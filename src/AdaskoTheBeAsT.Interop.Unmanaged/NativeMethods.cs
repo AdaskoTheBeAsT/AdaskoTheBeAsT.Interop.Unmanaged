@@ -10,11 +10,11 @@ internal static class NativeMethods
     private const string KernelLib = "kernel32";
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(KernelLib, CharSet = CharSet.Auto, BestFitMapping = false, SetLastError = true)]
+    [DllImport(KernelLib, CharSet = CharSet.Unicode, BestFitMapping = false, SetLastError = true)]
     internal static extern SafeLibraryHandle LoadLibrary(string fileName);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(KernelLib, CharSet = CharSet.Auto, BestFitMapping = false, SetLastError = true)]
+    [DllImport(KernelLib, CharSet = CharSet.Unicode, BestFitMapping = false, SetLastError = true)]
     internal static extern SafeLibraryHandle LoadLibraryEx(
         string fileName,
         IntPtr hFile,

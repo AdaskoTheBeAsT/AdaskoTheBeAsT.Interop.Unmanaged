@@ -1,0 +1,11 @@
+LoadLibrary
+LoadLibraryEx
+FreeLibrary
+GetProcAddress
+ActivateActCtx
+CreateActCtx
+DeactivateActCtx
+ReleaseActCtx
+PeekMessage
+TranslateMessage
+DispatchMessage

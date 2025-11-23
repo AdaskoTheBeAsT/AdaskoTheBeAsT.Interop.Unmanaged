@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -27,34 +28,53 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Constructor to load a dll and be responsible for freeing it.
     /// </summary>
     /// <param name="fileName">full path name of dll to load.</param>
+    /// <param name="flags">Flags to pass to LoadLibraryEx.</param>
     /// <exception cref="System.IO.FileNotFoundException">if fileName can't be found.</exception>
     /// <remarks>Throws exceptions on failure. Most common failure would be file-not-found, or
     /// that the file is not a  loadable image.</remarks>
-    public UnmanagedLibrary(string fileName)
+    public UnmanagedLibrary(
+        string fileName,
+        LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+                                 | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32)
     {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(fileName));
+        }
+
         _safeLibraryHandle = NativeMethods.LoadLibraryEx(
             fileName,
             IntPtr.Zero,
-            LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32);
+            flags);
 
         if (_safeLibraryHandle.IsInvalid)
         {
-            var hr = Marshal.GetHRForLastWin32Error();
-            Marshal.ThrowExceptionForHR(hr);
+            throw new Win32Exception(
+                Marshal.GetLastWin32Error(),
+                $"Failed to load library '{fileName}'.");
         }
     }
 
-    public static SafeLibraryHandle LoadLibrary(string fileName)
+    public static SafeLibraryHandle LoadLibrary(
+        string fileName,
+        LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+                                 | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32)
     {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            throw new ArgumentException("Value cannot be null or whitespace.", nameof(fileName));
+        }
+
         var safeLibraryHandle = NativeMethods.LoadLibraryEx(
             fileName,
             IntPtr.Zero,
-            LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32);
+            flags);
 
         if (safeLibraryHandle.IsInvalid)
         {
-            var hr = Marshal.GetHRForLastWin32Error();
-            Marshal.ThrowExceptionForHR(hr);
+            throw new Win32Exception(
+                Marshal.GetLastWin32Error(),
+                $"Failed to load library '{fileName}'.");
         }
 
         return safeLibraryHandle;
@@ -76,7 +96,7 @@ public sealed class UnmanagedLibrary : IDisposable
     }
 
     public static TDelegate? GetUnmanagedFunction<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName)
-        where TDelegate : class
+        where TDelegate : Delegate
     {
         var p = NativeMethods.GetProcAddress(safeLibraryHandle, functionName);
 
@@ -262,7 +282,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// you can not dispose this library until that IUnknown is collected. Else, you may free
     /// the library and then the CLR may call release on that IUnknown and it will crash.</remarks>
     public TDelegate? GetUnmanagedFunction<TDelegate>(string functionName)
-        where TDelegate : class
+        where TDelegate : Delegate
     {
         var p = NativeMethods.GetProcAddress(_safeLibraryHandle, functionName);
 
@@ -272,12 +292,7 @@ public sealed class UnmanagedLibrary : IDisposable
             return null;
         }
 
-        var function = Marshal.GetDelegateForFunctionPointer(p, typeof(TDelegate));
-
-        // Ideally, we'd just make the constraint on TDelegate be
-        // System.Delegate, but compiler error CS0702 (constrained can't be System.Delegate)
-        // prevents that. So we make the constraint system.object and do the cast from object-->TDelegate.
-        return function as TDelegate;
+        return Marshal.GetDelegateForFunctionPointer<TDelegate>(p);
     }
 
     /// <summary>

@@ -4,7 +4,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 [Flags]
 #pragma warning disable S2344
-internal enum LoadLibraryFlags : uint
+public enum LoadLibraryFlags : uint
 #pragma warning restore S2344
 {
     /// <summary>

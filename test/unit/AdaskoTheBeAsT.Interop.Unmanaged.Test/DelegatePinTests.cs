@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using AwesomeAssertions;
 using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
@@ -16,10 +17,10 @@ public class DelegatePinTests
         var keepAlive = new object();
 
         // Act
-        var delegatePin = new DelegatePin(ptr, keepAlive);
+        using var delegatePin = new DelegatePin(ptr, keepAlive);
 
         // Assert
-        Assert.Equal(ptr, delegatePin.Ptr);
+        delegatePin.Ptr.Should().Be(ptr);
     }
 
     [Fact]
@@ -30,10 +31,10 @@ public class DelegatePinTests
         var keepAlive = new object();
 
         // Act
-        var delegatePin = new DelegatePin(ptr, keepAlive);
+        using var delegatePin = new DelegatePin(ptr, keepAlive);
 
         // Assert
-        Assert.Equal(IntPtr.Zero, delegatePin.Ptr);
+        delegatePin.Ptr.Should().Be(IntPtr.Zero);
     }
 
     [Fact]
@@ -43,10 +44,10 @@ public class DelegatePinTests
         var ptr = new IntPtr(12345);
 
         // Act
-        var delegatePin = new DelegatePin(ptr, null!);
+        using var delegatePin = new DelegatePin(ptr, null!);
 
         // Assert
-        Assert.Equal(ptr, delegatePin.Ptr);
+        delegatePin.Ptr.Should().Be(ptr);
     }
 
     [Fact]
@@ -54,13 +55,13 @@ public class DelegatePinTests
     {
         // Arrange
         var expectedPtr = new IntPtr(99999);
-        var delegatePin = new DelegatePin(expectedPtr, new object());
+        using var delegatePin = new DelegatePin(expectedPtr, new object());
 
         // Act
         var actualPtr = delegatePin.Ptr;
 
         // Assert
-        Assert.Equal(expectedPtr, actualPtr);
+        actualPtr.Should().Be(expectedPtr);
     }
 
     [Fact]
@@ -68,11 +69,13 @@ public class DelegatePinTests
     {
         // Arrange
         var ptr = new IntPtr(12345);
-        var delegatePin = new DelegatePin(ptr, new object());
+        using var delegatePin = new DelegatePin(ptr, new object());
 
         // Act & Assert - Compile-time check that Ptr is readonly
         // This test verifies the property exists and is accessible
-        var _ = delegatePin.Ptr;
+        Action action = () => _ = delegatePin.Ptr;
+
+        action.Should().NotThrow();
     }
 
     [Fact]
@@ -82,7 +85,11 @@ public class DelegatePinTests
         var delegatePin = new DelegatePin(new IntPtr(12345), new object());
 
         // Act & Assert - no exception
-        delegatePin.Dispose();
+#pragma warning disable IDISP017
+        Action action = () => delegatePin.Dispose();
+#pragma warning restore IDISP017
+
+        action.Should().NotThrow();
     }
 
     [Fact]
@@ -92,9 +99,16 @@ public class DelegatePinTests
         var delegatePin = new DelegatePin(new IntPtr(12345), new object());
 
         // Act & Assert - no exception
-        delegatePin.Dispose();
-        delegatePin.Dispose();
-        delegatePin.Dispose();
+#pragma warning disable IDISP016,IDISP017
+        Action action = () =>
+        {
+            delegatePin.Dispose();
+            delegatePin.Dispose();
+            delegatePin.Dispose();
+        };
+#pragma warning restore IDISP016,IDISP017
+
+        action.Should().NotThrow();
     }
 
     [Fact]
@@ -105,11 +119,13 @@ public class DelegatePinTests
         var delegatePin = new DelegatePin(expectedPtr, new object());
 
         // Act
+#pragma warning disable IDISP016,IDISP017
         delegatePin.Dispose();
+#pragma warning restore IDISP016,IDISP017
         var actualPtr = delegatePin.Ptr;
 
         // Assert
-        Assert.Equal(expectedPtr, actualPtr);
+        actualPtr.Should().Be(expectedPtr);
     }
 
     [Fact]
@@ -133,11 +149,11 @@ public class DelegatePinTests
         var ptr = Marshal.GetFunctionPointerForDelegate(callback);
 
         // Act
-        var delegatePin = new DelegatePin(ptr, callback);
+        using var delegatePin = new DelegatePin(ptr, callback);
 
         // Assert
-        Assert.Equal(ptr, delegatePin.Ptr);
-        Assert.NotEqual(IntPtr.Zero, delegatePin.Ptr);
+        delegatePin.Ptr.Should().Be(ptr);
+        delegatePin.Ptr.Should().NotBe(IntPtr.Zero);
     }
 
     [Fact]
@@ -150,12 +166,14 @@ public class DelegatePinTests
 
         // Act
         var pin1 = new DelegatePin(ptr, keepAlive1);
-        var pin2 = new DelegatePin(ptr, keepAlive2);
+        using var pin2 = new DelegatePin(ptr, keepAlive2);
 
         // Assert
-        Assert.Equal(pin1.Ptr, pin2.Ptr);
+        pin1.Ptr.Should().Be(pin2.Ptr);
+#pragma warning disable IDISP017 // Prefer using
         pin1.Dispose();
-        Assert.Equal(ptr, pin2.Ptr); // pin2 should still work
+#pragma warning restore IDISP017 // Prefer using
+        pin2.Ptr.Should().Be(ptr); // pin2 should still work
     }
 
     [Fact]
@@ -166,11 +184,11 @@ public class DelegatePinTests
         var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
 
         // Act
-        var delegatePin = new DelegatePin(ptr, binder);
+        using var delegatePin = new DelegatePin(ptr, binder);
 
         // Assert
-        Assert.NotEqual(IntPtr.Zero, delegatePin.Ptr);
-        Assert.Equal(ptr, delegatePin.Ptr);
+        delegatePin.Ptr.Should().NotBe(IntPtr.Zero);
+        delegatePin.Ptr.Should().Be(ptr);
     }
 
     [Fact]
@@ -195,7 +213,7 @@ public class DelegatePinTests
         var isReadOnlyStruct = Array.Exists(
             customAttributes,
             attr => string.Equals(attr.GetType().Name, "IsReadOnlyAttribute", StringComparison.Ordinal));
-        
+
         Assert.True(isReadOnlyStruct || typeof(DelegatePin).IsValueType);
     }
 }

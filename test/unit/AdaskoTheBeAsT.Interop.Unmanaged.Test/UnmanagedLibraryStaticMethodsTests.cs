@@ -129,7 +129,7 @@ public class UnmanagedLibraryStaticMethodsTests
     public void FreeLibrary_WithValidHandle_FreesSuccessfully()
     {
         // Arrange
-        var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
         UnmanagedLibrary.FreeLibrary(handle);
@@ -142,7 +142,7 @@ public class UnmanagedLibraryStaticMethodsTests
     public void FreeLibrary_WithAlreadyClosedHandle_DoesNotThrow()
     {
         // Arrange
-        var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
         UnmanagedLibrary.FreeLibrary(handle);
 
         // Act
@@ -156,7 +156,7 @@ public class UnmanagedLibraryStaticMethodsTests
     public void FreeLibrary_CalledMultipleTimes_DoesNotThrow()
     {
         // Arrange
-        var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
         Action act = () =>
@@ -241,4 +241,3 @@ public class UnmanagedLibraryStaticMethodsTests
         processId.Should().Be(TestHelpers.GetCurrentProcessId());
     }
 }
-

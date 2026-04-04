@@ -111,7 +111,9 @@ public class UnmanagedLibraryConstructorTests
     public void Dispose_CalledOnce_DisposesSuccessfully()
     {
         // Arrange
+#pragma warning disable CA2000 // Dispose objects before losing scope
         var library = new UnmanagedLibrary("kernel32.dll");
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
         // Act
         Action act = () => library.Dispose();
@@ -124,7 +126,9 @@ public class UnmanagedLibraryConstructorTests
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
         // Arrange
+#pragma warning disable CA2000 // Dispose objects before losing scope
         var library = new UnmanagedLibrary("kernel32.dll");
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
         // Act
         Action act = () =>

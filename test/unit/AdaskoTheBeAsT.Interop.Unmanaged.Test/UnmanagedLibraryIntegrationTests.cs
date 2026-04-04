@@ -72,7 +72,7 @@ public class UnmanagedLibraryIntegrationTests
     public void StaticWorkflow_LoadGetInvokeFree_WorksCorrectly()
     {
         // Arrange
-        var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
         var getProcessId = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
@@ -172,7 +172,7 @@ public class UnmanagedLibraryIntegrationTests
         normalFunction.Should().NotBeNull();
         normalLoad.Should().NotBeNull();
         dataFileLoad.Should().NotBeNull();
-        
+
         // Both libraries loaded successfully
         var processId = normalFunction!();
         processId.Should().BeGreaterThan(0u);
@@ -184,13 +184,13 @@ public class UnmanagedLibraryIntegrationTests
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
         var originalFunction = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
-        
+
         // Act - Get function pointer
         var functionPtr = Marshal.GetFunctionPointerForDelegate(originalFunction!);
 
         // Assert
         functionPtr.Should().NotBe(IntPtr.Zero);
-        
+
         // Can still call original function
         var processId = originalFunction!();
         processId.Should().Be(TestHelpers.GetCurrentProcessId());
@@ -201,14 +201,14 @@ public class UnmanagedLibraryIntegrationTests
     {
         // Arrange
         Func<int, int, int> managedCallback = (a, b) => a * b;
-        
+
         // Act
         var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(managedCallback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
         binder.Should().NotBeNull();
-        
+
         // Can still invoke the original callback
         var result = managedCallback(5, 7);
         result.Should().Be(35);
@@ -227,7 +227,7 @@ public class UnmanagedLibraryIntegrationTests
         // Assert
         pin.Ptr.Should().Be(ptr);
         pin.Ptr.Should().NotBe(IntPtr.Zero);
-        
+
         // Can still invoke callback
         var result = callback(10);
         result.Should().Be(20);

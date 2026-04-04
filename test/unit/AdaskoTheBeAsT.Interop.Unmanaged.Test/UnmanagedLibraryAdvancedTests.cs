@@ -18,6 +18,9 @@ public class UnmanagedLibraryAdvancedTests
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int CdeclDelegate(int a, int b);
 
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    private delegate uint GetCurrentProcessIdDelegate();
+
     [Fact]
     public void GetFunctionPointerForDelegate_WithSimpleDelegate_ReturnsValidPointer()
     {
@@ -39,7 +42,7 @@ public class UnmanagedLibraryAdvancedTests
         SimpleDelegate callback = (x, y) => x + y;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
 
         // Assert
         binder.Should().NotBeNull();
@@ -83,10 +86,11 @@ public class UnmanagedLibraryAdvancedTests
         GenericDelegate<int> callback = value => Console.WriteLine(value);
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
 
         // Assert
         binder.Should().NotBeNull();
+
         // For generic delegates, binder is a Tuple containing both the original and proxy delegates
         binder.Should().BeOfType<Tuple<Delegate, Delegate>>();
     }
@@ -154,8 +158,8 @@ public class UnmanagedLibraryAdvancedTests
         SimpleDelegate callback2 = (x, y) => x * y;
 
         // Act
-        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out var binder1);
-        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out var binder2);
+        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out _);
+        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out _);
 
         // Assert
         ptr1.Should().NotBe(IntPtr.Zero);
@@ -227,8 +231,4 @@ public class UnmanagedLibraryAdvancedTests
         var processId = nativeDelegate!();
         processId.Should().Be(TestHelpers.GetCurrentProcessId());
     }
-
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    private delegate uint GetCurrentProcessIdDelegate();
 }
-

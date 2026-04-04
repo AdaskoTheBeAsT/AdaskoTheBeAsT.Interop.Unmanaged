@@ -150,7 +150,9 @@ public class UnmanagedLibraryInstanceMethodsTests
 
         // Note: GetProcAddress behavior with LOAD_LIBRARY_AS_DATAFILE varies by Windows version
         // On some versions it may still work, on others it returns null
-        var function = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
+        Action action = () => _ = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
+
         // We just verify no exception is thrown
+        action.Should().NotThrow();
     }
 }

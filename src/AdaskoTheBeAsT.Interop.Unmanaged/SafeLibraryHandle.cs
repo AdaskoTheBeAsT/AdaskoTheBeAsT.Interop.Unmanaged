@@ -4,8 +4,12 @@ using Microsoft.Win32.SafeHandles;
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 /// <summary>
-/// See http://msdn.microsoft.com/msdnmag/issues/05/10/Reliability/ for more about safe handles.
+/// Represents a Windows module handle that releases the loaded library when disposed.
 /// </summary>
+/// <remarks>
+/// Instances are created by the loading APIs in this package and should be disposed, or passed to
+/// <see cref="UnmanagedLibrary.FreeLibrary(SafeLibraryHandle?)"/>, when no longer needed.
+/// </remarks>
 // ReSharper disable ClassNeverInstantiated.Global
 #pragma warning disable S3453
 #if NETSTANDARD2_0

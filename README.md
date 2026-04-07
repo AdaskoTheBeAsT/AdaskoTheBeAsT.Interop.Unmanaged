@@ -3,23 +3,47 @@
 [![NuGet](https://img.shields.io/nuget/v/AdaskoTheBeAsT.Interop.Unmanaged.svg)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-> 🚀 A robust, type-safe, and memory-efficient .NET library for loading and managing unmanaged DLLs with zero hassle!
+> 🚀 Typed, safer dynamic DLL loading for .NET when static `DllImport` or `LibraryImport` is not enough.
 
-## Why This Library?
+`AdaskoTheBeAsT.Interop.Unmanaged` is a Windows-focused .NET library for loading native DLLs at runtime, resolving exports as strongly typed delegates, and releasing module handles safely with `SafeHandle`.
 
-Working with native DLLs in .NET can be tricky - memory leaks, crashes, and platform-specific quirks. This library provides a **battle-tested**, **safe**, and **elegant** wrapper around Windows `LoadLibrary`, `GetProcAddress`, and `FreeLibrary` APIs.
+## ✨ Why developers will like it
 
-### ✨ Key Features
+- 🔒 **Safer lifetime management** with `SafeLibraryHandle`
+- 🎯 **Strongly typed delegates** instead of manual `IntPtr` plumbing
+- 🧩 **Runtime export lookup** for optional or version-specific native APIs
+- 🪝 **Managed callback support** when native code needs a function pointer
+- ⚙️ **Low-level control** through `LoadLibraryEx` flags
+- 🧪 **Broad automated test coverage** across classic .NET Framework and modern .NET
+- 📚 **Generated XML docs** and nullable-enabled code
 
-- 🛡️ **Memory Safe** - Uses `SafeHandle` pattern to prevent resource leaks
-- 🔒 **Type Safe** - Strongly-typed delegate mapping for native functions
-- ⚡ **High Performance** - Minimal overhead with optimized P/Invoke
-- 🎯 **Developer Friendly** - Simple, intuitive API that just works
-- 🔧 **Flexible** - Support for custom calling conventions and generic delegates
-- 📦 **Multi-Framework** - Supports .NET Standard 2.0, .NET 8.0, and .NET 9.0
-- 🧪 **Production Ready** - Analyzed by 20+ code quality tools
+## 🤔 When this library shines
 
-## Installation
+This package is especially useful when you need to:
+
+- Load a native DLL by name or by full path at runtime
+- Probe for exports that may or may not exist on a given machine
+- Use different load flags for system DLLs, resource DLLs, or third-party binaries
+- Pass managed delegates into unmanaged code as callbacks
+- Support both older .NET consumers and the latest .NET runtimes from one package
+
+## 🙌 Why not just use `DllImport`?
+
+If your native dependency is fixed at compile time and your exports are always present, `DllImport` or `LibraryImport` may be enough.
+
+This library becomes valuable when you need **dynamic loading**, **optional exports**, **runtime path selection**, or **callback pointer generation** without hand-rolling the native interop plumbing every time.
+
+## 🖥️ Platform and framework support
+
+| Area | Support |
+| --- | --- |
+| Runtime | Windows only |
+| Library target frameworks | `netstandard2.0`, `net8.0`, `net9.0`, `net10.0` |
+| Automated test matrix | `net462`, `net47`, `net471`, `net472`, `net48`, `net481`, `net8.0`, `net9.0`, `net10.0` |
+
+> ℹ️ `netstandard2.0` support means broad API compatibility for consumers. The runtime behavior is still Windows-only because the library wraps `kernel32` APIs such as `LoadLibraryEx`, `GetProcAddress`, and `FreeLibrary`.
+
+## 📦 Installation
 
 ```bash
 dotnet add package AdaskoTheBeAsT.Interop.Unmanaged
@@ -31,207 +55,173 @@ Or via Package Manager:
 Install-Package AdaskoTheBeAsT.Interop.Unmanaged
 ```
 
-## Quick Start
+## 🚀 Quick start
 
-### Basic Usage
+### 1) Load a DLL and call an export
 
 ```csharp
+using System;
+using System.Runtime.InteropServices;
 using AdaskoTheBeAsT.Interop.Unmanaged;
 
-// Define your native function signature
-[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-delegate int Add(int a, int b);
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+delegate uint GetCurrentProcessIdDelegate();
 
-// Load the DLL and get the function
-using var library = new UnmanagedLibrary("MyNative.dll");
-var addFunction = library.GetUnmanagedFunction<Add>("add");
+using var library = new UnmanagedLibrary("kernel32.dll");
+var getCurrentProcessId = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
 
-if (addFunction != null)
+if (getCurrentProcessId is not null)
 {
-    int result = addFunction(5, 3); // result = 8
-    Console.WriteLine($"Result: {result}");
+    Console.WriteLine($"Current PID: {getCurrentProcessId()}");
 }
 ```
 
-### Advanced: Custom Load Flags
+### 2) Handle optional exports safely
+
+`GetUnmanagedFunction<TDelegate>` returns `null` when the export is missing, which makes feature probing straightforward.
 
 ```csharp
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+delegate IntPtr OptionalExportDelegate();
+
+using var library = new UnmanagedLibrary("SomeNativeSdk.dll");
+var optionalExport = library.GetUnmanagedFunction<OptionalExportDelegate>("OptionalExport");
+
+if (optionalExport is null)
+{
+    Console.WriteLine("This version of the native SDK does not expose OptionalExport.");
+}
+```
+
+### 3) Load from a specific path with explicit flags
+
+Use a fully qualified path when you want deterministic loading behavior for a specific DLL.
+
+```csharp
+var flags =
+    LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR |
+    LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
+
+using var library = new UnmanagedLibrary(@"C:\Native\MyLibrary.dll", flags);
+```
+
+### 4) Use the static handle-based API
+
+If you want to manage the handle yourself, the static helpers are available too.
+
+```csharp
+using System;
+using System.Runtime.InteropServices;
 using AdaskoTheBeAsT.Interop.Unmanaged;
 
-// Load with custom search paths
-var flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR 
-          | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+delegate uint GetTickCountDelegate();
 
-using var library = new UnmanagedLibrary(@"C:\MyLibs\custom.dll", flags);
-var myFunc = library.GetUnmanagedFunction<MyDelegate>("MyFunction");
-```
+using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+var getTickCount = UnmanagedLibrary.GetUnmanagedFunction<GetTickCountDelegate>(handle, "GetTickCount");
 
-### Static Helper Methods
-
-```csharp
-// Load library without wrapper
-var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
-
-// Get function from handle
-var func = UnmanagedLibrary.GetUnmanagedFunction<MyDelegate>(handle, "GetVersion");
-
-// Clean up when done
-UnmanagedLibrary.FreeLibrary(handle);
-```
-
-### Generic Delegates with Custom Calling Conventions
-
-```csharp
-// Get function pointer for delegate
-var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(myCallback, out var binder);
-
-// Create delegate from function pointer with custom calling convention
-var del = UnmanagedLibrary.GetDelegateForFunctionPointer<MyDelegate>(
-    ptr, 
-    CallingConventions.Standard
-);
-```
-
-## API Overview
-
-### Core Classes
-
-#### `UnmanagedLibrary`
-Main class for loading and managing native DLLs.
-
-```csharp
-// Constructor
-UnmanagedLibrary(string fileName, LoadLibraryFlags flags = ...)
-
-// Get function as delegate
-TDelegate? GetUnmanagedFunction<TDelegate>(string functionName)
-
-// Static helpers
-static SafeLibraryHandle LoadLibrary(string fileName, LoadLibraryFlags flags)
-static void FreeLibrary(SafeLibraryHandle handle)
-static TDelegate? GetUnmanagedFunction<TDelegate>(SafeLibraryHandle handle, string functionName)
-```
-
-#### `SafeLibraryHandle`
-Thread-safe handle wrapper that ensures proper cleanup.
-
-#### `LoadLibraryFlags`
-Comprehensive enum of Windows LoadLibraryEx flags for fine-grained control over DLL loading behavior.
-
-#### `DelegatePin`
-Utility struct for pinning delegates in memory to prevent garbage collection during native callbacks.
-
-## Common Use Cases
-
-### Loading a 3rd Party Native Library
-
-```csharp
-using var lib = new UnmanagedLibrary("opencv_world.dll");
-var cvVersion = lib.GetUnmanagedFunction<GetVersionDelegate>("cvGetVersion");
-```
-
-### Platform-Specific DLL Loading
-
-```csharp
-#if WINDOWS
-var flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR 
-          | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
-using var lib = new UnmanagedLibrary("native_win.dll", flags);
-#elif LINUX
-// Use DllImport or different interop mechanism
-#endif
-```
-
-### Extracting Resources from DLLs
-
-```csharp
-// Load DLL as data file without executing code
-var flags = LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE;
-using var lib = new UnmanagedLibrary("resource.dll", flags);
-// Extract resources here
-```
-
-## Error Handling
-
-The library throws meaningful exceptions with context:
-
-```csharp
-try
+if (getTickCount is not null)
 {
-    using var lib = new UnmanagedLibrary("missing.dll");
-}
-catch (Win32Exception ex)
-{
-    // "Failed to load library 'missing.dll'."
-    Console.WriteLine($"Error: {ex.Message}");
-    Console.WriteLine($"Native Error Code: {ex.NativeErrorCode}");
-}
-
-try
-{
-    using var lib = new UnmanagedLibrary(null!);
-}
-catch (ArgumentException ex)
-{
-    // "Value cannot be null or whitespace. (Parameter 'fileName')"
-    Console.WriteLine($"Error: {ex.Message}");
+    Console.WriteLine($"Tick count: {getTickCount()}");
 }
 ```
 
-## Performance Tips
+### 5) Pass a managed callback to native code
 
-1. **Reuse library instances** - Keep the `UnmanagedLibrary` instance alive if you need multiple function calls
-2. **Cache delegates** - Store retrieved delegates instead of calling `GetUnmanagedFunction` repeatedly
-3. **Use static methods** - For one-off calls, static helper methods avoid object allocation
+When you expose a managed delegate to unmanaged code, keep the returned `binder` alive for as long as native code may store or invoke the pointer.
 
 ```csharp
-// ❌ Bad - Repeated loading
-for (int i = 0; i < 1000; i++)
-{
-    using var lib = new UnmanagedLibrary("my.dll");
-    var func = lib.GetUnmanagedFunction<MyDelegate>("MyFunc");
-    func?.Invoke();
-}
+using System;
+using AdaskoTheBeAsT.Interop.Unmanaged;
 
-// ✅ Good - Load once, use many times
-using var lib = new UnmanagedLibrary("my.dll");
-var func = lib.GetUnmanagedFunction<MyDelegate>("MyFunc");
-for (int i = 0; i < 1000; i++)
-{
-    func?.Invoke();
-}
+Func<int, int, int> callback = (a, b) => a + b;
+
+var callbackPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+
+// Pass callbackPointer to native code here.
+
+GC.KeepAlive(binder);
 ```
 
-## Security Considerations
+## 🧠 API at a glance
 
-- The library uses `SuppressUnmanagedCodeSecurity` for performance - only load trusted DLLs
-- Always validate file paths before loading to prevent DLL hijacking attacks
-- Use `LOAD_LIBRARY_SEARCH_*` flags to control DLL search paths and prevent loading from untrusted locations
-- Dispose library instances promptly to prevent holding locks on DLL files
+### `UnmanagedLibrary`
 
-## Requirements
+Main entry point for loading DLLs and resolving exports.
 
-- **.NET Standard 2.0** or higher
-- **.NET 8.0** or higher
-- **.NET 9.0** or higher
-- **Windows OS** (uses Windows API under the hood)
+```csharp
+new UnmanagedLibrary(string fileName, LoadLibraryFlags flags = ...);
+TDelegate? GetUnmanagedFunction<TDelegate>(string functionName);
 
-## Contributing
+static SafeLibraryHandle LoadLibrary(string fileName, LoadLibraryFlags flags = ...);
+static void FreeLibrary(SafeLibraryHandle? safeLibraryHandle);
+static TDelegate? GetUnmanagedFunction<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName);
+static IntPtr GetFunctionPointerForDelegate<T>(T delegateCallback, out object binder);
+```
 
-Contributions are welcome! This project maintains high code quality standards with:
-- 20+ static analyzers (StyleCop, Roslynator, SonarAnalyzer, etc.)
-- Treat warnings as errors
-- Nullable reference types enabled
-- Comprehensive documentation required
+### `SafeLibraryHandle`
 
-## License
+Wraps the native module handle using the .NET `SafeHandle` pattern, which helps prevent leaks and double-free mistakes.
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+### `LoadLibraryFlags`
 
-## Credits
+Exposes Windows `LoadLibraryEx` flags so you can control how the loader locates and initializes modules.
 
-Developed with ❤️ by [Adam Pluciński](https://github.com/AdaskoTheBeAsT)
+## 🛡️ Safety and lifetime rules
 
----
+These are the most important things to remember:
 
-**⭐ If this library saved you time, give it a star on GitHub!**
+- ✅ Keep the `UnmanagedLibrary` instance or `SafeLibraryHandle` alive while retrieved delegates are still in use
+- ✅ Keep the callback `binder` alive while native code may call the function pointer
+- ✅ Use the exact delegate signature and calling convention expected by the native export
+- ✅ Prefer explicit `LOAD_LIBRARY_SEARCH_*` flags when loading third-party binaries
+- ❌ Do not unload the library and continue using delegates you obtained from it
+- ❌ Do not load untrusted DLLs
+
+## ⚠️ Important behavior notes
+
+- Export names are **case-sensitive**
+- Invalid file names throw `ArgumentException`
+- Failed loads throw `Win32Exception`
+- Missing exports return `null`
+- `FreeLibrary` is safe to call with `null` or an already closed handle
+- Flags such as `LOAD_LIBRARY_AS_DATAFILE` change loader behavior and are intended for special scenarios, not standard function invocation
+
+## 💡 Common use cases
+
+- Loading Windows system DLLs such as `kernel32.dll` or `user32.dll`
+- Dynamically integrating with third-party native SDKs
+- Supporting optional native features across multiple versions of the same DLL
+- Registering managed callbacks with unmanaged code
+- Choosing DLL resolution behavior explicitly to reduce surprises
+
+## 🧪 Quality notes
+
+The project is built with quality-oriented defaults, including:
+
+- nullable reference types enabled
+- generated XML documentation
+- warnings treated as errors
+- automated tests across .NET Framework 4.6.2-4.8.1 and .NET 8-10
+
+## ❓FAQ
+
+### Do I need to pass a full DLL path?
+
+Not always. A bare module name such as `kernel32.dll` works when the selected flags can resolve it. Use a fully qualified path when you want deterministic loading from a specific location.
+
+### What happens if the export does not exist?
+
+`GetUnmanagedFunction<TDelegate>` returns `null`, so you can probe for optional functionality without exceptions.
+
+### Do I need to use `DelegatePin` directly?
+
+Usually no. Most consumers only need to keep the `binder` returned by `GetFunctionPointerForDelegate` rooted for the required lifetime.
+
+### Can I use this on Linux or macOS?
+
+No. The package may target cross-platform TFMs, but its runtime implementation depends on Windows loader APIs.
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).

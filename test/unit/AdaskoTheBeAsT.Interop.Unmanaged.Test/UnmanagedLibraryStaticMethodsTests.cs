@@ -184,6 +184,32 @@ public class UnmanagedLibraryStaticMethodsTests
     }
 
     [Fact]
+    public void GetUnmanagedFunction_WithNullHandle_ThrowsArgumentNullException()
+    {
+        // Act
+        Action act = () => UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(null!, "GetCurrentProcessId");
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("safeLibraryHandle");
+    }
+
+    [Fact]
+    public void GetUnmanagedFunction_WithWhitespaceFunctionName_ThrowsArgumentException()
+    {
+        // Arrange
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+
+        // Act
+        Action act = () => UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "   ");
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*cannot be null or whitespace*")
+            .WithParameterName("functionName");
+    }
+
+    [Fact]
     public void GetUnmanagedFunction_WithNonExistentFunction_ReturnsNull()
     {
         // Arrange

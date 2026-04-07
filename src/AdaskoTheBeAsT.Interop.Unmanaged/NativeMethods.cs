@@ -11,10 +11,6 @@ internal static class NativeMethods
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport(KernelLib, CharSet = CharSet.Unicode, BestFitMapping = false, SetLastError = true)]
-    internal static extern SafeLibraryHandle LoadLibrary(string fileName);
-
-    [SuppressUnmanagedCodeSecurity]
-    [DllImport(KernelLib, CharSet = CharSet.Unicode, BestFitMapping = false, SetLastError = true)]
     internal static extern SafeLibraryHandle LoadLibraryEx(
         string fileName,
         IntPtr hFile,

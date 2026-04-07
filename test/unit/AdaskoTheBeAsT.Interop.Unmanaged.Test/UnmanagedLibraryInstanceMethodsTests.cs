@@ -30,6 +30,21 @@ public class UnmanagedLibraryInstanceMethodsTests
     }
 
     [Fact]
+    public void GetUnmanagedFunction_WithWhitespaceFunctionName_ThrowsArgumentException()
+    {
+        // Arrange
+        using var library = new UnmanagedLibrary("kernel32.dll");
+
+        // Act
+        Action act = () => library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("   ");
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*cannot be null or whitespace*")
+            .WithParameterName("functionName");
+    }
+
+    [Fact]
     public void GetUnmanagedFunction_WithNonExistentFunction_ReturnsNull()
     {
         // Arrange

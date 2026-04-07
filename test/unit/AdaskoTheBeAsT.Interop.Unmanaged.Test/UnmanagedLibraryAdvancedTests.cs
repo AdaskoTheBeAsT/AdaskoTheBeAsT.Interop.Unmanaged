@@ -36,6 +36,17 @@ public class UnmanagedLibraryAdvancedTests
     }
 
     [Fact]
+    public void GetFunctionPointerForDelegate_WithNullDelegate_ThrowsArgumentNullException()
+    {
+        // Act
+        Action act = () => _ = UnmanagedLibrary.GetFunctionPointerForDelegate<Action>(null!, out _);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>()
+            .WithParameterName("delegateCallback");
+    }
+
+    [Fact]
     public void GetFunctionPointerForDelegate_BinderKeepsDelegateAlive()
     {
         // Arrange
@@ -101,18 +112,28 @@ public class UnmanagedLibraryAdvancedTests
         // Arrange
         GenericDelegate<int> callback1 = value => Console.WriteLine(value);
         GenericDelegate<int> callback2 = value => Console.WriteLine(value * 2);
+        var proxyAssemblyName = typeof(GenericDelegate<int>).Name + "`" + typeof(int).Name;
+        var proxyAssembliesBefore = CountAssemblies(proxyAssemblyName);
 
         // Act
         var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out var _);
-        var assembliesAfterFirst = AppDomain.CurrentDomain.GetAssemblies().Length;
+        var proxyAssembliesAfterFirst = CountAssemblies(proxyAssemblyName);
 
         var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out var _);
-        var assembliesAfterSecond = AppDomain.CurrentDomain.GetAssemblies().Length;
+        var proxyAssembliesAfterSecond = CountAssemblies(proxyAssemblyName);
 
         // Assert
         ptr1.Should().NotBe(IntPtr.Zero);
         ptr2.Should().NotBe(IntPtr.Zero);
-        assembliesAfterSecond.Should().Be(assembliesAfterFirst); // Should reuse the same proxy assembly
+        proxyAssembliesAfterFirst.Should().BeGreaterThanOrEqualTo(proxyAssembliesBefore);
+        proxyAssembliesAfterSecond.Should().Be(proxyAssembliesAfterFirst); // Should reuse the same proxy assembly
+
+        static int CountAssemblies(string assemblyName)
+        {
+            return Array.FindAll(
+                AppDomain.CurrentDomain.GetAssemblies(),
+                assembly => assembly.GetName().Name?.Equals(assemblyName, StringComparison.OrdinalIgnoreCase) ?? false).Length;
+        }
     }
 
     [Fact]
@@ -130,6 +151,28 @@ public class UnmanagedLibraryAdvancedTests
         ptr1.Should().NotBe(IntPtr.Zero);
         ptr2.Should().NotBe(IntPtr.Zero);
         ptr1.Should().NotBe(ptr2); // Different function pointers
+    }
+
+    [Fact]
+    public void GetDelegateForFunctionPointer_WithZeroPointer_ThrowsArgumentException()
+    {
+        // Act
+        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<SimpleDelegate>(IntPtr.Zero, CallingConventions.Standard);
+
+        // Assert
+        act.Should().Throw<ArgumentException>()
+            .WithParameterName("ptr");
+    }
+
+    [Fact]
+    public void GetDelegateForFunctionPointer_WithNonDelegateType_ThrowsInvalidOperationException()
+    {
+        // Act
+        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<object>(new IntPtr(1), CallingConventions.Standard);
+
+        // Assert
+        act.Should().Throw<InvalidOperationException>()
+            .WithMessage("*delegate type*");
     }
 
     [Fact]

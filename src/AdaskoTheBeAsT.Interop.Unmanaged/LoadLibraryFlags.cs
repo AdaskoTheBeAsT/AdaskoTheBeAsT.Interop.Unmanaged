@@ -2,6 +2,16 @@ using System;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+/// <summary>
+/// Specifies flags passed to the Windows <c>LoadLibraryEx</c> function.
+/// </summary>
+/// <remarks>
+/// Use these values with <see cref="UnmanagedLibrary"/> or
+/// <see cref="UnmanagedLibrary.LoadLibrary(string, LoadLibraryFlags)"/> to control how a DLL is
+/// located and initialized. The default APIs in this package use
+/// <see cref="LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR"/> together with
+/// <see cref="LOAD_LIBRARY_SEARCH_SYSTEM32"/>.
+/// </remarks>
 [Flags]
 #pragma warning disable S2344
 public enum LoadLibraryFlags : uint

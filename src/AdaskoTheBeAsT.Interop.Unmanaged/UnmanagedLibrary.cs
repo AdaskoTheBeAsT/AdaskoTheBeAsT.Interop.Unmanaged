@@ -155,10 +155,22 @@ public sealed class UnmanagedLibrary : IDisposable
 
         ValidateTextArgument(functionName, nameof(functionName));
 
+        var addedRef = false;
+        try
+        {
+            safeLibraryHandle.DangerousAddRef(ref addedRef);
 #pragma warning disable S3869
-        address = NativeLoader.GetExport(safeLibraryHandle.DangerousGetHandle(), functionName);
+            address = NativeLoader.GetExport(safeLibraryHandle.DangerousGetHandle(), functionName);
 #pragma warning restore S3869
-        return address != IntPtr.Zero;
+            return address != IntPtr.Zero;
+        }
+        finally
+        {
+            if (addedRef)
+            {
+                safeLibraryHandle.DangerousRelease();
+            }
+        }
     }
 
     /// <summary>
@@ -359,16 +371,50 @@ public sealed class UnmanagedLibrary : IDisposable
                     typeof(MulticastDelegate));
 
                 // If the source delegate type declares an [UnmanagedFunctionPointer] attribute,
-                // propagate it to the proxy so the runtime thunk uses the intended calling
-                // convention (e.g. Cdecl). Otherwise the proxy would default to StdCall/WinApi
-                // which can cause stack imbalance crashes for Cdecl targets.
+                // propagate it (including CharSet, BestFitMapping, ThrowOnUnmappableChar,
+                // SetLastError) to the proxy so the runtime thunk preserves the original interop
+                // semantics. Otherwise the proxy would default to StdCall/WinApi + CharSet.Auto
+                // which can cause stack imbalance crashes for Cdecl targets and incorrect string
+                // marshaling for callbacks that rely on CharSet.Unicode/Ansi.
                 var ufp = delegateType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
                 if (ufp != null)
                 {
-                    var ufpCtor = typeof(UnmanagedFunctionPointerAttribute)
-                        .GetConstructor([typeof(CallingConvention)]);
-                    if (ufpCtor != null)
+                    var ufpAttributeType = typeof(UnmanagedFunctionPointerAttribute);
+                    const BindingFlags ufpFieldBindingFlags =
+                        BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+                    var ufpCtor = ufpAttributeType.GetConstructor([typeof(CallingConvention)]);
+                    var charSetField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.CharSet), ufpFieldBindingFlags);
+                    var bestFitMappingField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.BestFitMapping), ufpFieldBindingFlags);
+                    var throwOnUnmappableCharField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.ThrowOnUnmappableChar), ufpFieldBindingFlags);
+                    var setLastErrorField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.SetLastError), ufpFieldBindingFlags);
+                    if (ufpCtor != null
+                        && charSetField != null
+                        && bestFitMappingField != null
+                        && throwOnUnmappableCharField != null
+                        && setLastErrorField != null)
                     {
+                        proxyTypeBuilder.SetCustomAttribute(
+                            new CustomAttributeBuilder(
+                                ufpCtor,
+                                [ufp.CallingConvention],
+                                namedFields:
+                                [
+                                    charSetField,
+                                    bestFitMappingField,
+                                    throwOnUnmappableCharField,
+                                    setLastErrorField,
+                                ],
+                                fieldValues:
+                                [
+                                    ufp.CharSet,
+                                    ufp.BestFitMapping,
+                                    ufp.ThrowOnUnmappableChar,
+                                    ufp.SetLastError,
+                                ]));
+                    }
+                    else if (ufpCtor != null)
+                    {
+                        // Fallback: copy only CallingConvention if reflection can't find the fields.
                         proxyTypeBuilder.SetCustomAttribute(
                             new CustomAttributeBuilder(ufpCtor, [ufp.CallingConvention]));
                     }
@@ -480,10 +526,22 @@ public sealed class UnmanagedLibrary : IDisposable
     {
         ValidateTextArgument(functionName, nameof(functionName));
 
+        var addedRef = false;
+        try
+        {
+            _safeLibraryHandle.DangerousAddRef(ref addedRef);
 #pragma warning disable S3869
-        address = NativeLoader.GetExport(_safeLibraryHandle.DangerousGetHandle(), functionName);
+            address = NativeLoader.GetExport(_safeLibraryHandle.DangerousGetHandle(), functionName);
 #pragma warning restore S3869
-        return address != IntPtr.Zero;
+            return address != IntPtr.Zero;
+        }
+        finally
+        {
+            if (addedRef)
+            {
+                _safeLibraryHandle.DangerousRelease();
+            }
+        }
     }
 
     /// <summary>
@@ -512,17 +570,29 @@ public sealed class UnmanagedLibrary : IDisposable
     private static TDelegate? GetUnmanagedFunctionCore<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName)
         where TDelegate : Delegate
     {
+        var addedRef = false;
+        try
+        {
+            safeLibraryHandle.DangerousAddRef(ref addedRef);
 #pragma warning disable S3869
-        var p = NativeLoader.GetExport(safeLibraryHandle.DangerousGetHandle(), functionName);
+            var p = NativeLoader.GetExport(safeLibraryHandle.DangerousGetHandle(), functionName);
 #pragma warning restore S3869
 
-        // Failure is a common case, especially for adaptive code.
-        if (p == IntPtr.Zero)
-        {
-            return null;
-        }
+            // Failure is a common case, especially for adaptive code.
+            if (p == IntPtr.Zero)
+            {
+                return null;
+            }
 
-        return Marshal.GetDelegateForFunctionPointer<TDelegate>(p);
+            return Marshal.GetDelegateForFunctionPointer<TDelegate>(p);
+        }
+        finally
+        {
+            if (addedRef)
+            {
+                safeLibraryHandle.DangerousRelease();
+            }
+        }
     }
 
     private static Type EnsureDelegateType<T>()

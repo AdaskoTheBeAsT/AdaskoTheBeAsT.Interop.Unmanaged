@@ -27,6 +27,14 @@ public class UnmanagedLibraryAdvancedTests
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int CdeclGenericDelegate<T>(T value);
 
+    [UnmanagedFunctionPointer(
+        CallingConvention.StdCall,
+        CharSet = CharSet.Unicode,
+        BestFitMapping = false,
+        ThrowOnUnmappableChar = true,
+        SetLastError = true)]
+    private delegate int FullyDecoratedGenericDelegate<T>(T value);
+
     [Fact]
     public void GetFunctionPointerForDelegate_WithSimpleDelegate_ReturnsValidPointer()
     {
@@ -254,6 +262,29 @@ public class UnmanagedLibraryAdvancedTests
         var attr = proxyType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
         attr.Should().NotBeNull();
         attr!.CallingConvention.Should().Be(CallingConvention.Cdecl);
+    }
+
+    [Fact]
+    public void GetFunctionPointerForDelegate_GenericDelegate_PropagatesAllUnmanagedFunctionPointerFields()
+    {
+        // Arrange - generic delegate decorated with every UnmanagedFunctionPointer field
+        FullyDecoratedGenericDelegate<int> callback = x => x + 1;
+
+        // Act
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+
+        // Assert - the proxy type should carry ALL configured fields, not only CallingConvention
+        binder.Should().BeOfType<Tuple<Delegate, Delegate>>();
+        var tuple = (Tuple<Delegate, Delegate>)binder;
+        var proxyType = tuple.Item2.GetType();
+
+        var attr = proxyType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
+        attr.Should().NotBeNull();
+        attr!.CallingConvention.Should().Be(CallingConvention.StdCall);
+        attr.CharSet.Should().Be(CharSet.Unicode);
+        attr.BestFitMapping.Should().BeFalse();
+        attr.ThrowOnUnmappableChar.Should().BeTrue();
+        attr.SetLastError.Should().BeTrue();
     }
 
     [Fact]

@@ -266,4 +266,83 @@ public class UnmanagedLibraryStaticMethodsTests
         processId.Should().BeGreaterThan(0u);
         processId.Should().Be(TestHelpers.GetCurrentProcessId());
     }
+
+    [Fact]
+    public void TryGetExport_Static_WithValidFunction_ReturnsTrueAndNonZeroAddress()
+    {
+        // Arrange
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+
+        // Act
+        var found = UnmanagedLibrary.TryGetExport(handle, "GetCurrentProcessId", out var addr);
+
+        // Assert
+        found.Should().BeTrue();
+        addr.Should().NotBe(IntPtr.Zero);
+    }
+
+    [Fact]
+    public void TryGetExport_Static_WithNonExistentFunction_ReturnsFalseAndZeroAddress()
+    {
+        // Arrange
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+
+        // Act
+        var found = UnmanagedLibrary.TryGetExport(handle, "NonExistentFunction", out var addr);
+
+        // Assert
+        found.Should().BeFalse();
+        addr.Should().Be(IntPtr.Zero);
+    }
+
+    [Fact]
+    public void TryGetExport_Static_WithNullHandle_ThrowsArgumentNullException()
+    {
+        // Act
+        Action act = () => UnmanagedLibrary.TryGetExport(null!, "GetCurrentProcessId", out _);
+
+        // Assert
+        act.Should().Throw<ArgumentNullException>().WithParameterName("safeLibraryHandle");
+    }
+
+    [Fact]
+    public void TryGetExport_Static_WithWhitespaceFunctionName_ThrowsArgumentException()
+    {
+        // Arrange
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+
+        // Act
+        Action act = () => UnmanagedLibrary.TryGetExport(handle, "   ", out _);
+
+        // Assert
+        act.Should().Throw<ArgumentException>().WithParameterName("functionName");
+    }
+
+    [Fact]
+    public void TryGetExport_Instance_WithValidFunction_ReturnsTrueAndNonZeroAddress()
+    {
+        // Arrange
+        using var library = new UnmanagedLibrary("kernel32.dll");
+
+        // Act
+        var found = library.TryGetExport("GetCurrentProcessId", out var addr);
+
+        // Assert
+        found.Should().BeTrue();
+        addr.Should().NotBe(IntPtr.Zero);
+    }
+
+    [Fact]
+    public void TryGetExport_Instance_WithNonExistentFunction_ReturnsFalse()
+    {
+        // Arrange
+        using var library = new UnmanagedLibrary("kernel32.dll");
+
+        // Act
+        var found = library.TryGetExport("NonExistentFunction", out var addr);
+
+        // Assert
+        found.Should().BeFalse();
+        addr.Should().Be(IntPtr.Zero);
+    }
 }

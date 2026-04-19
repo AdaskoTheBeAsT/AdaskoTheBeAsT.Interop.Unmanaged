@@ -9,9 +9,13 @@ using System.Text;
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 /// <summary>
-/// Represents a loaded Windows DLL and exposes its exported functions as managed delegates.
+/// Represents a loaded native dynamic library and exposes its exported functions as managed delegates.
 /// </summary>
 /// <remarks>
+/// Works on Windows (via <c>LoadLibraryEx</c>/<c>GetProcAddress</c>/<c>FreeLibrary</c>), Linux and
+/// macOS (via <c>dlopen</c>/<c>dlsym</c>/<c>dlclose</c>). On non-Windows platforms the
+/// <see cref="LoadLibraryFlags"/> argument is ignored and the library is loaded with
+/// <c>RTLD_NOW</c>.
 /// This type owns the loaded module handle and frees it when disposed. Any function pointer or
 /// object obtained from the library becomes unsafe to use after the module is unloaded.
 /// </remarks>
@@ -25,14 +29,16 @@ public sealed class UnmanagedLibrary : IDisposable
     private readonly SafeLibraryHandle _safeLibraryHandle;
 
     /// <summary>
-    /// Loads a Windows DLL and transfers ownership of the resulting module handle to this instance.
+    /// Loads a native dynamic library and transfers ownership of the resulting module handle to this instance.
     /// </summary>
     /// <param name="fileName">
-    /// Module name or fully qualified path of the DLL to load. With the default flags, Windows
-    /// searches <c>System32</c> for bare module names and uses the DLL directory for dependency
-    /// resolution when a fully qualified path is provided.
+    /// Module name or fully qualified path of the library to load. With the default flags on
+    /// Windows, the system searches <c>System32</c> for bare module names and uses the DLL
+    /// directory for dependency resolution when a fully qualified path is provided. On Linux and
+    /// macOS, <paramref name="fileName"/> is passed to <c>dlopen</c> which searches standard
+    /// locations such as <c>LD_LIBRARY_PATH</c>/<c>DYLD_LIBRARY_PATH</c> for bare names.
     /// </param>
-    /// <param name="flags">Flags passed to <c>LoadLibraryEx</c>.</param>
+    /// <param name="flags">Flags passed to <c>LoadLibraryEx</c> on Windows. Ignored on Linux and macOS.</param>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="fileName"/> is <see langword="null"/>, empty, or whitespace.
     /// </exception>
@@ -46,14 +52,16 @@ public sealed class UnmanagedLibrary : IDisposable
     }
 
     /// <summary>
-    /// Loads a Windows DLL and returns a safe handle that owns the module.
+    /// Loads a native dynamic library and returns a safe handle that owns the module.
     /// </summary>
     /// <param name="fileName">
-    /// Module name or fully qualified path of the DLL to load. With the default flags, Windows
-    /// searches <c>System32</c> for bare module names and uses the DLL directory for dependency
-    /// resolution when a fully qualified path is provided.
+    /// Module name or fully qualified path of the library to load. With the default flags on
+    /// Windows, the system searches <c>System32</c> for bare module names and uses the DLL
+    /// directory for dependency resolution when a fully qualified path is provided. On Linux and
+    /// macOS, <paramref name="fileName"/> is passed to <c>dlopen</c> which searches standard
+    /// locations such as <c>LD_LIBRARY_PATH</c>/<c>DYLD_LIBRARY_PATH</c> for bare names.
     /// </param>
-    /// <param name="flags">Flags passed to <c>LoadLibraryEx</c>.</param>
+    /// <param name="flags">Flags passed to <c>LoadLibraryEx</c> on Windows. Ignored on Linux and macOS.</param>
     /// <returns>A safe handle for the loaded module.</returns>
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="fileName"/> is <see langword="null"/>, empty, or whitespace.
@@ -115,14 +123,52 @@ public sealed class UnmanagedLibrary : IDisposable
     }
 
     /// <summary>
+    /// Tries to look up an exported symbol on a loaded module handle and returns its raw address.
+    /// </summary>
+    /// <param name="safeLibraryHandle">Handle for the loaded module that owns the export.</param>
+    /// <param name="functionName">Case-sensitive export name to look up.</param>
+    /// <param name="address">
+    /// When this method returns, contains the native address of the export, or
+    /// <see cref="IntPtr.Zero"/> when the export was not found.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the export was found; <see langword="false"/> otherwise.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="safeLibraryHandle"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="functionName"/> is <see langword="null"/>, empty, or whitespace.
+    /// </exception>
+    /// <remarks>
+    /// This overload does not allocate a managed delegate and is the preferred way to obtain a
+    /// pointer that will be cast to a C# unmanaged function pointer
+    /// (for example <c>delegate* unmanaged[Stdcall]&lt;uint&gt;</c>) on <c>net5.0</c> or newer.
+    /// Keep <paramref name="safeLibraryHandle"/> alive for as long as the returned address is used.
+    /// </remarks>
+    public static bool TryGetExport(SafeLibraryHandle safeLibraryHandle, string functionName, out IntPtr address)
+    {
+        if (safeLibraryHandle == null)
+        {
+            throw new ArgumentNullException(nameof(safeLibraryHandle));
+        }
+
+        ValidateTextArgument(functionName, nameof(functionName));
+
+#pragma warning disable S3869
+        address = NativeLoader.GetExport(safeLibraryHandle.DangerousGetHandle(), functionName);
+#pragma warning restore S3869
+        return address != IntPtr.Zero;
+    }
+
+    /// <summary>
     /// Creates a managed delegate that invokes an unmanaged function pointer using the specified
-    /// calling convention metadata.
+    /// unmanaged calling convention.
     /// </summary>
     /// <typeparam name="T">Delegate type that describes the unmanaged signature.</typeparam>
     /// <param name="ptr">Pointer to the unmanaged function.</param>
     /// <param name="conv">
-    /// Managed calling convention metadata passed to the emitted <c>calli</c> instruction. In most
-    /// cases use <see cref="CallingConventions.Standard"/>.
+    /// Unmanaged calling convention to use for the emitted indirect call (<c>calli</c>).
     /// </param>
     /// <returns>The created delegate.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="ptr"/> is <see cref="IntPtr.Zero"/>.</exception>
@@ -132,8 +178,40 @@ public sealed class UnmanagedLibrary : IDisposable
     /// <remarks>
     /// The delegate type should describe the exact parameter and return types of the unmanaged
     /// export. A mismatched signature or calling convention can corrupt the process.
+    /// <para>
+    /// Unlike <see cref="Marshal.GetDelegateForFunctionPointer{TDelegate}(IntPtr)"/>, this method
+    /// emits a raw <c>calli</c> and does not perform parameter marshaling. All parameter and
+    /// return types must already be native-compatible (primitives, <see cref="IntPtr"/>, or
+    /// blittable structs). For types that require marshaling (for example <c>string</c> to
+    /// <c>LPWStr</c>) prefer <see cref="Marshal.GetDelegateForFunctionPointer{TDelegate}(IntPtr)"/>
+    /// with an <see cref="UnmanagedFunctionPointerAttribute"/> on the delegate type instead.
+    /// </para>
+    /// <para>
+    /// <b>Preferred alternatives:</b>
+    /// <list type="bullet">
+    /// <item>
+    /// <description>
+    /// Use <see cref="Marshal.GetDelegateForFunctionPointer{TDelegate}(IntPtr)"/> when you need
+    /// automatic parameter marshaling and the calling convention is known at compile time
+    /// (declare it via <see cref="UnmanagedFunctionPointerAttribute"/> on the delegate).
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// On <c>net5.0</c> and newer, prefer C# unmanaged function pointers, for example
+    /// <c>delegate* unmanaged[Stdcall]&lt;uint&gt;</c>. They are zero-overhead, verifiable,
+    /// AOT-friendly, and carry the calling convention as part of the type. Obtain the raw
+    /// <see cref="IntPtr"/> with <see cref="TryGetExport(string, out IntPtr)"/> (or the static
+    /// overload) and cast it directly to the desired function pointer type inside an
+    /// <c>unsafe</c> block.
+    /// </description>
+    /// </item>
+    /// </list>
+    /// This method remains useful when you need to pick the unmanaged calling convention at
+    /// runtime for a signature that contains only native-compatible types.
+    /// </para>
     /// </remarks>
-    public static T? GetDelegateForFunctionPointer<T>(IntPtr ptr, CallingConventions conv)
+    public static T? GetDelegateForFunctionPointer<T>(IntPtr ptr, CallingConvention conv)
         where T : class
     {
         if (ptr == IntPtr.Zero)
@@ -165,7 +243,8 @@ public sealed class UnmanagedLibrary : IDisposable
             il.Emit(OpCodes.Ldc_I8, ptr.ToInt64());
         }
 
-        il.EmitCalli(OpCodes.Calli, conv, returnType, paramTypes, []);
+        il.Emit(OpCodes.Conv_I);
+        il.EmitCalli(OpCodes.Calli, conv, returnType, paramTypes);
         il.Emit(OpCodes.Ret);
         return invoke.CreateDelegate(delegateType) as T;
     }
@@ -186,8 +265,35 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Thrown when <paramref name="delegateCallback"/> is <see langword="null"/>.
     /// </exception>
     /// <remarks>
-    /// For delegates that cannot be marshaled directly, this method creates a runtime proxy
-    /// delegate and stores both delegates inside <paramref name="binder"/>.
+    /// For delegates that cannot be marshaled directly (open generic delegate types such as
+    /// <c>Func&lt;T, TResult&gt;</c>), this method creates a runtime proxy delegate and stores
+    /// both delegates inside <paramref name="binder"/>. If the source delegate type declares
+    /// an <see cref="UnmanagedFunctionPointerAttribute"/>, that attribute is copied onto the
+    /// proxy so the native calling convention is preserved.
+    /// <para>
+    /// <b>Preferred alternatives:</b>
+    /// <list type="bullet">
+    /// <item>
+    /// <description>
+    /// Declare a concrete (non-generic) delegate type annotated with
+    /// <see cref="UnmanagedFunctionPointerAttribute"/> (for example
+    /// <c>[UnmanagedFunctionPointer(CallingConvention.Cdecl)] delegate int Callback(int a, int b);</c>)
+    /// and call <see cref="Marshal.GetFunctionPointerForDelegate(Delegate)"/> directly. That
+    /// avoids IL emission entirely and is more AOT-friendly.
+    /// </description>
+    /// </item>
+    /// <item>
+    /// <description>
+    /// On <c>net5.0</c> and newer, prefer <c>System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute</c>
+    /// on a <see langword="static"/> method together with a C# unmanaged function pointer
+    /// (<c>delegate* unmanaged[Cdecl]&lt;int, int, int&gt;</c>). This allocates no delegate,
+    /// needs no keep-alive <paramref name="binder"/>, and is fully AOT-compatible.
+    /// </description>
+    /// </item>
+    /// </list>
+    /// Use this method only when you need to pass a closure (capturing delegate) or a generic
+    /// delegate type to unmanaged code on older runtimes that cannot use the options above.
+    /// </para>
     /// </remarks>
     public static IntPtr GetFunctionPointerForDelegate<T>(T delegateCallback, out object binder)
         where T : class, Delegate
@@ -251,6 +357,22 @@ public sealed class UnmanagedLibrary : IDisposable
                     name,
                     TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.Public,
                     typeof(MulticastDelegate));
+
+                // If the source delegate type declares an [UnmanagedFunctionPointer] attribute,
+                // propagate it to the proxy so the runtime thunk uses the intended calling
+                // convention (e.g. Cdecl). Otherwise the proxy would default to StdCall/WinApi
+                // which can cause stack imbalance crashes for Cdecl targets.
+                var ufp = delegateType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
+                if (ufp != null)
+                {
+                    var ufpCtor = typeof(UnmanagedFunctionPointerAttribute)
+                        .GetConstructor([typeof(CallingConvention)]);
+                    if (ufpCtor != null)
+                    {
+                        proxyTypeBuilder.SetCustomAttribute(
+                            new CustomAttributeBuilder(ufpCtor, [ufp.CallingConvention]));
+                    }
+                }
 
                 // implement the basic methods of a delegate as the compiler does
                 const MethodAttributes methodAttributes =
@@ -335,6 +457,36 @@ public sealed class UnmanagedLibrary : IDisposable
     }
 
     /// <summary>
+    /// Tries to look up an exported symbol in the loaded module and returns its raw address.
+    /// </summary>
+    /// <param name="functionName">Case-sensitive export name to look up.</param>
+    /// <param name="address">
+    /// When this method returns, contains the native address of the export, or
+    /// <see cref="IntPtr.Zero"/> when the export was not found.
+    /// </param>
+    /// <returns>
+    /// <see langword="true"/> if the export was found; <see langword="false"/> otherwise.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="functionName"/> is <see langword="null"/>, empty, or whitespace.
+    /// </exception>
+    /// <remarks>
+    /// This method does not allocate a managed delegate and is the preferred way to obtain a
+    /// pointer that will be cast to a C# unmanaged function pointer
+    /// (for example <c>delegate* unmanaged[Stdcall]&lt;uint&gt;</c>) on <c>net5.0</c> or newer.
+    /// Keep this <see cref="UnmanagedLibrary"/> instance alive for as long as the returned address is used.
+    /// </remarks>
+    public bool TryGetExport(string functionName, out IntPtr address)
+    {
+        ValidateTextArgument(functionName, nameof(functionName));
+
+#pragma warning disable S3869
+        address = NativeLoader.GetExport(_safeLibraryHandle.DangerousGetHandle(), functionName);
+#pragma warning restore S3869
+        return address != IntPtr.Zero;
+    }
+
+    /// <summary>
     /// Releases the loaded library handle.
     /// </summary>
     /// <remarks>
@@ -353,25 +505,16 @@ public sealed class UnmanagedLibrary : IDisposable
     {
         ValidateTextArgument(fileName, nameof(fileName));
 
-        var safeLibraryHandle = NativeMethods.LoadLibraryEx(
-            fileName,
-            IntPtr.Zero,
-            flags);
-
-        if (safeLibraryHandle.IsInvalid)
-        {
-            throw new Win32Exception(
-                Marshal.GetLastWin32Error(),
-                $"Failed to load library '{fileName}'.");
-        }
-
-        return safeLibraryHandle;
+        var handle = NativeLoader.Load(fileName, flags);
+        return new SafeLibraryHandle(handle, ownsHandle: true);
     }
 
     private static TDelegate? GetUnmanagedFunctionCore<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName)
         where TDelegate : Delegate
     {
-        var p = NativeMethods.GetProcAddress(safeLibraryHandle, functionName);
+#pragma warning disable S3869
+        var p = NativeLoader.GetExport(safeLibraryHandle.DangerousGetHandle(), functionName);
+#pragma warning restore S3869
 
         // Failure is a common case, especially for adaptive code.
         if (p == IntPtr.Zero)

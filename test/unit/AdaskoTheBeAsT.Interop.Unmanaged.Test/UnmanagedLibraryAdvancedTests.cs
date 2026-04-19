@@ -21,6 +21,12 @@ public class UnmanagedLibraryAdvancedTests
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]
     private delegate uint GetCurrentProcessIdDelegate();
 
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
+    private delegate IntPtr GetModuleHandleWByIntPtrDelegate(IntPtr lpModuleName);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int CdeclGenericDelegate<T>(T value);
+
     [Fact]
     public void GetFunctionPointerForDelegate_WithSimpleDelegate_ReturnsValidPointer()
     {
@@ -157,7 +163,7 @@ public class UnmanagedLibraryAdvancedTests
     public void GetDelegateForFunctionPointer_WithZeroPointer_ThrowsArgumentException()
     {
         // Act
-        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<SimpleDelegate>(IntPtr.Zero, CallingConventions.Standard);
+        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<SimpleDelegate>(IntPtr.Zero, CallingConvention.StdCall);
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -168,11 +174,76 @@ public class UnmanagedLibraryAdvancedTests
     public void GetDelegateForFunctionPointer_WithNonDelegateType_ThrowsInvalidOperationException()
     {
         // Act
-        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<object>(new IntPtr(1), CallingConventions.Standard);
+        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<object>(new IntPtr(1), CallingConvention.StdCall);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*delegate type*");
+    }
+
+    [Fact]
+    public void GetDelegateForFunctionPointer_RoundTrip_NoArgs_InvokesNativeFunction()
+    {
+        // Arrange - obtain raw native function pointer for kernel32!GetCurrentProcessId
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+        var original = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var ptr = Marshal.GetFunctionPointerForDelegate(original!);
+
+        // Act - re-wrap via IL-emit path with unmanaged calling convention
+        var rewrapped = UnmanagedLibrary.GetDelegateForFunctionPointer<GetCurrentProcessIdDelegate>(
+            ptr,
+            CallingConvention.Winapi);
+        var pid = rewrapped!();
+
+        // Assert
+        pid.Should().BeGreaterThan(0u);
+        pid.Should().Be(TestHelpers.GetCurrentProcessId());
+        GC.KeepAlive(original);
+    }
+
+    [Fact]
+    public void GetDelegateForFunctionPointer_RoundTrip_WithPointerArg_InvokesNativeFunction()
+    {
+        // NOTE: the IL-emit calli path does NOT perform parameter marshaling. All parameters must
+        // already be native-compatible (primitives, IntPtr, structs with blittable layout). For
+        // marshaling (string <-> LPWStr etc.) use Marshal.GetDelegateForFunctionPointer<T>(ptr).
+
+        // Arrange - kernel32!GetModuleHandleW (LPCWSTR -> HMODULE); we pass IntPtr.Zero (NULL)
+        // which asks for the exe module handle.
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+        var original = UnmanagedLibrary.GetUnmanagedFunction<GetModuleHandleWByIntPtrDelegate>(
+            handle,
+            "GetModuleHandleW");
+        var ptr = Marshal.GetFunctionPointerForDelegate(original!);
+
+        // Act
+        var rewrapped = UnmanagedLibrary.GetDelegateForFunctionPointer<GetModuleHandleWByIntPtrDelegate>(
+            ptr,
+            CallingConvention.Winapi);
+        var module = rewrapped!(IntPtr.Zero);
+
+        // Assert
+        module.Should().NotBe(IntPtr.Zero);
+        GC.KeepAlive(original);
+    }
+
+    [Fact]
+    public void GetFunctionPointerForDelegate_GenericDelegate_PropagatesUnmanagedFunctionPointerAttribute()
+    {
+        // Arrange - generic delegate decorated with [UnmanagedFunctionPointer(Cdecl)]
+        CdeclGenericDelegate<int> callback = x => x + 1;
+
+        // Act
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+
+        // Assert - binder is Tuple<originalDelegate, proxyDelegate>; the proxy type should carry the attribute
+        binder.Should().BeOfType<Tuple<Delegate, Delegate>>();
+        var tuple = (Tuple<Delegate, Delegate>)binder;
+        var proxyType = tuple.Item2.GetType();
+
+        var attr = proxyType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
+        attr.Should().NotBeNull();
+        attr!.CallingConvention.Should().Be(CallingConvention.Cdecl);
     }
 
     [Fact]

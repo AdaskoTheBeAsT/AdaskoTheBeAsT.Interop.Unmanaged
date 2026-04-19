@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
@@ -40,7 +41,7 @@ internal static class NativeLoader
         {
             return NativeLibrary.Load(fileName);
         }
-        catch (DllNotFoundException ex)
+        catch (Exception ex) when (ex is DllNotFoundException or BadImageFormatException or FileLoadException)
         {
             throw new Win32Exception(
                 0,

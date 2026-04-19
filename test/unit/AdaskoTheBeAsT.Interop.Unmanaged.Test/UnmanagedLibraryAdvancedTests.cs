@@ -415,7 +415,9 @@ public class UnmanagedLibraryAdvancedTests
         // exercise the CallingConvention argument path (IL is still emitted; a mismatched
         // calling convention only manifests when invoking, so we don't invoke here).
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
-        UnmanagedLibrary.TryGetExport(handle, "GetCurrentProcessId", out var ptr);
+        var found = UnmanagedLibrary.TryGetExport(handle, "GetCurrentProcessId", out var ptr);
+        found.Should().BeTrue();
+        ptr.Should().NotBe(IntPtr.Zero);
 
         // Act
         var rewrapped = UnmanagedLibrary.GetDelegateForFunctionPointer<GetCurrentProcessIdDelegate>(

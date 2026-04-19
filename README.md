@@ -279,7 +279,7 @@ These are the few things you actually need to remember:
 
 - Export names are **case-sensitive** 🔠 (this matches native loader semantics on Linux/macOS and avoids surprises on Windows)
 - Invalid file names throw `ArgumentException`
-- Failed loads throw `Win32Exception` with `Failed to load library '<name>'` and the native error string
+- Failed loads throw `Win32Exception` with `Failed to load library '<name>'`; the trailing message is the native loader error string on Windows and on the .NET Framework/Mono `dlopen` path, and the wrapped managed-exception message (`DllNotFoundException` / `BadImageFormatException` / `FileLoadException`) on .NET 8+ non-Windows
 - Missing exports return `null` (classic API) or `false` (`TryGetExport`) — never throw
 - `FreeLibrary` is safe to call with `null` or an already closed handle (idempotent)
 - `LoadLibraryFlags` are silently ignored on Linux/macOS; the library always passes `RTLD_NOW` on those platforms

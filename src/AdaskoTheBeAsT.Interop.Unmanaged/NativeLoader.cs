@@ -10,9 +10,9 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// <remarks>
 /// On Windows this type always uses <c>LoadLibraryEx</c>/<c>GetProcAddress</c>/<c>FreeLibrary</c>
 /// so that <see cref="LoadLibraryFlags"/> are honored exactly as before.
-/// On Linux and macOS running on modern .NET (net8.0 and newer) it delegates to
-/// <c>System.Runtime.InteropServices.NativeLibrary</c>; on <c>netstandard2.0</c>
-/// (including .NET Framework and Mono) it dispatches to platform-specific
+/// On Linux and macOS running on .NET 8.0 and newer it delegates to
+/// <c>System.Runtime.InteropServices.NativeLibrary</c>; on .NET Framework
+/// (net4.6.2 through net4.8.1, including Mono) it dispatches to platform-specific
 /// <c>dlopen</c>/<c>dlsym</c>/<c>dlclose</c> P/Invokes.
 /// </remarks>
 internal static class NativeLoader

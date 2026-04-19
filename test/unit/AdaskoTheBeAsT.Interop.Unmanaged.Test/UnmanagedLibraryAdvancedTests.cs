@@ -184,6 +184,11 @@ public class UnmanagedLibraryAdvancedTests
     [Fact]
     public void GetDelegateForFunctionPointer_RoundTrip_NoArgs_InvokesNativeFunction()
     {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
         // Arrange - obtain raw native function pointer for kernel32!GetCurrentProcessId
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
         var original = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
@@ -204,6 +209,11 @@ public class UnmanagedLibraryAdvancedTests
     [Fact]
     public void GetDelegateForFunctionPointer_RoundTrip_WithPointerArg_InvokesNativeFunction()
     {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
         // NOTE: the IL-emit calli path does NOT perform parameter marshaling. All parameters must
         // already be native-compatible (primitives, IntPtr, structs with blittable layout). For
         // marshaling (string <-> LPWStr etc.) use Marshal.GetDelegateForFunctionPointer<T>(ptr).

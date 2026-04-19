@@ -270,6 +270,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void TryGetExport_Static_WithValidFunction_ReturnsTrueAndNonZeroAddress()
     {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -284,6 +289,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void TryGetExport_Static_WithNonExistentFunction_ReturnsFalseAndZeroAddress()
     {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -308,6 +318,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void TryGetExport_Static_WithWhitespaceFunctionName_ThrowsArgumentException()
     {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -321,6 +336,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void TryGetExport_Instance_WithValidFunction_ReturnsTrueAndNonZeroAddress()
     {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -335,6 +355,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void TryGetExport_Instance_WithNonExistentFunction_ReturnsFalse()
     {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 

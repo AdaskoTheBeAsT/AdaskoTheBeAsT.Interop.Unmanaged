@@ -113,11 +113,7 @@ public sealed class UnmanagedLibrary : IDisposable
     public static TDelegate? GetUnmanagedFunction<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName)
         where TDelegate : Delegate
     {
-        if (safeLibraryHandle == null)
-        {
-            throw new ArgumentNullException(nameof(safeLibraryHandle));
-        }
-
+        ThrowIfNull(safeLibraryHandle, nameof(safeLibraryHandle));
         ValidateTextArgument(functionName, nameof(functionName));
         return GetUnmanagedFunctionCore<TDelegate>(safeLibraryHandle, functionName);
     }
@@ -148,11 +144,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// </remarks>
     public static bool TryGetExport(SafeLibraryHandle safeLibraryHandle, string functionName, out IntPtr address)
     {
-        if (safeLibraryHandle == null)
-        {
-            throw new ArgumentNullException(nameof(safeLibraryHandle));
-        }
-
+        ThrowIfNull(safeLibraryHandle, nameof(safeLibraryHandle));
         ValidateTextArgument(functionName, nameof(functionName));
 
         var addedRef = false;
@@ -309,11 +301,7 @@ public sealed class UnmanagedLibrary : IDisposable
     public static IntPtr GetFunctionPointerForDelegate<T>(T delegateCallback, out object binder)
         where T : class, Delegate
     {
-        if (delegateCallback == null)
-        {
-            throw new ArgumentNullException(nameof(delegateCallback));
-        }
-
+        ThrowIfNull(delegateCallback, nameof(delegateCallback));
         Delegate del = delegateCallback;
 
         try
@@ -460,6 +448,21 @@ public sealed class UnmanagedLibrary : IDisposable
         {
             throw new ArgumentException("Value cannot be null or whitespace.", paramName);
         }
+    }
+
+    private static void ThrowIfNull<T>(T? value, string paramName)
+        where T : class
+    {
+#if NET8_0_OR_GREATER
+#pragma warning disable S3236
+        ArgumentNullException.ThrowIfNull(value, paramName);
+#pragma warning restore S3236
+#else
+        if (value is null)
+        {
+            throw new ArgumentNullException(paramName);
+        }
+#endif
     }
 
     private static IntPtr GetFunctionPointerForGenericDelegate<T>(Delegate del, out object binder)

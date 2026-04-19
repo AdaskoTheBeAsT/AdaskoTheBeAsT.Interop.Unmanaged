@@ -10,6 +10,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 #pragma warning disable SA1310
 #pragma warning disable IDE1006
 #pragma warning disable SYSLIB1054
+#pragma warning disable MA0182 // referenced via NativeLoader's #if !NET8_0_OR_GREATER branch; roslyn cannot see the cross-TFM usage
 
 /// <summary>
 /// P/Invoke signatures for the POSIX dynamic loader on macOS.
@@ -41,6 +42,7 @@ internal static class OsxNativeMethods
     internal static extern IntPtr dlerror();
 }
 
+#pragma warning restore MA0182
 #pragma warning restore SYSLIB1054
 #pragma warning restore IDE1006
 #pragma warning restore SA1310

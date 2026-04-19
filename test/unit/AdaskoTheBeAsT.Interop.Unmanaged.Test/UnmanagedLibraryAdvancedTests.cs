@@ -192,7 +192,7 @@ public class UnmanagedLibraryAdvancedTests
     [Fact]
     public void GetDelegateForFunctionPointer_RoundTrip_NoArgs_InvokesNativeFunction()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -217,7 +217,7 @@ public class UnmanagedLibraryAdvancedTests
     [Fact]
     public void GetDelegateForFunctionPointer_RoundTrip_WithPointerArg_InvokesNativeFunction()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -406,7 +406,7 @@ public class UnmanagedLibraryAdvancedTests
     [Fact]
     public void GetDelegateForFunctionPointer_CdeclConvention_EmitsDelegate()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }

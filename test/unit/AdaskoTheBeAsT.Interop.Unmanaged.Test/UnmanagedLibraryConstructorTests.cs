@@ -60,7 +60,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithValidDll_LoadsSuccessfully()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -75,7 +75,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithCustomFlags_LoadsSuccessfully()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -93,7 +93,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithDataFileFlag_LoadsSuccessfully()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -111,7 +111,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithMultipleFlags_LoadsSuccessfully()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -130,7 +130,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Dispose_CalledOnce_DisposesSuccessfully()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -150,7 +150,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -175,7 +175,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void UsingStatement_DisposesLibraryProperly()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }
@@ -191,7 +191,7 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_LoadedLibrary_ExposesValidSafeHandleThroughLookup()
     {
-        if (!TestHelpers.IsWindows())
+        if (TestHelpers.SkipIfNotWindows())
         {
             return;
         }

@@ -26,8 +26,13 @@ public sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
 #pragma warning restore S3453
 {
     /// <summary>
-    /// Initializes a new, empty <see cref="SafeLibraryHandle"/>. Used by the P/Invoke marshaller
-    /// only; consumers obtain instances through <see cref="UnmanagedLibrary"/> APIs.
+    /// Initializes a new, empty <see cref="SafeLibraryHandle"/>. Retained to satisfy the
+    /// <see cref="System.Runtime.InteropServices.SafeHandle"/> convention of having a
+    /// parameterless constructor (CA1419) so that reflection- and serialization-based
+    /// consumers can instantiate the type; the loader path no longer relies on the P/Invoke
+    /// marshaller since exports are resolved via <see cref="IntPtr"/> and wrapped with
+    /// <see cref="SafeLibraryHandle(IntPtr, bool)"/>. Consumers obtain instances through
+    /// <see cref="UnmanagedLibrary"/> APIs.
     /// </summary>
     [ExcludeFromCodeCoverage]
 #pragma warning disable CA1419

@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security;
 
@@ -16,6 +17,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// <remarks>
 /// On macOS the dynamic loader symbols are exposed by <c>libSystem.dylib</c>.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 internal static class OsxNativeMethods
 {
     internal const int RTLD_NOW = 2;

@@ -152,4 +152,14 @@ public class UnmanagedLibraryConstructorTests
             library.Should().NotBeNull();
         }
     }
+
+    [Fact]
+    public void Constructor_LoadedLibrary_ExposesValidSafeHandleThroughLookup()
+    {
+        using var library = new UnmanagedLibrary("kernel32.dll");
+        var found = library.TryGetExport("GetCurrentProcessId", out var addr);
+        library.Should().NotBeNull();
+        found.Should().BeTrue();
+        addr.Should().NotBe(IntPtr.Zero);
+    }
 }

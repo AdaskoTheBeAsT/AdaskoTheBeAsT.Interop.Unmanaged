@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.ConstrainedExecution;
 using System.Runtime.InteropServices;
 using System.Security;
@@ -6,6 +7,8 @@ using System.Security;
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 #pragma warning disable CA1060
+
+[ExcludeFromCodeCoverage]
 internal static class WindowsNativeMethods
 {
     private const string KernelLib = "kernel32";

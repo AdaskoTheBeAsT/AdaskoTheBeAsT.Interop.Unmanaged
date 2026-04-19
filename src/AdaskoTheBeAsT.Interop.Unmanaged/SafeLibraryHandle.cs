@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 #if NETFRAMEWORK
 using System.Security.Permissions;
 #endif
@@ -25,9 +26,13 @@ public sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
 #pragma warning restore S3453
 {
     /// <summary>
-    /// Initializes a new, empty <see cref="SafeLibraryHandle"/>. Used by the P/Invoke marshaller.
+    /// Initializes a new, empty <see cref="SafeLibraryHandle"/>. Used by the P/Invoke marshaller
+    /// only; consumers obtain instances through <see cref="UnmanagedLibrary"/> APIs.
     /// </summary>
+    [ExcludeFromCodeCoverage]
+#pragma warning disable CA1419
     internal SafeLibraryHandle()
+#pragma warning restore CA1419
         : base(true)
     {
     }

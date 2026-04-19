@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
@@ -15,6 +16,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// (net4.6.2 through net4.8.1, including Mono) it dispatches to platform-specific
 /// <c>dlopen</c>/<c>dlsym</c>/<c>dlclose</c> P/Invokes.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 internal static class NativeLoader
 {
     public static IntPtr Load(string fileName, LoadLibraryFlags flags)

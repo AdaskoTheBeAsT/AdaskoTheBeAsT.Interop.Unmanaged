@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Security;
 
@@ -17,6 +18,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// Uses <c>libdl.so.2</c> which still exists as a stub on modern glibc (2.34+) that forwards
 /// the symbols to <c>libc.so.6</c>, and is the canonical location on older systems.
 /// </remarks>
+[ExcludeFromCodeCoverage]
 internal static class LinuxNativeMethods
 {
     internal const int RTLD_NOW = 2;

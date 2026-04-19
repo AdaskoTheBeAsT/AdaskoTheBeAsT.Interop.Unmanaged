@@ -194,7 +194,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Unlike <see cref="Marshal.GetDelegateForFunctionPointer{TDelegate}(IntPtr)"/>, this method
     /// emits a raw <c>calli</c> and does not perform parameter marshaling. All parameter and
     /// return types must already be native-compatible (primitives, <see cref="IntPtr"/>, or
-    /// blittable structs). For types that require marshaling (for example <c>string</c> to
+    /// blittable structs). For types that require marshaling (for example <see langword="string"/> to
     /// <c>LPWStr</c>) prefer <see cref="Marshal.GetDelegateForFunctionPointer{TDelegate}(IntPtr)"/>
     /// with an <see cref="UnmanagedFunctionPointerAttribute"/> on the delegate type instead.
     /// </para>
@@ -215,7 +215,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// AOT-friendly, and carry the calling convention as part of the type. Obtain the raw
     /// <see cref="IntPtr"/> with <see cref="TryGetExport(string, out IntPtr)"/> (or the static
     /// overload) and cast it directly to the desired function pointer type inside an
-    /// <c>unsafe</c> block.
+    /// <see langword="unsafe"/> block.
     /// </description>
     /// </item>
     /// </list>
@@ -261,7 +261,6 @@ public sealed class UnmanagedLibrary : IDisposable
         return invoke.CreateDelegate(delegateType) as T;
     }
 
-#pragma warning disable MA0051
     /// <summary>
     /// Creates an unmanaged function pointer for a managed delegate and returns a keep-alive object
     /// for the callback lifetime.
@@ -316,170 +315,18 @@ public sealed class UnmanagedLibrary : IDisposable
         }
 
         Delegate del = delegateCallback;
-        IntPtr result;
 
         try
         {
-            result = Marshal.GetFunctionPointerForDelegate(del);
+            var result = Marshal.GetFunctionPointerForDelegate(del);
             binder = del;
+            return result;
         }
         catch (ArgumentException)
         {
-            // generic type delegate
-            var delegateType = typeof(T);
-            var method = delegateType.GetMethod("Invoke");
-            var returnType = method!.ReturnType;
-            var paramTypes =
-                method
-                .GetParameters()
-                .Select((x) => x.ParameterType)
-                .ToArray();
-
-            // builder a friendly name for our assembly, module, and proxy type
-            var nameBuilder = new StringBuilder();
-            nameBuilder.Append(delegateType.Name);
-            foreach (var pType in paramTypes)
-            {
-                nameBuilder
-                    .Append('`')
-                    .Append(pType.Name);
-            }
-
-            var name = nameBuilder.ToString();
-
-            // check if we've previously proxied this type before
-            var proxyAssemblyExist =
-                Array.Find(
-                    AppDomain
-                        .CurrentDomain
-                        .GetAssemblies(),
-                    (x) => x.GetName().Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
-
-            Type? proxyType;
-            if (proxyAssemblyExist == null)
-            {
-                // create a proxy assembly
-                var proxyAssembly = AssemblyBuilder.DefineDynamicAssembly(
-                    new AssemblyName(name),
-                    AssemblyBuilderAccess.Run);
-                var proxyModule = proxyAssembly.DefineDynamicModule(name);
-
-                // begin creating the proxy type
-                var proxyTypeBuilder = proxyModule.DefineType(
-                    name,
-                    TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.Public,
-                    typeof(MulticastDelegate));
-
-                // If the source delegate type declares an [UnmanagedFunctionPointer] attribute,
-                // propagate it (including CharSet, BestFitMapping, ThrowOnUnmappableChar,
-                // SetLastError) to the proxy so the runtime thunk preserves the original interop
-                // semantics. Otherwise the proxy would default to StdCall/WinApi + CharSet.Auto
-                // which can cause stack imbalance crashes for Cdecl targets and incorrect string
-                // marshaling for callbacks that rely on CharSet.Unicode/Ansi.
-                var ufp = delegateType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
-                if (ufp != null)
-                {
-                    var ufpAttributeType = typeof(UnmanagedFunctionPointerAttribute);
-                    const BindingFlags ufpFieldBindingFlags =
-                        BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-                    var ufpCtor = ufpAttributeType.GetConstructor([typeof(CallingConvention)]);
-                    var charSetField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.CharSet), ufpFieldBindingFlags);
-                    var bestFitMappingField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.BestFitMapping), ufpFieldBindingFlags);
-                    var throwOnUnmappableCharField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.ThrowOnUnmappableChar), ufpFieldBindingFlags);
-                    var setLastErrorField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.SetLastError), ufpFieldBindingFlags);
-                    if (ufpCtor != null
-                        && charSetField != null
-                        && bestFitMappingField != null
-                        && throwOnUnmappableCharField != null
-                        && setLastErrorField != null)
-                    {
-                        proxyTypeBuilder.SetCustomAttribute(
-                            new CustomAttributeBuilder(
-                                ufpCtor,
-                                [ufp.CallingConvention],
-                                namedFields:
-                                [
-                                    charSetField,
-                                    bestFitMappingField,
-                                    throwOnUnmappableCharField,
-                                    setLastErrorField,
-                                ],
-                                fieldValues:
-                                [
-                                    ufp.CharSet,
-                                    ufp.BestFitMapping,
-                                    ufp.ThrowOnUnmappableChar,
-                                    ufp.SetLastError,
-                                ]));
-                    }
-                    else if (ufpCtor != null)
-                    {
-                        // Fallback: copy only CallingConvention if reflection can't find the fields.
-                        proxyTypeBuilder.SetCustomAttribute(
-                            new CustomAttributeBuilder(ufpCtor, [ufp.CallingConvention]));
-                    }
-                }
-
-                // implement the basic methods of a delegate as the compiler does
-                const MethodAttributes methodAttributes =
-                    MethodAttributes.Public
-                    | MethodAttributes.HideBySig
-                    | MethodAttributes.NewSlot
-                    | MethodAttributes.Virtual;
-                proxyTypeBuilder
-                    .DefineConstructor(
-                        MethodAttributes.FamANDAssem
-                        | MethodAttributes.Family
-                        | MethodAttributes.HideBySig
-                        | MethodAttributes.RTSpecialName,
-                        CallingConventions.Standard,
-                        [typeof(object), typeof(IntPtr)])
-                    .SetImplementationFlags(
-                        MethodImplAttributes.Runtime);
-
-                proxyTypeBuilder
-                    .DefineMethod(
-                        "BeginInvoke",
-                        methodAttributes,
-                        typeof(IAsyncResult),
-                        paramTypes)
-                    .SetImplementationFlags(
-                        MethodImplAttributes.Runtime);
-                proxyTypeBuilder
-                    .DefineMethod(
-                        "EndInvoke",
-                        methodAttributes,
-                        returnType: null,
-                        [typeof(IAsyncResult)])
-                    .SetImplementationFlags(
-                        MethodImplAttributes.Runtime);
-                proxyTypeBuilder
-                    .DefineMethod(
-                        "Invoke",
-                        methodAttributes,
-                        returnType,
-                        paramTypes)
-                    .SetImplementationFlags(
-                        MethodImplAttributes.Runtime);
-
-                // create & wrap an instance of the proxy type
-                proxyType = proxyTypeBuilder.CreateTypeInfo();
-            }
-            else
-            {
-                // pull the type from an existing proxy assembly
-                proxyType = proxyAssemblyExist!.GetType(name);
-            }
-
-            // marshal and bind the proxy so the pointer doesn't become invalid
-            var repProxy = Delegate.CreateDelegate(proxyType!, del.Target, del.Method);
-            result = Marshal.GetFunctionPointerForDelegate(repProxy);
-            binder = Tuple.Create(del, repProxy);
+            return GetFunctionPointerForGenericDelegate<T>(del, out binder);
         }
-
-        return result;
     }
-#pragma warning restore MA0051
 
     /// <summary>
     /// Looks up an exported function in the loaded module and marshals it as a managed delegate.
@@ -613,5 +460,176 @@ public sealed class UnmanagedLibrary : IDisposable
         {
             throw new ArgumentException("Value cannot be null or whitespace.", paramName);
         }
+    }
+
+    private static IntPtr GetFunctionPointerForGenericDelegate<T>(Delegate del, out object binder)
+        where T : class, Delegate
+    {
+        var delegateType = typeof(T);
+        var method = delegateType.GetMethod(Invoke);
+        var returnType = method!.ReturnType;
+        var paramTypes =
+            method
+            .GetParameters()
+            .Select((x) => x.ParameterType)
+            .ToArray();
+
+        var name = BuildProxyTypeName(delegateType, paramTypes);
+        var proxyType = GetOrCreateProxyDelegateType(delegateType, name, returnType, paramTypes);
+
+        // marshal and bind the proxy so the pointer doesn't become invalid
+        var repProxy = Delegate.CreateDelegate(proxyType!, del.Target, del.Method);
+        var result = Marshal.GetFunctionPointerForDelegate(repProxy);
+        binder = Tuple.Create(del, repProxy);
+        return result;
+    }
+
+    private static string BuildProxyTypeName(Type delegateType, Type[] paramTypes)
+    {
+        var nameBuilder = new StringBuilder();
+        nameBuilder.Append(delegateType.Name);
+        foreach (var pType in paramTypes)
+        {
+            nameBuilder
+                .Append('`')
+                .Append(pType.Name);
+        }
+
+        return nameBuilder.ToString();
+    }
+
+    private static Type? GetOrCreateProxyDelegateType(
+        Type delegateType,
+        string name,
+        Type returnType,
+        Type[] paramTypes)
+    {
+        // check if we've previously proxied this type before
+        var proxyAssemblyExist =
+            Array.Find(
+                AppDomain
+                    .CurrentDomain
+                    .GetAssemblies(),
+                (x) => x.GetName().Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
+
+        if (proxyAssemblyExist != null)
+        {
+            // pull the type from an existing proxy assembly
+            return proxyAssemblyExist.GetType(name);
+        }
+
+        // create a proxy assembly
+        var proxyAssembly = AssemblyBuilder.DefineDynamicAssembly(
+            new AssemblyName(name),
+            AssemblyBuilderAccess.Run);
+        var proxyModule = proxyAssembly.DefineDynamicModule(name);
+
+        // begin creating the proxy type
+        var proxyTypeBuilder = proxyModule.DefineType(
+            name,
+            TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.Public,
+            typeof(MulticastDelegate));
+
+        ApplyUnmanagedFunctionPointerAttribute(delegateType, proxyTypeBuilder);
+        DefineDelegateMembers(proxyTypeBuilder, returnType, paramTypes);
+
+        // create & wrap an instance of the proxy type
+        return proxyTypeBuilder.CreateTypeInfo();
+    }
+
+    private static void ApplyUnmanagedFunctionPointerAttribute(Type delegateType, TypeBuilder proxyTypeBuilder)
+    {
+        // If the source delegate type declares an [UnmanagedFunctionPointer] attribute,
+        // propagate it (including CharSet, BestFitMapping, ThrowOnUnmappableChar,
+        // SetLastError) to the proxy so the runtime thunk preserves the original interop
+        // semantics. Otherwise the proxy would default to StdCall/WinApi + CharSet.Auto
+        // which can cause stack imbalance crashes for Cdecl targets and incorrect string
+        // marshaling for callbacks that rely on CharSet.Unicode/Ansi.
+        var ufp = delegateType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
+        if (ufp == null)
+        {
+            return;
+        }
+
+        var ufpAttributeType = typeof(UnmanagedFunctionPointerAttribute);
+        const BindingFlags ufpFieldBindingFlags =
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
+        var ufpCtor = ufpAttributeType.GetConstructor([typeof(CallingConvention)]);
+        var charSetField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.CharSet), ufpFieldBindingFlags);
+        var bestFitMappingField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.BestFitMapping), ufpFieldBindingFlags);
+        var throwOnUnmappableCharField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.ThrowOnUnmappableChar), ufpFieldBindingFlags);
+        var setLastErrorField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.SetLastError), ufpFieldBindingFlags);
+        if (ufpCtor == null
+            || charSetField == null
+            || bestFitMappingField == null
+            || throwOnUnmappableCharField == null
+            || setLastErrorField == null)
+        {
+            return;
+        }
+
+        proxyTypeBuilder.SetCustomAttribute(
+            new CustomAttributeBuilder(
+                ufpCtor,
+                [ufp.CallingConvention],
+                namedFields:
+                [
+                    charSetField,
+                    bestFitMappingField,
+                    throwOnUnmappableCharField,
+                    setLastErrorField,
+                ],
+                fieldValues:
+                [
+                    ufp.CharSet,
+                    ufp.BestFitMapping,
+                    ufp.ThrowOnUnmappableChar,
+                    ufp.SetLastError,
+                ]));
+    }
+
+    private static void DefineDelegateMembers(TypeBuilder proxyTypeBuilder, Type returnType, Type[] paramTypes)
+    {
+        // implement the basic methods of a delegate as the compiler does
+        const MethodAttributes methodAttributes =
+            MethodAttributes.Public
+            | MethodAttributes.HideBySig
+            | MethodAttributes.NewSlot
+            | MethodAttributes.Virtual;
+        proxyTypeBuilder
+            .DefineConstructor(
+                MethodAttributes.FamANDAssem
+                | MethodAttributes.Family
+                | MethodAttributes.HideBySig
+                | MethodAttributes.RTSpecialName,
+                CallingConventions.Standard,
+                [typeof(object), typeof(IntPtr)])
+            .SetImplementationFlags(
+                MethodImplAttributes.Runtime);
+
+        proxyTypeBuilder
+            .DefineMethod(
+                "BeginInvoke",
+                methodAttributes,
+                typeof(IAsyncResult),
+                paramTypes)
+            .SetImplementationFlags(
+                MethodImplAttributes.Runtime);
+        proxyTypeBuilder
+            .DefineMethod(
+                "EndInvoke",
+                methodAttributes,
+                returnType: null,
+                [typeof(IAsyncResult)])
+            .SetImplementationFlags(
+                MethodImplAttributes.Runtime);
+        proxyTypeBuilder
+            .DefineMethod(
+                Invoke,
+                methodAttributes,
+                returnType,
+                paramTypes)
+            .SetImplementationFlags(
+                MethodImplAttributes.Runtime);
     }
 }

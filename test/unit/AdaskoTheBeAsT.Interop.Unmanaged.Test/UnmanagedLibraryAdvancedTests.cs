@@ -386,4 +386,43 @@ public class UnmanagedLibraryAdvancedTests
         var processId = nativeDelegate!();
         processId.Should().Be(TestHelpers.GetCurrentProcessId());
     }
+
+    [Fact]
+    public void GetFunctionPointerForDelegate_GenericDelegate_WithoutUnmanagedFunctionPointerAttribute_DoesNotCopyAttribute()
+    {
+        // Arrange - a generic delegate type WITHOUT [UnmanagedFunctionPointer]
+        GenericDelegate<double> callback = value => Console.WriteLine(value);
+
+        // Act
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+
+        // Assert - proxy exists but has no UFP attribute (we do not synthesize one)
+        binder.Should().BeOfType<Tuple<Delegate, Delegate>>();
+        var tuple = (Tuple<Delegate, Delegate>)binder;
+        var proxyType = tuple.Item2.GetType();
+        proxyType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>().Should().BeNull();
+    }
+
+    [Fact]
+    public void GetDelegateForFunctionPointer_CdeclConvention_EmitsDelegate()
+    {
+        if (!TestHelpers.IsWindows())
+        {
+            return;
+        }
+
+        // Arrange - kernel32!GetCurrentProcessId uses Winapi/StdCall on x64; request Cdecl to
+        // exercise the CallingConvention argument path (IL is still emitted; a mismatched
+        // calling convention only manifests when invoking, so we don't invoke here).
+        using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+        UnmanagedLibrary.TryGetExport(handle, "GetCurrentProcessId", out var ptr);
+
+        // Act
+        var rewrapped = UnmanagedLibrary.GetDelegateForFunctionPointer<GetCurrentProcessIdDelegate>(
+            ptr,
+            CallingConvention.Cdecl);
+
+        // Assert
+        rewrapped.Should().NotBeNull();
+    }
 }

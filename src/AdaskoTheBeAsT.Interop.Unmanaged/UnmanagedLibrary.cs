@@ -460,7 +460,9 @@ public sealed class UnmanagedLibrary : IDisposable
 #else
         if (value is null)
         {
+#pragma warning disable RCS1256 // paramName is the caller's public-API parameter, not this helper's
             throw new ArgumentNullException(paramName);
+#pragma warning restore RCS1256
         }
 #endif
     }

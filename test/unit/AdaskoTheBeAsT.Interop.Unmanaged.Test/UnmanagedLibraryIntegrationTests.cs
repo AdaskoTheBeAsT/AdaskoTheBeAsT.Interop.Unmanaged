@@ -34,6 +34,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void FullWorkflow_LoadGetInvokeDispose_WorksCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         using var library = new UnmanagedLibrary("kernel32.dll");
         var getProcessId = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
         var processId = getProcessId!();
@@ -46,6 +51,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void FullWorkflow_MultipleFunctions_AllWorkCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -67,6 +77,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void StaticWorkflow_LoadGetInvokeFree_WorksCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -83,6 +98,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void MultipleLibraries_LoadedSimultaneously_WorkIndependently()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         using var kernel32 = new UnmanagedLibrary("kernel32.dll");
         using var user32 = new UnmanagedLibrary("user32.dll");
 
@@ -101,6 +121,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void GetModuleHandle_WithNullParameter_ReturnsModuleHandle()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
         var getModuleHandle = library.GetUnmanagedFunction<GetModuleHandleW>(nameof(GetModuleHandleW));
@@ -115,6 +140,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void GetModuleHandle_WithKnownModule_ReturnsValidHandle()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
         var getModuleHandle = library.GetUnmanagedFunction<GetModuleHandleW>(nameof(GetModuleHandleW));
@@ -129,6 +159,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void EnvironmentVariable_SetAndGet_WorksCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
         var setEnvVar = library.GetUnmanagedFunction<SetEnvironmentVariableW>(nameof(SetEnvironmentVariableW));
@@ -152,6 +187,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void LoadLibrary_WithDifferentFlags_LoadsSameLibraryDifferently()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         using var normalLoad = new UnmanagedLibrary(
             "kernel32.dll",
             LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32);
@@ -175,6 +215,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void FunctionPointerRoundTrip_WithNativeFunction_WorksCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
         var originalFunction = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
@@ -230,6 +275,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void MultipleLibraryInstances_SameLibrary_WorkIndependently()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         using var library1 = new UnmanagedLibrary("kernel32.dll");
         using var library2 = new UnmanagedLibrary("kernel32.dll");
 
@@ -247,6 +297,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void LoadLibrary_DisposeAndReload_WorksCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         uint pid1;
         using (var library = new UnmanagedLibrary("kernel32.dll"))
@@ -271,6 +326,11 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void ComplexScenario_LoadMultipleFunctionsInvokeAndDispose_WorksCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 

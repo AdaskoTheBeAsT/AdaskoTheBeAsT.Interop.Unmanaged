@@ -60,6 +60,11 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithValidDll_LoadsSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Act
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -70,6 +75,11 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithCustomFlags_LoadsSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         var flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
 
@@ -83,6 +93,11 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithDataFileFlag_LoadsSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         var flags = LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE;
 
@@ -96,6 +111,11 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Constructor_WithMultipleFlags_LoadsSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         var flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
                     | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
@@ -110,6 +130,11 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Dispose_CalledOnce_DisposesSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
 #pragma warning disable CA2000 // Dispose objects before losing scope
         var library = new UnmanagedLibrary("kernel32.dll");
@@ -125,6 +150,11 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void Dispose_CalledMultipleTimes_DoesNotThrow()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
 #pragma warning disable CA2000 // Dispose objects before losing scope
         var library = new UnmanagedLibrary("kernel32.dll");
@@ -145,11 +175,31 @@ public class UnmanagedLibraryConstructorTests
     [Fact]
     public void UsingStatement_DisposesLibraryProperly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Act
         using (var library = new UnmanagedLibrary("kernel32.dll"))
         {
             // Assert
             library.Should().NotBeNull();
         }
+    }
+
+    [Fact]
+    public void Constructor_LoadedLibrary_ExposesValidSafeHandleThroughLookup()
+    {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
+        using var library = new UnmanagedLibrary("kernel32.dll");
+        var found = library.TryGetExport("GetCurrentProcessId", out var addr);
+        library.Should().NotBeNull();
+        found.Should().BeTrue();
+        addr.Should().NotBe(IntPtr.Zero);
     }
 }

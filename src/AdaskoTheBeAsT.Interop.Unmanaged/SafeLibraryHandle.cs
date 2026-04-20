@@ -1,31 +1,62 @@
+using System;
+using System.Diagnostics.CodeAnalysis;
+#if NETFRAMEWORK
 using System.Security.Permissions;
+#endif
 using Microsoft.Win32.SafeHandles;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 /// <summary>
-/// Represents a Windows module handle that releases the loaded library when disposed.
+/// Represents a loaded native module handle that releases the library when disposed.
 /// </summary>
 /// <remarks>
-/// Instances are created by the loading APIs in this package and should be disposed, or passed to
+/// On Windows this wraps an <c>HMODULE</c> from <c>LoadLibraryEx</c> and releases it with
+/// <c>FreeLibrary</c>. On Linux and macOS this wraps the handle returned by <c>dlopen</c>
+/// and releases it with <c>dlclose</c>. Instances are created by the loading APIs in this
+/// package and should be disposed, or passed to
 /// <see cref="UnmanagedLibrary.FreeLibrary(SafeLibraryHandle?)"/>, when no longer needed.
 /// </remarks>
 // ReSharper disable ClassNeverInstantiated.Global
 #pragma warning disable S3453
-#if NETSTANDARD2_0
+#if NETFRAMEWORK
 [SecurityPermission(SecurityAction.LinkDemand, UnmanagedCode = true)]
 #endif
 public sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
 #pragma warning restore S3453
 {
-    private SafeLibraryHandle()
+    /// <summary>
+    /// Initializes a new, empty <see cref="SafeLibraryHandle"/>. Retained to satisfy the
+    /// <see cref="System.Runtime.InteropServices.SafeHandle"/> convention of having a
+    /// parameterless constructor (CA1419) so that reflection- and serialization-based
+    /// consumers can instantiate the type; the loader path no longer relies on the P/Invoke
+    /// marshaller since exports are resolved via <see cref="IntPtr"/> and wrapped with
+    /// <see cref="SafeLibraryHandle(IntPtr, bool)"/>. Consumers obtain instances through
+    /// <see cref="UnmanagedLibrary"/> APIs.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+#pragma warning disable CA1419
+    internal SafeLibraryHandle()
+#pragma warning restore CA1419
         : base(true)
     {
     }
 
+    /// <summary>
+    /// Initializes a new <see cref="SafeLibraryHandle"/> that wraps an existing native handle.
+    /// </summary>
+    /// <param name="existingHandle">Native handle to take ownership of.</param>
+    /// <param name="ownsHandle">Whether the handle should be released when disposed.</param>
+    internal SafeLibraryHandle(IntPtr existingHandle, bool ownsHandle)
+        : base(ownsHandle)
+    {
+        SetHandle(existingHandle);
+    }
+
+    /// <inheritdoc />
     protected override bool ReleaseHandle()
     {
-        return NativeMethods.FreeLibrary(handle);
+        return NativeLoader.Free(handle);
     }
 }
 

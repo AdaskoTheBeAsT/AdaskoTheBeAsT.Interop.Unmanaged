@@ -45,6 +45,8 @@ internal static class TestHelpers
 
 #if NET8_0_OR_GREATER
         Assert.Skip(reason);
+#else
+        _ = reason;
 #endif
         return true;
     }

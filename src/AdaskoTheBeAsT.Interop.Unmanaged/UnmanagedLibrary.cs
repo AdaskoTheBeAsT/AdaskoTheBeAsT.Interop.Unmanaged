@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -450,6 +451,7 @@ public sealed class UnmanagedLibrary : IDisposable
         }
     }
 
+    [SuppressMessage("Roslynator", "RCS1256:Invalid argument null check", Justification = "paramName is the caller's public-API parameter, not this helper's")]
     private static void ThrowIfNull<T>(T? value, string paramName)
         where T : class
     {
@@ -460,9 +462,7 @@ public sealed class UnmanagedLibrary : IDisposable
 #else
         if (value is null)
         {
-#pragma warning disable RCS1256 // paramName is the caller's public-API parameter, not this helper's
             throw new ArgumentNullException(paramName);
-#pragma warning restore RCS1256
         }
 #endif
     }

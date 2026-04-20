@@ -12,12 +12,6 @@ public class UnmanagedLibraryAdvancedTests
 
     private delegate void GenericDelegate<T>(T value);
 
-    [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    private delegate int StdCallDelegate(int a, int b);
-
-    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int CdeclDelegate(int a, int b);
-
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]
     private delegate uint GetCurrentProcessIdDelegate();
 

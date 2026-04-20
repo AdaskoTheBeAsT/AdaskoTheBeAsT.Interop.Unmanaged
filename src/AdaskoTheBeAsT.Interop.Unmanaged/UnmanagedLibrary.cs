@@ -84,7 +84,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// </param>
     public static void FreeLibrary(SafeLibraryHandle? safeLibraryHandle)
     {
-        if (safeLibraryHandle == null || safeLibraryHandle.IsClosed)
+        if (safeLibraryHandle?.IsClosed != false)
         {
             return;
         }

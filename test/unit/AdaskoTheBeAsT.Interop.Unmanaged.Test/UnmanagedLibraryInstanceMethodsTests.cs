@@ -157,7 +157,6 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_LoadedWithDataFileFlag_LoadsAsDataFile()
     {
-        // Arrange & Act
         using var library = new UnmanagedLibrary("kernel32.dll", LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE);
 
         // Assert - Library loaded successfully even with DATAFILE flag

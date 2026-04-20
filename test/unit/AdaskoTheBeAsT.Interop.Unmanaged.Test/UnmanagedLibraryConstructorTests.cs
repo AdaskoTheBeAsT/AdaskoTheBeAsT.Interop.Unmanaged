@@ -11,7 +11,11 @@ public class UnmanagedLibraryConstructorTests
     public void Constructor_WithNullFileName_ThrowsArgumentException()
     {
         // Act
-        Action act = () => new UnmanagedLibrary(null!);
+        Action act = static () =>
+        {
+            using var library = new UnmanagedLibrary(null!);
+            GC.KeepAlive(library);
+        };
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -23,7 +27,11 @@ public class UnmanagedLibraryConstructorTests
     public void Constructor_WithEmptyFileName_ThrowsArgumentException()
     {
         // Act
-        Action act = () => new UnmanagedLibrary(string.Empty);
+        Action act = static () =>
+        {
+            using var library = new UnmanagedLibrary(string.Empty);
+            GC.KeepAlive(library);
+        };
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -35,7 +43,11 @@ public class UnmanagedLibraryConstructorTests
     public void Constructor_WithWhitespaceFileName_ThrowsArgumentException()
     {
         // Act
-        Action act = () => new UnmanagedLibrary("   ");
+        Action act = static () =>
+        {
+            using var library = new UnmanagedLibrary("   ");
+            GC.KeepAlive(library);
+        };
 
         // Assert
         act.Should().Throw<ArgumentException>()
@@ -50,7 +62,11 @@ public class UnmanagedLibraryConstructorTests
         var nonExistentDll = $"NonExistent_{Guid.NewGuid()}.dll";
 
         // Act
-        Action act = () => new UnmanagedLibrary(nonExistentDll);
+        Action act = () =>
+        {
+            using var library = new UnmanagedLibrary(nonExistentDll);
+            GC.KeepAlive(library);
+        };
 
         // Assert
         act.Should().Throw<Win32Exception>()
@@ -81,7 +97,7 @@ public class UnmanagedLibraryConstructorTests
         }
 
         // Arrange
-        var flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
+        const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
 
         // Act
         using var library = new UnmanagedLibrary("kernel32.dll", flags);
@@ -99,7 +115,7 @@ public class UnmanagedLibraryConstructorTests
         }
 
         // Arrange
-        var flags = LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE;
+        const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE;
 
         // Act
         using var library = new UnmanagedLibrary("kernel32.dll", flags);
@@ -117,7 +133,7 @@ public class UnmanagedLibraryConstructorTests
         }
 
         // Arrange
-        var flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+        const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
                     | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
 
         // Act

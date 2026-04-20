@@ -38,7 +38,7 @@ public sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
 #pragma warning disable CA1419
     internal SafeLibraryHandle()
 #pragma warning restore CA1419
-        : base(true)
+        : base(ownsHandle: true)
     {
     }
 

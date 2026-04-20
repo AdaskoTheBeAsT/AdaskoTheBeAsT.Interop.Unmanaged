@@ -91,7 +91,7 @@ public class UnmanagedLibraryStaticMethodsTests
     public void LoadLibrary_WithCustomFlags_LoadsSuccessfully()
     {
         // Arrange
-        var flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
+        const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
 
         // Act
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll", flags);
@@ -105,7 +105,7 @@ public class UnmanagedLibraryStaticMethodsTests
     public void LoadLibrary_WithDataFileFlag_LoadsSuccessfully()
     {
         // Arrange
-        var flags = LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE;
+        const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE;
 
         // Act
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll", flags);
@@ -119,7 +119,7 @@ public class UnmanagedLibraryStaticMethodsTests
     public void FreeLibrary_WithNullHandle_DoesNotThrow()
     {
         // Act
-        Action act = () => UnmanagedLibrary.FreeLibrary(null);
+        Action act = () => UnmanagedLibrary.FreeLibrary(safeLibraryHandle: null);
 
         // Assert
         act.Should().NotThrow();

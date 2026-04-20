@@ -137,7 +137,7 @@ public class DelegatePinTests
         // Act & Assert - no exception
         using (var delegatePin = new DelegatePin(ptr, new object()))
         {
-            Assert.Equal(ptr, delegatePin.Ptr);
+            delegatePin.Ptr.Should().Be(ptr);
         }
     }
 
@@ -195,25 +195,25 @@ public class DelegatePinTests
     public void Struct_IsValueType()
     {
         // Assert - Compile-time verification
-        Assert.True(typeof(DelegatePin).IsValueType);
+        typeof(DelegatePin).IsValueType.Should().BeTrue();
     }
 
     [Fact]
     public void Struct_ImplementsIDisposable()
     {
         // Assert - Compile-time verification
-        Assert.True(typeof(IDisposable).IsAssignableFrom(typeof(DelegatePin)));
+        typeof(IDisposable).IsAssignableFrom(typeof(DelegatePin)).Should().BeTrue();
     }
 
     [Fact]
     public void Struct_IsReadOnly()
     {
         // Assert - Compile-time verification
-        var customAttributes = typeof(DelegatePin).GetCustomAttributes(false);
+        var customAttributes = typeof(DelegatePin).GetCustomAttributes(inherit: false);
         var isReadOnlyStruct = Array.Exists(
             customAttributes,
             attr => string.Equals(attr.GetType().Name, "IsReadOnlyAttribute", StringComparison.Ordinal));
 
-        Assert.True(isReadOnlyStruct || typeof(DelegatePin).IsValueType);
+        (isReadOnlyStruct || typeof(DelegatePin).IsValueType).Should().BeTrue();
     }
 }

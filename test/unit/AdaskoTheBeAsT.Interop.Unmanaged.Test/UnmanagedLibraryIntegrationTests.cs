@@ -15,9 +15,6 @@ public class UnmanagedLibraryIntegrationTests
     private delegate IntPtr GetCurrentProcessDelegate();
 
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    private delegate uint GetLastErrorDelegate();
-
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
     private delegate IntPtr GetModuleHandleW([MarshalAs(UnmanagedType.LPWStr)] string? lpModuleName);
 
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]
@@ -37,7 +34,6 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void FullWorkflow_LoadGetInvokeDispose_WorksCorrectly()
     {
-        // Arrange & Act
         using var library = new UnmanagedLibrary("kernel32.dll");
         var getProcessId = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
         var processId = getProcessId!();
@@ -63,9 +59,9 @@ public class UnmanagedLibraryIntegrationTests
         var tickCount = getTickCount!();
 
         // Assert
-        Assert.True(processId > 0);
-        Assert.NotEqual(IntPtr.Zero, processHandle);
-        Assert.True(tickCount > 0);
+        processId.Should().BeGreaterThan(0u);
+        processHandle.Should().NotBe(IntPtr.Zero);
+        tickCount.Should().BeGreaterThan(0u);
     }
 
     [Fact]
@@ -87,7 +83,6 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void MultipleLibraries_LoadedSimultaneously_WorkIndependently()
     {
-        // Arrange & Act
         using var kernel32 = new UnmanagedLibrary("kernel32.dll");
         using var user32 = new UnmanagedLibrary("user32.dll");
 
@@ -98,9 +93,9 @@ public class UnmanagedLibraryIntegrationTests
         var tickCount = getTickCount!();
 
         // Assert
-        Assert.True(processId > 0);
-        Assert.Equal(TestHelpers.GetCurrentProcessId(), processId);
-        Assert.True(tickCount > 0);
+        processId.Should().BeGreaterThan(0u);
+        processId.Should().Be(TestHelpers.GetCurrentProcessId());
+        tickCount.Should().BeGreaterThan(0u);
     }
 
     [Fact]
@@ -111,7 +106,7 @@ public class UnmanagedLibraryIntegrationTests
         var getModuleHandle = library.GetUnmanagedFunction<GetModuleHandleW>(nameof(GetModuleHandleW));
 
         // Act
-        var handle = getModuleHandle!(null);
+        var handle = getModuleHandle!(lpModuleName: null);
 
         // Assert
         handle.Should().NotBe(IntPtr.Zero);
@@ -140,13 +135,13 @@ public class UnmanagedLibraryIntegrationTests
         var getEnvVar = library.GetUnmanagedFunction<GetEnvironmentVariableW>(nameof(GetEnvironmentVariableW));
 
         var testVarName = $"TEST_VAR_{Guid.NewGuid():N}";
-        var testVarValue = "TestValue123";
+        const string testVarValue = "TestValue123";
 
         // Act
         var setResult = setEnvVar!(testVarName, testVarValue);
 
         // Cleanup
-        setEnvVar(testVarName, null);
+        setEnvVar(testVarName, lpValue: null);
 
         // Assert - Just verify the functions work and set operation succeeded
         setResult.Should().BeTrue();
@@ -157,7 +152,6 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void LoadLibrary_WithDifferentFlags_LoadsSameLibraryDifferently()
     {
-        // Arrange & Act
         using var normalLoad = new UnmanagedLibrary(
             "kernel32.dll",
             LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32);
@@ -236,7 +230,6 @@ public class UnmanagedLibraryIntegrationTests
     [Fact]
     public void MultipleLibraryInstances_SameLibrary_WorkIndependently()
     {
-        // Arrange & Act
         using var library1 = new UnmanagedLibrary("kernel32.dll");
         using var library2 = new UnmanagedLibrary("kernel32.dll");
 
@@ -291,7 +284,7 @@ public class UnmanagedLibraryIntegrationTests
         var processId = getProcessId!();
         var processHandle = getProcess!();
         var tickCount = getTickCount!();
-        var moduleHandle = getModuleHandle!(null);
+        var moduleHandle = getModuleHandle!(lpModuleName: null);
 
         // Assert - All functions should work
         processId.Should().BeGreaterThan(0u);

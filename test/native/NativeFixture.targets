@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <CMakeCommand Condition="'$(CMakeCommand)' == ''">cmake</CMakeCommand>
+    <NativeBuildDirectory>$(MSBuildProjectDirectory)/obj/native/$(TargetFramework)/$(PlatformTarget)</NativeBuildDirectory>
+    <NativeGeneratorArgs Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' == 'x86'">-A Win32</NativeGeneratorArgs>
+    <NativeGeneratorArgs Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' != 'x86'">-A x64</NativeGeneratorArgs>
+    <NativeBuildTypeArg Condition="!$([MSBuild]::IsOSPlatform('Windows'))">-DCMAKE_BUILD_TYPE=$(Configuration)</NativeBuildTypeArg>
+  </PropertyGroup>
+  <Target Name="BuildNativeFixture" BeforeTargets="Build" Condition="'$(TargetFramework)' != '' and '$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <NativeOutputDirectory>$(TargetDir)native</NativeOutputDirectory>
+    </PropertyGroup>
+    <Exec Command="&quot;$(CMakeCommand)&quot; -S &quot;$(MSBuildThisFileDirectory).&quot; -B &quot;$(NativeBuildDirectory)&quot; $(NativeGeneratorArgs) $(NativeBuildTypeArg) -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=&quot;$(NativeOutputDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=&quot;$(NativeOutputDirectory)&quot; -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeOutputDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeOutputDirectory)&quot;" />
+    <Exec Command="&quot;$(CMakeCommand)&quot; --build &quot;$(NativeBuildDirectory)&quot; --config $(Configuration)" />
+  </Target>
+</Project>

@@ -28,7 +28,7 @@ public class UnmanagedLibraryIntegrationTests
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]
     private delegate uint GetEnvironmentVariableW(
         [MarshalAs(UnmanagedType.LPWStr)] string lpName,
-        StringBuilder lpBuffer,
+        [MarshalAs(UnmanagedType.LPWStr)] StringBuilder lpBuffer,
         uint nSize);
 
     [Fact]
@@ -172,16 +172,24 @@ public class UnmanagedLibraryIntegrationTests
         var testVarName = $"TEST_VAR_{Guid.NewGuid():N}";
         const string testVarValue = "TestValue123";
 
-        // Act
-        var setResult = setEnvVar!(testVarName, testVarValue);
-
-        // Cleanup
-        setEnvVar(testVarName, lpValue: null);
-
-        // Assert - Just verify the functions work and set operation succeeded
-        setResult.Should().BeTrue();
         setEnvVar.Should().NotBeNull();
         getEnvVar.Should().NotBeNull();
+        try
+        {
+            // Act
+            var setResult = setEnvVar(testVarName, testVarValue);
+            var buffer = new StringBuilder(256);
+            var length = getEnvVar(testVarName, buffer, (uint)buffer.Capacity);
+
+            // Assert
+            setResult.Should().BeTrue();
+            length.Should().Be((uint)testVarValue.Length);
+            buffer.ToString().Should().Be(testVarValue);
+        }
+        finally
+        {
+            setEnvVar(testVarName, lpValue: null);
+        }
     }
 
     [Fact]
@@ -208,7 +216,7 @@ public class UnmanagedLibraryIntegrationTests
         dataFileLoad.Should().NotBeNull();
 
         // Both libraries loaded successfully
-        var processId = normalFunction!();
+        var processId = normalFunction();
         processId.Should().BeGreaterThan(0u);
     }
 

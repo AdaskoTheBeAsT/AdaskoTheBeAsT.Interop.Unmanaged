@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net10.0;net9.0;net8.0;net481;net48;net472;net471;net47;net462</TargetFrameworks>
+    <TargetFrameworks>net10.0;net9.0;net8.0;net481;net48;net472</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
@@ -9,7 +9,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryType>github</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <Description>Working with native DLLs in .NET can be tricky - memory leaks, crashes, and platform-specific quirks. This library provides a **battle-tested**, **safe**, and **elegant** wrapper around Windows `LoadLibrary`, `GetProcAddress`, and `FreeLibrary` APIs.</Description>
+    <Description>Native library loading, export lookup, SafeHandle ownership, and managed callback lifetime scopes for Windows, Linux, and macOS.</Description>
     <Authors>Adam "AdaskoTheBeAsT" Pluciński</Authors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
@@ -20,8 +20,13 @@
     <PackageProjectUrl>https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged</PackageProjectUrl>
     <Copyright>Adam "AdaskoTheBeAsT" Pluciński</Copyright>
     <PackageTags>Interop;Unmanaged</PackageTags>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>Validation hardening: embedded NUL names and unsupported raw calli signatures now fail before native calls. Adds public callback scopes and clearer loader diagnostics.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
@@ -38,13 +43,6 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>-->
-    <PackageReference Include="System.Reflection.Emit" Version="[4.7.0,5.0.0)" />
-    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="[4.7.0,5.0.0)" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net462' OR '$(TargetFramework)' == 'net47' OR '$(TargetFramework)' == 'net471' OR '$(TargetFramework)' == 'net472' OR '$(TargetFramework)' == 'net48' OR '$(TargetFramework)' == 'net481'">
-    <PackageReference Include="System.Memory" Version="[4.6.3,5.0.0)" />
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="[6.1.2,7.0.0)" />
   </ItemGroup>
 
   <ItemGroup>

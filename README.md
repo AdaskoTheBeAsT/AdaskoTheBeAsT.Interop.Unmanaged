@@ -1,396 +1,479 @@
 # AdaskoTheBeAsT.Interop.Unmanaged
 
-> 🚀 Typed, safe, lifetime-managed dynamic native library loading for .NET — on Windows, Linux, and macOS.
+> 🚀 Native libraries. Typed delegates. Explicit lifetimes. Less boilerplate.
 
-[![NuGet](https://img.shields.io/nuget/v/AdaskoTheBeAsT.Interop.Unmanaged.svg?label=AdaskoTheBeAsT.Interop.Unmanaged&logo=nuget)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
-[![NuGet Downloads](https://img.shields.io/nuget/dt/AdaskoTheBeAsT.Interop.Unmanaged.svg?logo=nuget)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
-![TFMs](https://img.shields.io/badge/TFMs-net10.0%20%7C%20net9.0%20%7C%20net8.0%20%7C%20net4.6.2%E2%80%93net4.8.1-512BD4?logo=dotnet)
+Load the right native library at runtime, call its exports, and keep callbacks
+alive without scattering loader plumbing throughout your .NET application.
+Windows, Linux, and macOS, with the platform details spelled out below.
+
+[![NuGet](https://img.shields.io/nuget/v/AdaskoTheBeAsT.Interop.Unmanaged.svg)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
+[![NuGet Downloads](https://img.shields.io/nuget/dt/AdaskoTheBeAsT.Interop.Unmanaged.svg)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![Target frameworks](https://img.shields.io/badge/.NET-8%20%7C%209%20%7C%2010-512BD4?logo=dotnet)
+![Framework targets](https://img.shields.io/badge/.NET_Framework-4.7.2%20%7C%204.8%20%7C%204.8.1-512BD4)
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-blue)
-![Warnings](https://img.shields.io/badge/warnings--as--errors-on-green)
-![Deterministic](https://img.shields.io/badge/deterministic%20build-on-blue)
 
-### 🔬 Code quality — SonarCloud
+### 🔬 Code quality
 
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=coverage)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=coverage)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=sqale_rating)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=sqale_rating)
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=reliability_rating)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=reliability_rating)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=security_rating)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=security_rating)
-[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=bugs)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=bugs)
-[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=vulnerabilities)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=vulnerabilities)
-[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=code_smells)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=code_smells)
-[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=duplicated_lines_density)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=duplicated_lines_density)
-[![Technical Debt](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=sqale_index)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=sqale_index)
-[![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=ncloc)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=ncloc)
 
----
+> 🎉 **Welcome to 4.0.0!** Public callback scopes, stricter input and raw-signature
+> validation, and improved loader diagnostics. Check the [changelog](CHANGELOG.md)
+> for what's new and the [migration guide](MIGRATION.md) before upgrading.
 
-## 👋 Hello, native-loving friend
+## 🧭 Find your way
 
-You've got a native library. The static `DllImport` attribute is *fine*, right up until it isn't:
+- [✨ Why you'll like it](#when-to-use-it)
+- [📦 Installation](#installation)
+- [🚀 Quick start](#quick-start)
+- [🌍 Supported frameworks and platforms](#supported-frameworks-and-platforms)
+- [🪝 Callbacks](#callbacks)
+- [⚡ Raw function pointers](#raw-function-pointers)
+- [🧰 API at a glance](#api-reference)
+- [🛡️ Safety and lifetime rules](#safety-and-lifetime-rules)
+- [🔎 Loading and error behavior](#loading-and-error-behavior)
+- [✂️ Trimming and NativeAOT](#trimming-and-nativeaot)
+- [🧪 Build and test](#build-and-test)
 
-- 🧬 the DLL name depends on runtime config or an installer location
-- 🎯 some exports only exist on certain versions of the SDK
-- 🏢 you need `LOAD_LIBRARY_SEARCH_SYSTEM32` and friends to survive DLL-hijacking audits
-- 🐧 you want the same loader story on Linux and macOS
-- 🪝 native code wants a *function pointer* to a managed callback
-- ♻️ you want `SafeHandle` lifetime — not a `Marshal.FreeLibrary` landmine
+<a name="when-to-use-it"></a>
 
-`AdaskoTheBeAsT.Interop.Unmanaged` is the tiny, focused library that parks all that plumbing somewhere safe so your code stays readable. 📦
+## ✨ Why you'll like it
 
----
+You've got a native library. Its path comes from configuration, one customer has
+an older SDK, and native code wants to call you back. Sound familiar? This library
+keeps that plumbing in one place.
 
-## ✨ Why you'll love this
+- 🎯 **Real delegates, not just addresses.** Resolve exports using your delegate
+  declarations and call them from ordinary C#.
+- 🔍 **Optional means optional.** Check whether an SDK exposes a symbol without
+  treating a missing export as an error.
+- 🔒 **Module ownership you can follow.** Use a `SafeLibraryHandle` or
+  `UnmanagedLibrary` scope instead of scattering `FreeLibrary` calls around.
+- 🪝 **Callbacks with a keep-alive plan.** Root managed delegates while native
+  code holds their function pointers.
+- 🪟 **Windows search flags when you need them.** Choose an explicit
+  `LoadLibraryEx` search policy for your native dependencies.
+- 🌍 **One API, platform-specific loaders.** Windows `LoadLibraryEx`, modern .NET
+  `NativeLibrary` on Linux/macOS, and a legacy Mono fallback.
 
-- 🔒 **`SafeHandle`-backed lifetime.** `SafeLibraryHandle` cleans up on its own — no more "did I remember to `FreeLibrary`?" moments.
-- 🎯 **Strongly typed delegates.** Resolve exports into real delegate types, not `IntPtr` soup.
-- 🪝 **Managed-to-native callbacks.** `GetFunctionPointerForDelegate` gives you a stable pointer *plus* a `binder` root so the GC can't rip it out from under native code.
-- 🔀 **Open-generic delegate support.** Callbacks typed as `Delegate<T>`? The library IL-emits a concrete proxy on the fly and copies your `[UnmanagedFunctionPointer]` attribute onto it so the calling convention matches.
-- 🧪 **Runtime export probing.** Missing function? `GetUnmanagedFunction<T>` returns `null`, `TryGetExport` returns `false`. No exceptions, no try/catch dances.
-- 🧭 **Modern `delegate* unmanaged` friendly.** `TryGetExport` hands you the raw `IntPtr` so you can cast to `delegate* unmanaged[Stdcall]<int, int>` on `net5+`.
-- 🪟🐧🍎 **Windows + Linux + macOS.** Uses `LoadLibraryEx` on Windows; delegates to `NativeLibrary` on modern .NET and raw `dlopen` on .NET Framework via Mono.
-- ⚙️ **Full `LoadLibraryFlags` control.** `LOAD_LIBRARY_SEARCH_SYSTEM32`, `LOAD_WITH_ALTERED_SEARCH_PATH`, `LOAD_LIBRARY_AS_DATAFILE` — all there, faithfully honored on Windows.
-- 🧬 **9 TFMs, all green.** `net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`, `net471`, `net47`, `net462` — the full matrix on every build.
-- 🛡️ **Quality-first.** `TreatWarningsAsErrors=true`, deterministic builds, nullable annotations, generated XML docs, and a SonarCloud quality gate on every commit.
-- ✏️ **Source Link + snupkg.** Step into the library from your debugger without guessing.
+> 💡 **Use the simplest tool that fits.** Fixed library names and signatures?
+> `DllImport` or `LibraryImport` may be exactly what you need. Just raw loading on
+> modern .NET? `NativeLibrary` may be enough. This library helps with ownership
+> and boilerplate; it cannot verify your native ABI or make untrusted code safe.
 
----
+<a name="installation"></a>
 
 ## 📦 Installation
 
-```bash
+One command gets you the latest published NuGet package:
+
+```shell
 dotnet add package AdaskoTheBeAsT.Interop.Unmanaged
 ```
 
-Or via Package Manager:
+XML API docs come with the package, so IntelliSense can help along the way.
+Symbol packages (`.snupkg`) and Source Link let you step into the library when
+you want to see what's happening under the hood. 🔍
 
-```powershell
-Install-Package AdaskoTheBeAsT.Interop.Unmanaged
-```
-
-Symbols ship as `.snupkg` with Source Link and embedded untracked sources. Step in. Look around. It's fine. 🔍
-
----
-
-## 🗺️ Target framework matrix
-
-| TFM | Status | Notes |
-| --- | :-: | --- |
-| `net10.0` | ✅ | Uses `System.Runtime.InteropServices.NativeLibrary` under the hood on non-Windows. |
-| `net9.0` | ✅ | Same. |
-| `net8.0` | ✅ | Same. |
-| `net481` | ✅ | Windows desktop; other platforms go through hand-rolled `dlopen`/`dlsym` P/Invokes under Mono. |
-| `net48` | ✅ | Same. |
-| `net472` | ✅ | Same. |
-| `net471` | ✅ | Same. |
-| `net47` | ✅ | Same. |
-| `net462` | ✅ | Same. |
-
-Every cell is built with `TreatWarningsAsErrors=true`, `ContinuousIntegrationBuild=true`, `Deterministic=true`, and exercised by the test suite.
-
-### 🪟🐧🍎 Platform behavior
-
-| Platform | Loader path | `LoadLibraryFlags` honored? |
-| --- | --- | :-: |
-| 🪟 **Windows** (all TFMs) | `LoadLibraryEx` / `GetProcAddress` / `FreeLibrary` from `kernel32.dll` | ✅ fully |
-| 🐧 **Linux** on `net8+` | `NativeLibrary.Load` | ❌ flags silently ignored (`RTLD_NOW` semantics) |
-| 🍎 **macOS** on `net8+` | `NativeLibrary.Load` | ❌ flags silently ignored (`RTLD_NOW` semantics) |
-| 🐧 **Linux** on `net4.x` (Mono) | `dlopen(..., RTLD_NOW)` from `libdl.so.2` | ❌ flags silently ignored |
-| 🍎 **macOS** on `net4.x` (Mono) | `dlopen(..., RTLD_NOW)` from `libSystem.dylib` | ❌ flags silently ignored |
-
-> 💡 The `LoadLibraryFlags` argument is accepted on every platform for call-site compatibility — it's only *applied* on Windows, which is exactly what most interop callers expect.
-
----
+<a name="quick-start"></a>
 
 ## 🚀 Quick start
 
-### 1️⃣ Load a DLL and call an export
+### 1. Load a library and call an export
+
+Let's start small: ask Windows for the current process ID. This is a complete
+**Windows-only** example. Declare the exact native signature and calling
+convention, check the lookup result, and keep the library undisposed through the
+call.
 
 ```csharp
 using System;
 using System.Runtime.InteropServices;
 using AdaskoTheBeAsT.Interop.Unmanaged;
 
+using var library = new UnmanagedLibrary("kernel32.dll");
+var getCurrentProcessId =
+    library.GetUnmanagedFunction<GetCurrentProcessId>("GetCurrentProcessId")
+    ?? throw new EntryPointNotFoundException("GetCurrentProcessId");
+
+Console.WriteLine($"Current PID: {getCurrentProcessId()}");
+
 [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-delegate uint GetCurrentProcessIdDelegate();
+delegate uint GetCurrentProcessId();
+```
+
+The same lookup API works with `.so` and `.dylib` files on Linux and macOS.
+Library names, export names, signatures, and calling conventions must match the
+native library on each platform. For a complete cross-platform example using the
+repository's native fixture, see [consumer smoke tests](samples/README.md).
+
+### 2. Probe for an optional export
+
+Different SDK versions, different exports? Check for the feature before using it.
+
+`GetUnmanagedFunction<TDelegate>` returns `null` for a missing export.
+`TryGetExport` returns `false` and `IntPtr.Zero`. These results apply only to
+valid requests on an undisposed owner; invalid names and disposed handles still
+throw.
+
+```csharp
+using System;
+using System.Runtime.InteropServices;
+using AdaskoTheBeAsT.Interop.Unmanaged;
+
+// Pass an absolute path to your native SDK as the first command-line argument.
+using var library = new UnmanagedLibrary(args[0]);
+var optionalExport =
+    library.GetUnmanagedFunction<OptionalExport>("OptionalExport");
+
+Console.WriteLine(optionalExport is null
+    ? "This SDK version does not expose OptionalExport."
+    : $"OptionalExport returned {optionalExport()}.");
+
+// Replace this declaration with the signature from your SDK's native header.
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+delegate int OptionalExport();
+```
+
+### 3. Manage a handle directly
+
+Prefer to own the handle yourself? The static API returns a `SafeLibraryHandle`
+instead of an `UnmanagedLibrary` instance. Same lookup pattern, a different owner.
+This example is Windows-only.
+
+```csharp
+using System;
+using System.Runtime.InteropServices;
+using AdaskoTheBeAsT.Interop.Unmanaged;
+
+using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
+var getTickCount =
+    UnmanagedLibrary.GetUnmanagedFunction<GetTickCount>(handle, "GetTickCount")
+    ?? throw new EntryPointNotFoundException("GetTickCount");
+
+Console.WriteLine($"Tick count: {getTickCount()}");
+
+[UnmanagedFunctionPointer(CallingConvention.Winapi)]
+delegate uint GetTickCount();
+```
+
+<a name="supported-frameworks-and-platforms"></a>
+
+## 🌍 Supported frameworks and platforms
+
+The current project builds **six target frameworks**:
+
+| Runtime family | Package targets | Loader behavior |
+| --- | --- | --- |
+| Modern .NET | `net10.0`, `net9.0`, `net8.0` | Windows: `LoadLibraryEx`. Linux/macOS: `NativeLibrary`. |
+| .NET Framework | `net481`, `net48`, `net472` | Windows: `LoadLibraryEx`. Legacy Mono fallback: `dlopen`/`dlsym`. |
+
+4.0.0 removes the `net462`, `net47`, and `net471` targets present in 3.0.0.
+There is no `netstandard2.0` asset; it was removed in 3.0.0.
+
+Windows honors `LoadLibraryFlags`, with the default bare-name adjustment described
+[below](#loading-and-error-behavior). Linux and macOS ignore these Windows flags.
+Modern non-Windows loading follows the runtime's behavior; only the legacy
+fallback explicitly requests `RTLD_NOW`.
+
+**Targeting is not execution evidence.** The [validation notes](docs/validation.md)
+record an earlier Windows validation pass against nine targets and local
+`3.0.1-*` packages, not a validation of the six-target 4.0.0 release.
+The [native validation workflow](.github/workflows/native-validation.yml) contains
+cross-platform, x86, ARM64, trimmed, and NativeAOT jobs, but still includes removed
+targets and older test commands. It needs alignment before it can validate 4.0.0.
+
+Mono execution remains unverified. Modern musl/Alpine execution is also
+unverified; the legacy Linux fallback requires `libdl.so.2` and does not support
+musl. .NET Framework tests on a current Windows machine run on its installed
+in-place runtime, not on separate historical runtime installations.
+
+<a name="callbacks"></a>
+
+## 🪝 Callbacks
+
+Native code wants to call your C#? Give it a function pointer, and give the
+managed callback a lifetime that covers every native call.
+
+### Synchronous callbacks
+
+**New in 4.0.0:** `PinConcreteDelegate` creates a keep-alive scope without emitting
+a proxy. Prefer a concrete, non-generic delegate with an explicit calling
+convention.
+
+This complete example uses the repository's [native fixture](test/native/README.md).
+Pass its absolute path as `args[0]`: `fixture.dll`, `libfixture.so`, or
+`libfixture.dylib`. The expected output is `42`.
+
+```csharp
+using System;
+using System.Runtime.InteropServices;
+using AdaskoTheBeAsT.Interop.Unmanaged;
+
+using var library = new UnmanagedLibrary(args[0]);
+var invoke = library.GetUnmanagedFunction<InvokeCallback>("fixture_invoke")
+    ?? throw new EntryPointNotFoundException("fixture_invoke");
+using var callback = UnmanagedLibrary.PinConcreteDelegate<Callback>(value => value + 1);
+
+Console.WriteLine(invoke(callback.Ptr, 41));
+
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+delegate int Callback(int value);
+
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+delegate int InvokeCallback(IntPtr callback, int value);
+```
+
+`PinDelegate` also accepts constructed generic delegate types. That path emits a
+concrete proxy on dynamic runtimes and preserves calling convention, marshaling
+metadata, and the full multicast invocation list. Prefer a named delegate when
+the native API requires explicit interop attributes.
+
+> 📌 **A root, not a memory pin.** Despite its name, `DelegatePin` does not pin
+> memory. Its `Dispose` method is only a keep-alive boundary. It does not
+> unregister a callback, invalidate the pointer, or wait for native work.
+
+### Retained callbacks
+
+If native code stores a callback after the registration call returns, a local
+`using` scope or a single `GC.KeepAlive` after registration is not enough.
+
+1. Keep the delegate, or the `binder` returned by `GetFunctionPointerForDelegate`,
+   in a field for the full registration lifetime.
+2. Unregister using the native API.
+3. Wait for all in-flight callbacks to finish.
+4. Release the managed root, then unload the module only when nothing else uses it.
+
+See the compilable [retained callback example](samples/NativeSmoke/RetainedCallback.cs)
+and [isolated lifecycle checks](samples/NativeSmoke/LifetimeChecks.cs). The
+fixture's unregister operation waits synchronously; another SDK may require a
+separate wait.
+
+Translate exceptions inside callbacks into the native API's error convention.
+Do not let managed exceptions escape across the native boundary.
+
+<a name="raw-function-pointers"></a>
+
+## ⚡ Raw function pointers
+
+Prefer `delegate* unmanaged`? On modern .NET, `TryGetExport` gives you the address
+without creating a managed delegate. Enable
+`<AllowUnsafeBlocks>true</AllowUnsafeBlocks>` in your consumer project.
+This complete example is Windows-only.
+
+```csharp
+using System;
+using AdaskoTheBeAsT.Interop.Unmanaged;
 
 using var library = new UnmanagedLibrary("kernel32.dll");
-var getCurrentProcessId = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
-
-if (getCurrentProcessId is not null)
+if (!library.TryGetExport("GetCurrentProcessId", out var address))
 {
+    throw new EntryPointNotFoundException("GetCurrentProcessId");
+}
+
+unsafe
+{
+    var getCurrentProcessId = (delegate* unmanaged[Stdcall]<uint>)address;
     Console.WriteLine($"Current PID: {getCurrentProcessId()}");
 }
 ```
 
-### 2️⃣ Probe for optional exports safely
+The static equivalent is `UnmanagedLibrary.TryGetExport(handle, name, out address)`.
+Raw calls do not marshal parameters. You must match the native signature, calling
+convention, architecture, and module lifetime.
 
-`GetUnmanagedFunction<TDelegate>` returns `null` when the export is missing, which makes feature-probing trivial — no exceptions, no `Marshal.GetLastWin32Error` rituals.
+### Wrapping a raw pointer in a delegate
 
-```csharp
-[UnmanagedFunctionPointer(CallingConvention.Winapi)]
-delegate IntPtr OptionalExportDelegate();
+Prefer `Marshal.GetDelegateForFunctionPointer<TDelegate>(pointer)` when the
+signature needs marshaling. Put `[UnmanagedFunctionPointer]` and any required
+`[MarshalAs]` attributes on the delegate declaration.
 
-using var library = new UnmanagedLibrary("SomeNativeSdk.dll");
-var optionalExport = library.GetUnmanagedFunction<OptionalExportDelegate>("OptionalExport");
+`UnmanagedLibrary.GetDelegateForFunctionPointer<T>(pointer, convention)` instead
+emits a raw `calli` thunk. It is intended for native-compatible signatures when
+the calling convention must be selected at runtime, not as a replacement for the
+marshaler.
 
-if (optionalExport is null)
-{
-    Console.WriteLine("This version of the native SDK does not expose OptionalExport.");
-}
-```
+- Supports `Cdecl`, `StdCall`, and `Winapi`.
+- Accepts fixed-width numeric primitives other than `bool`/`char`, `IntPtr`,
+  `UIntPtr`, pointers, enums, and nonempty sequential/explicit structs composed
+  recursively of supported fields.
+- Rejects managed references, auto-layout structs, `bool`, `char`, `decimal`,
+  nullable values, managed `ref`/`out` parameters or returns, `[MarshalAs]`, and
+  `SetLastError`.
+- Requires a concrete, closed delegate type and runtime code generation.
 
-### 3️⃣ Load from an explicit path with explicit flags
+Represent an 8-bit native Boolean as `byte`, a Windows `BOOL` as `int`, and a
+16-bit UTF-16 code unit as `ushort` for raw calls. Native `char`, `wchar_t`,
+`long`, and Boolean widths depend on the API and platform. Validation cannot
+prove that your declaration matches the native ABI.
 
-Use a fully qualified path when you want deterministic loading behavior for a specific DLL. Combine flags with `|`.
+<a name="api-reference"></a>
 
-```csharp
-var flags =
-    LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR |
-    LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
+## 🧰 API at a glance
 
-using var library = new UnmanagedLibrary(@"C:\Native\MyLibrary.dll", flags);
-```
+Here's the toolbox. All types live in the
+`AdaskoTheBeAsT.Interop.Unmanaged` namespace.
 
-### 4️⃣ Static, handle-based API
+| API | Purpose |
+| --- | --- |
+| `new UnmanagedLibrary(fileName, flags)` | Load a module owned by a disposable instance. Flags are optional. |
+| `library.GetUnmanagedFunction<TDelegate>(name)` | Marshal an export as a delegate, or return `null` if missing. |
+| `library.TryGetExport(name, out address)` | Get a raw export address without creating a delegate. |
+| `UnmanagedLibrary.LoadLibrary(fileName, flags)` | Return an owning `SafeLibraryHandle`. Flags are optional. |
+| `UnmanagedLibrary.FreeLibrary(handle)` | Dispose a handle; `null` and already closed handles are accepted. |
+| `UnmanagedLibrary.GetUnmanagedFunction<TDelegate>(handle, name)` | Handle-based typed lookup. |
+| `UnmanagedLibrary.TryGetExport(handle, name, out address)` | Handle-based raw lookup. |
+| `UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out binder)` | Create a callback pointer and a managed keep-alive root. |
+| `UnmanagedLibrary.PinDelegate(callback)` | Create a `DelegatePin` scope, including generic proxy support. New in 4.0.0. |
+| `UnmanagedLibrary.PinConcreteDelegate(callback)` | Create a scope for a non-generic delegate without emission. New in 4.0.0. |
+| `UnmanagedLibrary.GetDelegateForFunctionPointer<T>(pointer, convention)` | Emit a raw unmanaged call thunk; no marshaling. |
 
-Prefer to manage the handle yourself? The static helpers are there.
+`SafeLibraryHandle` owns the native module. `LoadLibraryFlags` mirrors Windows
+`LoadLibraryEx` flags. `DelegatePin.Ptr` exposes a scoped callback pointer.
 
-```csharp
-using System;
-using System.Runtime.InteropServices;
-using AdaskoTheBeAsT.Interop.Unmanaged;
-
-[UnmanagedFunctionPointer(CallingConvention.Winapi)]
-delegate uint GetTickCountDelegate();
-
-using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
-var getTickCount = UnmanagedLibrary.GetUnmanagedFunction<GetTickCountDelegate>(handle, "GetTickCount");
-
-if (getTickCount is not null)
-{
-    Console.WriteLine($"Tick count: {getTickCount()}");
-}
-```
-
-### 5️⃣ Pass a managed callback to native code
-
-When you hand a managed delegate to unmanaged code, keep the returned `binder` alive for as long as native code may store or invoke the pointer.
-
-```csharp
-using System;
-using AdaskoTheBeAsT.Interop.Unmanaged;
-
-Func<int, int, int> callback = (a, b) => a + b;
-
-var callbackPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
-
-// Pass callbackPointer into native code here.
-// ...
-
-GC.KeepAlive(binder);
-```
-
-> 💡 For open-generic delegate types (e.g. `Action<T>`), the library IL-emits a non-generic proxy delegate at runtime *and* copies your `[UnmanagedFunctionPointer]` attribute onto the proxy so the generated function pointer uses the correct unmanaged calling convention.
-
-### 6️⃣ Modern `delegate* unmanaged` via `TryGetExport`
-
-On `net5+` you can skip the `Marshal` layer entirely and use a function-pointer type (`delegate* unmanaged[Stdcall]<...>`). `TryGetExport` gives you the raw `IntPtr`.
-
-```csharp
-using System;
-using AdaskoTheBeAsT.Interop.Unmanaged;
-
-using var library = new UnmanagedLibrary("kernel32.dll");
-
-if (library.TryGetExport("GetCurrentProcessId", out var addr))
-{
-    unsafe
-    {
-        var fn = (delegate* unmanaged[Stdcall]<uint>)addr;
-        Console.WriteLine($"PID: {fn()}");
-    }
-}
-```
-
-Static overload exists too:
-
-```csharp
-using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
-UnmanagedLibrary.TryGetExport(handle, "GetCurrentProcessId", out var addr);
-```
-
----
-
-## 🧠 API at a glance
-
-### `UnmanagedLibrary`
-
-Main entry point for loading DLLs and resolving exports.
-
-```csharp
-// Instance API
-new UnmanagedLibrary(string fileName, LoadLibraryFlags flags = ...);
-TDelegate? GetUnmanagedFunction<TDelegate>(string functionName);
-bool TryGetExport(string functionName, out IntPtr functionPointer);
-
-// Static / handle-based API
-static SafeLibraryHandle LoadLibrary(string fileName, LoadLibraryFlags flags = ...);
-static void FreeLibrary(SafeLibraryHandle? safeLibraryHandle);
-static TDelegate? GetUnmanagedFunction<TDelegate>(SafeLibraryHandle handle, string functionName);
-static bool TryGetExport(SafeLibraryHandle handle, string functionName, out IntPtr functionPointer);
-
-// Managed-to-native callbacks
-static IntPtr GetFunctionPointerForDelegate<T>(T delegateCallback, out object binder);
-
-// IL-emit re-wrap (advanced; prefer `Marshal.GetDelegateForFunctionPointer<T>`)
-static T? GetDelegateForFunctionPointer<T>(IntPtr ptr, CallingConvention callingConvention);
-```
-
-### `SafeLibraryHandle`
-
-Wraps the native module handle using the .NET `SafeHandle` pattern, which helps prevent leaks and double-free mistakes. `using`-friendly.
-
-### `LoadLibraryFlags`
-
-`[Flags]` enum mirroring the Windows `LoadLibraryEx` flags — `LOAD_LIBRARY_SEARCH_SYSTEM32`, `LOAD_WITH_ALTERED_SEARCH_PATH`, `LOAD_LIBRARY_AS_DATAFILE`, `LOAD_IGNORE_CODE_AUTHZ_LEVEL`, and friends.
-
-### `DelegatePin`
-
-Internal helper that roots generic-delegate proxies so the JIT-generated bridge stays alive. Most consumers only need to keep the returned `binder` rooted — `DelegatePin` is exposed for edge cases where you're doing the wrapping yourself.
-
----
+<a name="safety-and-lifetime-rules"></a>
 
 ## 🛡️ Safety and lifetime rules
 
-These are the few things you actually need to remember:
+The library handles the loader plumbing. These responsibilities stay with your
+application:
 
-- ✅ Keep the `UnmanagedLibrary` / `SafeLibraryHandle` alive while retrieved delegates or function pointers are still in use
-- ✅ Keep the callback `binder` alive while native code may call the function pointer
-- ✅ Use the exact delegate signature *and* calling convention expected by the native export
-- ✅ Prefer explicit `LOAD_LIBRARY_SEARCH_*` flags when loading third-party binaries (audit-friendly)
-- ❌ Do not unload the library and continue using delegates or function pointers you obtained from it
-- ❌ Do not load untrusted DLLs 🚫
+- 🔒 **Keep the module owner undisposed.** Returned delegates and pointers do not
+  extend its lifetime. The same rule applies to native objects created by exports.
+- ⏳ **Prevent concurrent unloading.** `SafeHandle` protects ownership and lookup-time
+  access, not subsequent calls through a returned pointer or delegate.
+- 🪝 **Root callbacks separately.** Keeping the library alive does not keep your
+  managed callbacks alive, or vice versa.
+- 🎯 **Match the native ABI exactly.** Incorrect signatures, layouts, or calling
+  conventions can corrupt the process.
+- 🛑 **Load only trusted binaries.** Search flags reduce search-path risks; they do
+  not sandbox native code or make arbitrary binaries safe.
 
----
+<a name="loading-and-error-behavior"></a>
 
-## ⚠️ Important behavior notes
+## 🔎 Loading and error behavior
 
-- Export names are **case-sensitive** 🔠 (this matches native loader semantics on Linux/macOS and avoids surprises on Windows)
-- Invalid file names throw `ArgumentException`
-- Failed loads throw `Win32Exception` with `Failed to load library '<name>'`; the trailing message is the native loader error string on Windows and on the .NET Framework/Mono `dlopen` path, and the wrapped managed-exception message (`DllNotFoundException` / `BadImageFormatException` / `FileLoadException`) on .NET 8+ non-Windows
-- Missing exports return `null` (classic API) or `false` (`TryGetExport`) — never throw
-- `FreeLibrary` is safe to call with `null` or an already closed handle (idempotent)
-- `LoadLibraryFlags` are silently ignored on Linux/macOS; the library always passes `RTLD_NOW` on those platforms
-- The IL-emit path in `GetDelegateForFunctionPointer<T>` does **not** perform parameter marshaling — for string / struct marshaling use `Marshal.GetDelegateForFunctionPointer<T>(ptr)` instead
+Missing feature, invalid request, or failed load? Here's what to expect.
 
----
-
-## 🤔 When to reach for this library
-
-Use this when you need **any** of:
-
-| Scenario | Why `DllImport` isn't enough |
+| Situation | Result |
 | --- | --- |
-| 🔀 DLL path chosen at runtime | `DllImport` wants a compile-time string |
-| 🎯 Optional / version-specific exports | `DllImport` throws `EntryPointNotFoundException` |
-| 🏢 Explicit `LOAD_LIBRARY_SEARCH_*` flags | `DllImport` uses default loader search order |
-| 🪝 Managed callback ↔ native function pointer | `Marshal.GetFunctionPointerForDelegate` is OK, but you have to manage the GC root yourself |
-| 🧬 `delegate* unmanaged[X]<...>` from a dynamically loaded DLL | `DllImport` doesn't apply; you need `dlsym`/`GetProcAddress` |
-| 🔒 `SafeHandle`-backed native module lifetime | `Marshal.FreeLibrary` is a foot-gun |
+| Null, empty, whitespace-only, or embedded-NUL library/export name | `ArgumentException`. |
+| Null handle passed to static lookup | `ArgumentNullException`. |
+| Missing export on an undisposed owner with a valid name | `null` for typed lookup; `false` and `IntPtr.Zero` for raw lookup. |
+| Lookup on a disposed owner with a valid name | `ObjectDisposedException`. |
+| Native library load failure | `Win32Exception`; see platform-specific diagnostics below. |
 
-If the DLL is fixed at compile time *and* every export is always present, `DllImport` (or `[LibraryImport]` on `net7+`) is absolutely the right tool. 👍
+Export names are case-sensitive. Spaces and Unicode in valid paths are preserved;
+names are not trimmed or normalized.
 
----
+On Windows, the default flag combination is
+`LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32`. For a **bare
+module name**, the loader removes `LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR` and searches
+System32. Fully qualified paths retain both flags. Other flag combinations are
+passed through unchanged.
 
-## 💡 Common use cases
+Use a fully qualified path for third-party libraries. Relative paths containing
+directory components are not automatically made absolute and are not suitable
+for the default Windows flags. For example:
 
-- 🔧 Loading Windows system DLLs such as `kernel32.dll` or `user32.dll`
-- 🏢 Dynamically integrating with third-party native SDKs whose install path you read at runtime
-- 🎯 Supporting optional native features across multiple versions of the same DLL
-- 🪝 Registering managed callbacks with unmanaged code
-- 🐧🍎 Writing cross-platform interop that speaks to platform-specific shared libraries (`libfoo.so`, `libfoo.dylib`, `foo.dll`)
-- 🧱 Choosing DLL resolution behavior explicitly to reduce DLL-hijacking risk
+```csharp
+using AdaskoTheBeAsT.Interop.Unmanaged;
 
----
+using var library = new UnmanagedLibrary(
+    @"C:\Native\MyLibrary.dll",
+    LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR |
+    LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32);
+```
+
+Windows load failures preserve `Win32Exception.NativeErrorCode` and include the
+requested name and system error description. Modern non-Windows failures preserve
+the underlying loader exception as `InnerException`; `NativeErrorCode` is zero,
+not a POSIX error number.
+
+Linux/macOS ignore `LoadLibraryFlags`, including resource-only and
+signature-related flags. Loading there is a normal executable load, **not**
+portable safe inspection of a binary.
+
+<a name="trimming-and-nativeaot"></a>
+
+## ✂️ Trimming and NativeAOT
+
+Shipping a trimmed or NativeAOT app? Choose the no-emission paths deliberately.
+The package as a whole is **not advertised as AOT-compatible**.
+
+| Capability | Trimming / NativeAOT considerations |
+| --- | --- |
+| Load/free and raw export lookup | No runtime emission. Covered by the consumer smoke sample. |
+| Raw unmanaged pointers and `UnmanagedCallersOnly` callbacks | Preferred no-emission path. Exact signatures and lifetimes remain your responsibility. |
+| Concrete delegate marshaling and `PinConcreteDelegate` | Require compiler-supported marshaling stubs for the concrete signature. The sample covers integer callbacks, not all signatures. |
+| Generic callback proxies, `GetFunctionPointerForDelegate`, and `PinDelegate` | Public helpers carry dynamic-code and reflection annotations on modern targets. Generic proxies need preserved metadata when trimmed and cannot be generated under NativeAOT. |
+| Raw `calli` delegate wrapper | Requires dynamic code and reflected signature metadata; throws under NativeAOT. |
+
+The [consumer sample](samples/README.md) demonstrates trimmed and NativeAOT paths
+and expected dynamic-code rejection. See the [migration guide](MIGRATION.md#trimming-and-nativeaot)
+for alternatives to warning suppression.
+
+Modern callback proxies use weak-key caching and collectible generated assemblies.
+The [collectible-context test](test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/CollectibleCallbackTests.cs)
+checks plugin unload behavior after callbacks are released. Legacy generated
+assemblies are not collectible; weak keys alone cannot unload them.
+
+<a name="build-and-test"></a>
 
 ## 🧪 Build and test
 
+Want to try the latest changes or contribute a fix? Here's the local setup.
+
+Building from source requires the SDK pinned in [global.json](global.json)
+(currently .NET SDK `10.0.401`). Native tests also require CMake 3.20+ and a C
+compiler. On Windows, install the Visual Studio C++ build tools and ensure
+`cmake` is on `PATH`, or pass `-p:CMakeCommand="<path-to-cmake.exe>"` when building.
+Install the .NET 8 and 9 runtimes to run those test targets.
+
+From the repository root on Windows:
+
 ```powershell
-dotnet build .\AdaskoTheBeAsT.Interop.Unmanaged.slnx
-dotnet test  .\AdaskoTheBeAsT.Interop.Unmanaged.slnx --no-build
+dotnet build .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release
+dotnet test --solution .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release --no-build
 ```
 
-The test suite runs across the full 9-TFM matrix. Windows-specific tests (things that call `kernel32`) self-skip on non-Windows hosts.
+For one modern target, including on Linux/macOS:
 
----
+```shell
+dotnet test --project test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/AdaskoTheBeAsT.Interop.Unmanaged.Test.csproj -c Release -f net10.0
+```
 
-## 🧪 Quality notes
+The current checkout uses Microsoft.Testing.Platform through `global.json`.
+Use `--solution` or `--project`, not the older positional `dotnet test` syntax.
+Native fixtures are built for the test architecture; a missing fixture is a
+failure, not a silent skip. Windows-specific smoke tests report skips on modern
+non-Windows runtimes.
 
-This project is built with quality-oriented defaults:
+More information:
 
-- 🛡️ Nullable reference types enabled
-- 📝 Generated XML documentation in every package
-- 🚨 `TreatWarningsAsErrors=true` across all projects
-- 🧪 Automated tests across `net462`–`net481` and `net8`–`net10`
-- 🔬 Static analysis via Roslyn analyzers + SonarCloud quality gate
-- 🧬 Deterministic, `ContinuousIntegrationBuild=true` packages
-- 🔍 Source Link + `snupkg` symbols for step-in debugging
+- [Native fixture and toolchain](test/native/README.md)
+- [Trimmed, NativeAOT, and retained-callback samples](samples/README.md)
+- [Callback benchmarks](benchmarks/README.md)
+- [Historical validation evidence and remaining gaps](docs/validation.md)
+- [Changelog](CHANGELOG.md) and [migration guide](MIGRATION.md)
 
----
+### 🤝 Contributing
 
-## ❓ FAQ
+Found a bug, a confusing example, or a native SDK edge case? Contributions are
+welcome, including documentation improvements.
 
-### Do I need to pass a full DLL path?
-
-Not always. A bare module name like `kernel32.dll` works when the selected flags can resolve it. Use a fully qualified path when you want deterministic loading from a specific location.
-
-### What happens if the export does not exist?
-
-`GetUnmanagedFunction<TDelegate>` returns `null`. `TryGetExport` returns `false` with `IntPtr.Zero`. No exceptions.
-
-### Do I need to use `DelegatePin` directly?
-
-Usually no. Most consumers only need to keep the `binder` returned by `GetFunctionPointerForDelegate` rooted for the required lifetime.
-
-### Can I use this on Linux and macOS?
-
-Yes. 🎉 On `net8+` the non-Windows path delegates to `System.Runtime.InteropServices.NativeLibrary`; on .NET Framework under Mono it falls back to direct `dlopen`/`dlsym` P/Invokes. Note that `LoadLibraryFlags` are silently ignored on non-Windows platforms and `RTLD_NOW` is used.
-
-### Which should I use: `GetUnmanagedFunction<T>` or `TryGetExport` + `delegate*`?
-
-On `net5+` with `unsafe` code, `TryGetExport` + `delegate* unmanaged[Stdcall]<...>` gives you zero-alloc direct calls. On older TFMs, or when you want marshaling (strings, structs), stick with `GetUnmanagedFunction<T>`.
-
-### Can I re-wrap a raw `IntPtr` back into a delegate?
-
-Yes — `GetDelegateForFunctionPointer<T>(ptr, callingConvention)` IL-emits a thunk using `calli`. **Note:** this path does not marshal parameters. For marshaling (e.g. `string` ↔ `LPWStr`), use `Marshal.GetDelegateForFunctionPointer<T>(ptr)` instead.
-
-### Does it support musl-based Linux (Alpine)?
-
-On `net8+` it does — `NativeLibrary.Load` handles the search. On .NET Framework under Mono, the current hard-coded soname is `libdl.so.2`, which works on glibc distros; Alpine/musl is not explicitly supported on the Mono path.
-
----
-
-## 🙋 Contributing
-
-Found a bug? Got an idea? Spotted a typo that's been haunting you? 👻
-
-1. 🐙 Open an issue describing the problem or the proposal.
-2. 🛠️ Fork + branch (`feature/your-idea`).
-3. ✅ Run `dotnet build` + `dotnet test` across the full matrix.
-4. ✨ Add/update tests — the strict-build settings will tell you if something's off.
-5. 🚀 Open a PR — the CI will do the rest.
-
----
+1. Open an issue describing the bug or proposed change. For interop failures,
+   include the package version, target framework, OS, architecture, and a minimal
+   reproduction.
+2. Add tests for behavior changes and run the relevant build and test targets.
+3. Open a pull request and tell us which platform checks you could not run.
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+[MIT](LICENSE).
 
 ---
 
-<p align="center">
-  Because <em>dynamic</em> native DLL loading in .NET shouldn't feel like defusing a bomb. 💣➡️🕊️<br/>
-  Made with ❤️ (and a lot of coffee ☕) by <a href="https://github.com/AdaskoTheBeAsT">AdaskoTheBeAsT</a>.
-</p>
+Made with ❤️ by [AdaskoTheBeAsT](https://github.com/AdaskoTheBeAsT) for .NET
+developers who occasionally need to speak native.

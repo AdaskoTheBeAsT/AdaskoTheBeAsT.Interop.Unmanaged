@@ -67,6 +67,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void LoadLibrary_WithValidDll_ReturnsValidHandle()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Act
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -79,6 +84,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void LoadLibrary_WithDefaultFlags_LoadsSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Act
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -90,6 +100,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void LoadLibrary_WithCustomFlags_LoadsSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
 
@@ -104,6 +119,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void LoadLibrary_WithDataFileFlag_LoadsSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE;
 
@@ -128,6 +148,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void FreeLibrary_WithValidHandle_FreesSuccessfully()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -141,6 +166,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void FreeLibrary_WithAlreadyClosedHandle_DoesNotThrow()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
         UnmanagedLibrary.FreeLibrary(handle);
@@ -155,6 +185,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void FreeLibrary_CalledMultipleTimes_DoesNotThrow()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -173,6 +208,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithValidFunction_ReturnsDelegate()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -197,6 +237,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithWhitespaceFunctionName_ThrowsArgumentException()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -212,6 +257,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithNonExistentFunction_ReturnsNull()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -225,6 +275,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void GetUnmanagedFunction_CalledMultipleTimes_ReturnsSameFunction()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -240,6 +295,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithDifferentDelegateTypes_ReturnsCorrectDelegates()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
@@ -255,6 +315,11 @@ public class UnmanagedLibraryStaticMethodsTests
     [Fact]
     public void GetUnmanagedFunction_InvokedFunction_ReturnsExpectedResult()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
         var function = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");

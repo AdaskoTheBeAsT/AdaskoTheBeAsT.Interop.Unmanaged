@@ -1,11 +1,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
@@ -14,16 +10,14 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// </summary>
 /// <remarks>
 /// Works on Windows (via <c>LoadLibraryEx</c>/<c>GetProcAddress</c>/<c>FreeLibrary</c>), Linux and
-/// macOS (via <c>dlopen</c>/<c>dlsym</c>/<c>dlclose</c>). On non-Windows platforms the
-/// <see cref="LoadLibraryFlags"/> argument is ignored and the library is loaded with
-/// <c>RTLD_NOW</c>.
+/// macOS (via <c>NativeLibrary</c> on modern .NET or a legacy <c>dlopen</c> fallback).
+/// Non-Windows loading ignores <see cref="LoadLibraryFlags"/> and performs a normal load;
+/// only the legacy fallback explicitly specifies <c>RTLD_NOW</c>.
 /// This type owns the loaded module handle and frees it when disposed. Any function pointer or
 /// object obtained from the library becomes unsafe to use after the module is unloaded.
 /// </remarks>
-public sealed class UnmanagedLibrary : IDisposable
+public sealed partial class UnmanagedLibrary : IDisposable
 {
-    private const string Invoke = "Invoke";
-
     /// <summary>
     /// Unmanaged resource. CLR will ensure SafeHandles get freed, without requiring a finalizer on this class.
     /// </summary>
@@ -36,12 +30,12 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Module name or fully qualified path of the library to load. With the default flags on
     /// Windows, the system searches <c>System32</c> for bare module names and uses the DLL
     /// directory for dependency resolution when a fully qualified path is provided. On Linux and
-    /// macOS, <paramref name="fileName"/> is passed to <c>dlopen</c> which searches standard
-    /// locations such as <c>LD_LIBRARY_PATH</c>/<c>DYLD_LIBRARY_PATH</c> for bare names.
+    /// macOS, the platform runtime controls name resolution. Relative paths with directory
+    /// components are not automatically converted to absolute paths.
     /// </param>
     /// <param name="flags">Flags passed to <c>LoadLibraryEx</c> on Windows. Ignored on Linux and macOS.</param>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="fileName"/> is <see langword="null"/>, empty, or whitespace.
+    /// Thrown when <paramref name="fileName"/> is null, empty, whitespace-only, or contains NUL.
     /// </exception>
     /// <exception cref="Win32Exception">Thrown when the library cannot be loaded.</exception>
     public UnmanagedLibrary(
@@ -59,13 +53,13 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Module name or fully qualified path of the library to load. With the default flags on
     /// Windows, the system searches <c>System32</c> for bare module names and uses the DLL
     /// directory for dependency resolution when a fully qualified path is provided. On Linux and
-    /// macOS, <paramref name="fileName"/> is passed to <c>dlopen</c> which searches standard
-    /// locations such as <c>LD_LIBRARY_PATH</c>/<c>DYLD_LIBRARY_PATH</c> for bare names.
+    /// macOS, the platform runtime controls name resolution. Relative paths with directory
+    /// components are not automatically converted to absolute paths.
     /// </param>
     /// <param name="flags">Flags passed to <c>LoadLibraryEx</c> on Windows. Ignored on Linux and macOS.</param>
     /// <returns>A safe handle for the loaded module.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="fileName"/> is <see langword="null"/>, empty, or whitespace.
+    /// Thrown when <paramref name="fileName"/> is null, empty, whitespace-only, or contains NUL.
     /// </exception>
     /// <exception cref="Win32Exception">Thrown when the library cannot be loaded.</exception>
     public static SafeLibraryHandle LoadLibrary(
@@ -105,7 +99,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Thrown when <paramref name="safeLibraryHandle"/> is <see langword="null"/>.
     /// </exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="functionName"/> is <see langword="null"/>, empty, or whitespace.
+    /// Thrown when <paramref name="functionName"/> is null, empty, whitespace-only, or contains NUL.
     /// </exception>
     /// <remarks>
     /// Keep <paramref name="safeLibraryHandle"/> alive for at least as long as the returned
@@ -135,7 +129,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Thrown when <paramref name="safeLibraryHandle"/> is <see langword="null"/>.
     /// </exception>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="functionName"/> is <see langword="null"/>, empty, or whitespace.
+    /// Thrown when <paramref name="functionName"/> is null, empty, whitespace-only, or contains NUL.
     /// </exception>
     /// <remarks>
     /// This overload does not allocate a managed delegate and is the preferred way to obtain a
@@ -178,16 +172,22 @@ public sealed class UnmanagedLibrary : IDisposable
     /// <returns>The created delegate.</returns>
     /// <exception cref="ArgumentException">Thrown when <paramref name="ptr"/> is <see cref="IntPtr.Zero"/>.</exception>
     /// <exception cref="InvalidOperationException">
-    /// Thrown when <typeparamref name="T"/> is not a delegate type.
+    /// Thrown when <typeparamref name="T"/> is not a concrete, closed delegate type.
     /// </exception>
+    /// <exception cref="ArgumentOutOfRangeException">The convention is not Cdecl, StdCall, or Winapi.</exception>
+    /// <exception cref="NotSupportedException">The signature requires marshaling or is not in the supported raw ABI subset.</exception>
+    /// <exception cref="PlatformNotSupportedException">Runtime code generation is unavailable.</exception>
     /// <remarks>
     /// The delegate type should describe the exact parameter and return types of the unmanaged
     /// export. A mismatched signature or calling convention can corrupt the process.
     /// <para>
     /// Unlike <see cref="Marshal.GetDelegateForFunctionPointer{TDelegate}(IntPtr)"/>, this method
     /// emits a raw <c>calli</c> and does not perform parameter marshaling. All parameter and
-    /// return types must already be native-compatible (primitives, <see cref="IntPtr"/>, or
-    /// blittable structs). For types that require marshaling (for example <see langword="string"/> to
+    /// return types must already be native-compatible: numeric primitives other than bool/char,
+    /// pointers, IntPtr/UIntPtr, enums, or nonempty sequential/explicit structs composed of these.
+    /// Managed ref/out parameters and returns, decimal, nullable values, MarshalAs, and SetLastError
+    /// are rejected. Use byte for an 8-bit native Boolean, int for Windows BOOL, and ushort for a
+    /// UTF-16 code unit; native widths depend on the API. For marshaling (for example string to
     /// <c>LPWStr</c>) prefer <see cref="Marshal.GetDelegateForFunctionPointer{TDelegate}(IntPtr)"/>
     /// with an <see cref="UnmanagedFunctionPointerAttribute"/> on the delegate type instead.
     /// </para>
@@ -204,8 +204,8 @@ public sealed class UnmanagedLibrary : IDisposable
     /// <item>
     /// <description>
     /// On <c>net5.0</c> and newer, prefer C# unmanaged function pointers, for example
-    /// <c>delegate* unmanaged[Stdcall]&lt;uint&gt;</c>. They are zero-overhead, verifiable,
-    /// AOT-friendly, and carry the calling convention as part of the type. Obtain the raw
+    /// <c>delegate* unmanaged[Stdcall]&lt;uint&gt;</c>. They avoid delegate allocation and
+    /// support AOT, but require an exact signature, calling convention, and module lifetime. Obtain the raw
     /// <see cref="IntPtr"/> with <see cref="TryGetExport(string, out IntPtr)"/> (or the static
     /// overload) and cast it directly to the desired function pointer type inside an
     /// <see langword="unsafe"/> block.
@@ -216,6 +216,10 @@ public sealed class UnmanagedLibrary : IDisposable
     /// runtime for a signature that contains only native-compatible types.
     /// </para>
     /// </remarks>
+#if NET8_0_OR_GREATER
+    [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk. Use TryGetExport and an unmanaged function pointer instead.")]
+    [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields. Preserve all signature metadata.")]
+#endif
     public static T? GetDelegateForFunctionPointer<T>(IntPtr ptr, CallingConvention conv)
         where T : class
     {
@@ -224,34 +228,7 @@ public sealed class UnmanagedLibrary : IDisposable
             throw new ArgumentException("Value cannot be zero.", nameof(ptr));
         }
 
-        var delegateType = EnsureDelegateType<T>();
-        var method = delegateType.GetMethod(Invoke);
-        var returnType = method!.ReturnType;
-        var paramTypes =
-            method
-            .GetParameters()
-            .Select(x => x.ParameterType)
-            .ToArray();
-        var invoke = new DynamicMethod(Invoke, returnType, paramTypes, typeof(Delegate));
-        var il = invoke.GetILGenerator();
-        for (int i = 0; i < paramTypes.Length; i++)
-        {
-            il.Emit(OpCodes.Ldarg, i);
-        }
-
-        if (IntPtr.Size == sizeof(int))
-        {
-            il.Emit(OpCodes.Ldc_I4, ptr.ToInt32());
-        }
-        else
-        {
-            il.Emit(OpCodes.Ldc_I8, ptr.ToInt64());
-        }
-
-        il.Emit(OpCodes.Conv_I);
-        il.EmitCalli(OpCodes.Calli, conv, returnType, paramTypes);
-        il.Emit(OpCodes.Ret);
-        return invoke.CreateDelegate(delegateType) as T;
+        return CreateRawDelegate<T>(ptr, conv);
     }
 
     /// <summary>
@@ -269,11 +246,12 @@ public sealed class UnmanagedLibrary : IDisposable
     /// Thrown when <paramref name="delegateCallback"/> is <see langword="null"/>.
     /// </exception>
     /// <remarks>
-    /// For delegates that cannot be marshaled directly (open generic delegate types such as
+    /// For delegates that cannot be marshaled directly (constructed generic delegate types such as
     /// <c>Func&lt;T, TResult&gt;</c>), this method creates a runtime proxy delegate and stores
     /// both delegates inside <paramref name="binder"/>. If the source delegate type declares
     /// an <see cref="UnmanagedFunctionPointerAttribute"/>, that attribute is copied onto the
-    /// proxy so the native calling convention is preserved.
+    /// proxy so the native calling convention is preserved. Parameter and return-value
+    /// marshaling attributes and the full invocation list are also preserved.
     /// <para>
     /// <b>Preferred alternatives:</b>
     /// <list type="bullet">
@@ -299,22 +277,70 @@ public sealed class UnmanagedLibrary : IDisposable
     /// delegate type to unmanaged code on older runtimes that cannot use the options above.
     /// </para>
     /// </remarks>
+#if NET8_0_OR_GREATER
+    [RequiresDynamicCode("Constructed generic callbacks require a runtime proxy. Use PinConcreteDelegate or UnmanagedCallersOnly instead.")]
+    [RequiresUnreferencedCode("Generic callback proxies inspect the runtime delegate type and its marshaling metadata.")]
+#endif
     public static IntPtr GetFunctionPointerForDelegate<T>(T delegateCallback, out object binder)
         where T : class, Delegate
     {
         ThrowIfNull(delegateCallback, nameof(delegateCallback));
         Delegate del = delegateCallback;
 
-        try
+        if (del.GetType().IsGenericType)
         {
-            var result = Marshal.GetFunctionPointerForDelegate(del);
-            binder = del;
-            return result;
+            return GetFunctionPointerForGenericDelegate(del, out binder);
         }
-        catch (ArgumentException)
+
+        var result = Marshal.GetFunctionPointerForDelegate(del);
+        binder = del;
+        return result;
+    }
+
+    /// <summary>
+    /// Creates a callback pointer and a scope that roots its managed callback.
+    /// </summary>
+    /// <typeparam name="TDelegate">The callback delegate type.</typeparam>
+    /// <param name="callback">The callback to expose to native code.</param>
+    /// <returns>A keep-alive scope for the callback pointer.</returns>
+    /// <remarks>
+    /// Dispose is only a keep-alive boundary. Before ending the scope, unregister any retained
+    /// native callback and wait for in-flight callbacks. Translate callback exceptions into the
+    /// native API's error convention; do not let them escape across the native boundary.
+    /// The native module owner must separately remain undisposed while its code may execute.
+    /// </remarks>
+#if NET8_0_OR_GREATER
+    [RequiresDynamicCode("Constructed generic callbacks require a runtime proxy. Use PinConcreteDelegate or UnmanagedCallersOnly instead.")]
+    [RequiresUnreferencedCode("Generic callback proxies inspect the runtime delegate type and its marshaling metadata.")]
+#endif
+    public static DelegatePin PinDelegate<TDelegate>(TDelegate callback)
+        where TDelegate : Delegate
+    {
+        ThrowIfNull(callback, nameof(callback));
+        var pointer = GetFunctionPointerForDelegate(callback, out var binder);
+        return new DelegatePin(pointer, binder);
+    }
+
+    /// <summary>
+    /// Roots a concrete, non-generic callback without generating a proxy or emitting IL.
+    /// </summary>
+    /// <typeparam name="TDelegate">A concrete delegate type with native marshaling support.</typeparam>
+    /// <param name="callback">Callback to root for the lifetime scope.</param>
+    /// <returns>A keep-alive scope; disposing it does not unregister native callbacks.</returns>
+    /// <remarks>
+    /// NativeAOT requires marshaling support for the concrete delegate signature at compile time.
+    /// UnmanagedCallersOnly and raw function pointers avoid delegate marshaling entirely.
+    /// </remarks>
+    public static DelegatePin PinConcreteDelegate<TDelegate>(TDelegate callback)
+        where TDelegate : Delegate
+    {
+        ThrowIfNull(callback, nameof(callback));
+        if (callback.GetType().IsGenericType)
         {
-            return GetFunctionPointerForGenericDelegate<T>(del, out binder);
+            throw new ArgumentException("A concrete, non-generic callback delegate is required.", nameof(callback));
         }
+
+        return new DelegatePin(Marshal.GetFunctionPointerForDelegate(callback), callback);
     }
 
     /// <summary>
@@ -324,7 +350,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// <param name="functionName">Case-sensitive export name to look up.</param>
     /// <returns>The requested delegate, or <see langword="null"/> when the export is not found.</returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="functionName"/> is <see langword="null"/>, empty, or whitespace.
+    /// Thrown when <paramref name="functionName"/> is null, empty, whitespace-only, or contains NUL.
     /// </exception>
     /// <remarks>
     /// Keep this instance alive for at least as long as the returned delegate or any objects
@@ -350,7 +376,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// <see langword="true"/> if the export was found; <see langword="false"/> otherwise.
     /// </returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="functionName"/> is <see langword="null"/>, empty, or whitespace.
+    /// Thrown when <paramref name="functionName"/> is null, empty, whitespace-only, or contains NUL.
     /// </exception>
     /// <remarks>
     /// This method does not allocate a managed delegate and is the preferred way to obtain a
@@ -360,24 +386,7 @@ public sealed class UnmanagedLibrary : IDisposable
     /// </remarks>
     public bool TryGetExport(string functionName, out IntPtr address)
     {
-        ValidateTextArgument(functionName, nameof(functionName));
-
-        var addedRef = false;
-        try
-        {
-            _safeLibraryHandle.DangerousAddRef(ref addedRef);
-#pragma warning disable S3869
-            address = NativeLoader.GetExport(_safeLibraryHandle.DangerousGetHandle(), functionName);
-#pragma warning restore S3869
-            return address != IntPtr.Zero;
-        }
-        finally
-        {
-            if (addedRef)
-            {
-                _safeLibraryHandle.DangerousRelease();
-            }
-        }
+        return TryGetExport(_safeLibraryHandle, functionName, out address);
     }
 
     /// <summary>
@@ -431,23 +440,16 @@ public sealed class UnmanagedLibrary : IDisposable
         }
     }
 
-    private static Type EnsureDelegateType<T>()
-        where T : class
-    {
-        var delegateType = typeof(T);
-        if (!typeof(Delegate).IsAssignableFrom(delegateType))
-        {
-            throw new InvalidOperationException("The type argument must be a delegate type.");
-        }
-
-        return delegateType;
-    }
-
     private static void ValidateTextArgument(string? value, string paramName)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        if (value == null || string.IsNullOrWhiteSpace(value))
         {
             throw new ArgumentException("Value cannot be null or whitespace.", paramName);
+        }
+
+        if (value.IndexOf('\0') >= 0)
+        {
+            throw new ArgumentException("Value cannot contain a NUL character.", paramName);
         }
     }
 
@@ -465,176 +467,5 @@ public sealed class UnmanagedLibrary : IDisposable
             throw new ArgumentNullException(paramName);
         }
 #endif
-    }
-
-    private static IntPtr GetFunctionPointerForGenericDelegate<T>(Delegate del, out object binder)
-        where T : class, Delegate
-    {
-        var delegateType = typeof(T);
-        var method = delegateType.GetMethod(Invoke);
-        var returnType = method!.ReturnType;
-        var paramTypes =
-            method
-            .GetParameters()
-            .Select((x) => x.ParameterType)
-            .ToArray();
-
-        var name = BuildProxyTypeName(delegateType, paramTypes);
-        var proxyType = GetOrCreateProxyDelegateType(delegateType, name, returnType, paramTypes);
-
-        // marshal and bind the proxy so the pointer doesn't become invalid
-        var repProxy = Delegate.CreateDelegate(proxyType!, del.Target, del.Method);
-        var result = Marshal.GetFunctionPointerForDelegate(repProxy);
-        binder = Tuple.Create(del, repProxy);
-        return result;
-    }
-
-    private static string BuildProxyTypeName(Type delegateType, Type[] paramTypes)
-    {
-        var nameBuilder = new StringBuilder();
-        nameBuilder.Append(delegateType.Name);
-        foreach (var pType in paramTypes)
-        {
-            nameBuilder
-                .Append('`')
-                .Append(pType.Name);
-        }
-
-        return nameBuilder.ToString();
-    }
-
-    private static Type? GetOrCreateProxyDelegateType(
-        Type delegateType,
-        string name,
-        Type returnType,
-        Type[] paramTypes)
-    {
-        // check if we've previously proxied this type before
-        var proxyAssemblyExist =
-            Array.Find(
-                AppDomain
-                    .CurrentDomain
-                    .GetAssemblies(),
-                (x) => x.GetName().Name?.Equals(name, StringComparison.OrdinalIgnoreCase) ?? false);
-
-        if (proxyAssemblyExist != null)
-        {
-            // pull the type from an existing proxy assembly
-            return proxyAssemblyExist.GetType(name);
-        }
-
-        // create a proxy assembly
-        var proxyAssembly = AssemblyBuilder.DefineDynamicAssembly(
-            new AssemblyName(name),
-            AssemblyBuilderAccess.Run);
-        var proxyModule = proxyAssembly.DefineDynamicModule(name);
-
-        // begin creating the proxy type
-        var proxyTypeBuilder = proxyModule.DefineType(
-            name,
-            TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.Public,
-            typeof(MulticastDelegate));
-
-        ApplyUnmanagedFunctionPointerAttribute(delegateType, proxyTypeBuilder);
-        DefineDelegateMembers(proxyTypeBuilder, returnType, paramTypes);
-
-        // create & wrap an instance of the proxy type
-        return proxyTypeBuilder.CreateTypeInfo();
-    }
-
-    private static void ApplyUnmanagedFunctionPointerAttribute(Type delegateType, TypeBuilder proxyTypeBuilder)
-    {
-        // If the source delegate type declares an [UnmanagedFunctionPointer] attribute,
-        // propagate it (including CharSet, BestFitMapping, ThrowOnUnmappableChar,
-        // SetLastError) to the proxy so the runtime thunk preserves the original interop
-        // semantics. Otherwise the proxy would default to StdCall/WinApi + CharSet.Auto
-        // which can cause stack imbalance crashes for Cdecl targets and incorrect string
-        // marshaling for callbacks that rely on CharSet.Unicode/Ansi.
-        var ufp = delegateType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
-        if (ufp == null)
-        {
-            return;
-        }
-
-        var ufpAttributeType = typeof(UnmanagedFunctionPointerAttribute);
-        const BindingFlags ufpFieldBindingFlags =
-            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
-        var ufpCtor = ufpAttributeType.GetConstructor([typeof(CallingConvention)]);
-        var charSetField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.CharSet), ufpFieldBindingFlags);
-        var bestFitMappingField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.BestFitMapping), ufpFieldBindingFlags);
-        var throwOnUnmappableCharField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.ThrowOnUnmappableChar), ufpFieldBindingFlags);
-        var setLastErrorField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.SetLastError), ufpFieldBindingFlags);
-        if (ufpCtor == null
-            || charSetField == null
-            || bestFitMappingField == null
-            || throwOnUnmappableCharField == null
-            || setLastErrorField == null)
-        {
-            return;
-        }
-
-        proxyTypeBuilder.SetCustomAttribute(
-            new CustomAttributeBuilder(
-                ufpCtor,
-                [ufp.CallingConvention],
-                namedFields:
-                [
-                    charSetField,
-                    bestFitMappingField,
-                    throwOnUnmappableCharField,
-                    setLastErrorField,
-                ],
-                fieldValues:
-                [
-                    ufp.CharSet,
-                    ufp.BestFitMapping,
-                    ufp.ThrowOnUnmappableChar,
-                    ufp.SetLastError,
-                ]));
-    }
-
-    private static void DefineDelegateMembers(TypeBuilder proxyTypeBuilder, Type returnType, Type[] paramTypes)
-    {
-        // implement the basic methods of a delegate as the compiler does
-        const MethodAttributes methodAttributes =
-            MethodAttributes.Public
-            | MethodAttributes.HideBySig
-            | MethodAttributes.NewSlot
-            | MethodAttributes.Virtual;
-        proxyTypeBuilder
-            .DefineConstructor(
-                MethodAttributes.FamANDAssem
-                | MethodAttributes.Family
-                | MethodAttributes.HideBySig
-                | MethodAttributes.RTSpecialName,
-                CallingConventions.Standard,
-                [typeof(object), typeof(IntPtr)])
-            .SetImplementationFlags(
-                MethodImplAttributes.Runtime);
-
-        proxyTypeBuilder
-            .DefineMethod(
-                "BeginInvoke",
-                methodAttributes,
-                typeof(IAsyncResult),
-                paramTypes)
-            .SetImplementationFlags(
-                MethodImplAttributes.Runtime);
-        proxyTypeBuilder
-            .DefineMethod(
-                "EndInvoke",
-                methodAttributes,
-                returnType: null,
-                [typeof(IAsyncResult)])
-            .SetImplementationFlags(
-                MethodImplAttributes.Runtime);
-        proxyTypeBuilder
-            .DefineMethod(
-                Invoke,
-                methodAttributes,
-                returnType,
-                paramTypes)
-            .SetImplementationFlags(
-                MethodImplAttributes.Runtime);
     }
 }

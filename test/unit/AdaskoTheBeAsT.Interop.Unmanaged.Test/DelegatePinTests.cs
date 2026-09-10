@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using AwesomeAssertions;
 using Xunit;
@@ -8,6 +9,12 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 public class DelegatePinTests
 {
     private delegate int SimpleDelegate(int x, int y);
+
+    [Fact]
+    public void UsingScope_KeepsObjectAliveUntilDispose()
+    {
+        IsObjectAliveInsideScope().Should().BeTrue();
+    }
 
     [Fact]
     public void Constructor_WithValidParameters_CreatesInstance()
@@ -214,6 +221,20 @@ public class DelegatePinTests
             customAttributes,
             attr => string.Equals(attr.GetType().Name, "IsReadOnlyAttribute", StringComparison.Ordinal));
 
-        (isReadOnlyStruct || typeof(DelegatePin).IsValueType).Should().BeTrue();
+        isReadOnlyStruct.Should().BeTrue();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static bool IsObjectAliveInsideScope()
+    {
+        var keepAlive = new object();
+        var reference = new WeakReference(keepAlive);
+        using var pin = new DelegatePin(new IntPtr(1), keepAlive);
+#pragma warning disable S1215 // Force collection to verify the keep-alive scope.
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+#pragma warning restore S1215
+        return reference.IsAlive;
     }
 }

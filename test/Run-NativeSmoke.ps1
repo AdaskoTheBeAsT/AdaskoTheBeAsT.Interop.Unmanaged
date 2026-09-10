@@ -9,7 +9,7 @@ $start.UseShellExecute = $false
 $start.ArgumentList.Add((Resolve-Path -LiteralPath $Library).Path)
 $process = [Diagnostics.Process]::Start($start)
 try {
-    if (!$process.WaitForExit($TimeoutSeconds * 1000)) {
+    if (-not $process.WaitForExit($TimeoutSeconds * 1000)) {
         $process.Kill($true)
         $process.WaitForExit()
         throw "Native smoke process timed out after $TimeoutSeconds seconds."

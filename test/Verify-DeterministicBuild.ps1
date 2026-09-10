@@ -21,7 +21,7 @@ try {
         foreach ($file in $files) {
             $source = Join-Path $root $file
             $target = Join-Path $copy $file
-            if (!(Test-Path -LiteralPath $source -PathType Leaf)) {
+            if (-not (Test-Path -LiteralPath $source -PathType Leaf)) {
                 if (Test-Path -LiteralPath $target -PathType Leaf) { Remove-Item -LiteralPath $target }
                 continue
             }

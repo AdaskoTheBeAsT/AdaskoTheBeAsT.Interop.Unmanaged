@@ -19,6 +19,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithValidFunction_ReturnsDelegate()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -32,6 +37,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithWhitespaceFunctionName_ThrowsArgumentException()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -47,6 +57,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithNonExistentFunction_ReturnsNull()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -60,6 +75,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_CalledMultipleTimes_ReturnsDelegates()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -75,6 +95,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_WithDifferentFunctions_ReturnsCorrectDelegates()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -92,6 +117,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_InvokedFunction_ReturnsExpectedResult()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
         var function = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
@@ -107,6 +137,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_MultipleFunctionsInvoked_AllWorkCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
         var getCurrentProcessId = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
@@ -122,26 +157,34 @@ public class UnmanagedLibraryInstanceMethodsTests
     }
 
     [Fact]
-    public void GetUnmanagedFunction_AfterDispose_FunctionStillWorks()
+    public void GetUnmanagedFunction_AfterDispose_ThrowsObjectDisposedException()
     {
-        // Arrange
-        GetCurrentProcessIdDelegate? function;
-        using (var library = new UnmanagedLibrary("kernel32.dll"))
+        if (TestHelpers.SkipIfNotWindows())
         {
-            function = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
+            return;
         }
 
-        // Act - Function pointer should still be valid even after library is disposed
-        // Note: This is dangerous in real code, but tests the behavior
-        var processId = function!();
+        // Arrange
+        using var library = new UnmanagedLibrary("kernel32.dll");
+#pragma warning disable IDISP016, IDISP017 // Exercise access after disposal.
+        library.Dispose();
+#pragma warning restore IDISP016, IDISP017
+
+        // Act
+        Action act = () => library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");
 
         // Assert
-        processId.Should().BeGreaterThan(0u);
+        act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]
     public void GetUnmanagedFunction_WithCaseSensitiveName_ReturnsCorrectFunction()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange
         using var library = new UnmanagedLibrary("kernel32.dll");
 
@@ -157,6 +200,11 @@ public class UnmanagedLibraryInstanceMethodsTests
     [Fact]
     public void GetUnmanagedFunction_LoadedWithDataFileFlag_LoadsAsDataFile()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         using var library = new UnmanagedLibrary("kernel32.dll", LoadLibraryFlags.LOAD_LIBRARY_AS_DATAFILE);
 
         // Assert - Library loaded successfully even with DATAFILE flag

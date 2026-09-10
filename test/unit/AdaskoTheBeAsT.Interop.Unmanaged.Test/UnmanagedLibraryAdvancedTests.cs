@@ -120,28 +120,17 @@ public class UnmanagedLibraryAdvancedTests
         // Arrange
         GenericDelegate<int> callback1 = value => Console.WriteLine(value);
         GenericDelegate<int> callback2 = value => Console.WriteLine(value * 2);
-        var proxyAssemblyName = typeof(GenericDelegate<int>).Name + "`" + typeof(int).Name;
-        var proxyAssembliesBefore = CountAssemblies(proxyAssemblyName);
 
         // Act
-        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out var _);
-        var proxyAssembliesAfterFirst = CountAssemblies(proxyAssemblyName);
-
-        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out var _);
-        var proxyAssembliesAfterSecond = CountAssemblies(proxyAssemblyName);
+        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out var binder1);
+        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out var binder2);
 
         // Assert
         ptr1.Should().NotBe(IntPtr.Zero);
         ptr2.Should().NotBe(IntPtr.Zero);
-        proxyAssembliesAfterFirst.Should().BeGreaterThanOrEqualTo(proxyAssembliesBefore);
-        proxyAssembliesAfterSecond.Should().Be(proxyAssembliesAfterFirst); // Should reuse the same proxy assembly
-
-        static int CountAssemblies(string assemblyName)
-        {
-            return Array.FindAll(
-                AppDomain.CurrentDomain.GetAssemblies(),
-                assembly => assembly.GetName().Name?.Equals(assemblyName, StringComparison.OrdinalIgnoreCase) ?? false).Length;
-        }
+        var proxy1 = ((Tuple<Delegate, Delegate>)binder1).Item2;
+        var proxy2 = ((Tuple<Delegate, Delegate>)binder2).Item2;
+        proxy2.GetType().Should().BeSameAs(proxy1.GetType());
     }
 
     [Fact]
@@ -255,7 +244,7 @@ public class UnmanagedLibraryAdvancedTests
 
         var attr = proxyType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
         attr.Should().NotBeNull();
-        attr!.CallingConvention.Should().Be(CallingConvention.Cdecl);
+        attr.CallingConvention.Should().Be(CallingConvention.Cdecl);
     }
 
     [Fact]
@@ -274,7 +263,7 @@ public class UnmanagedLibraryAdvancedTests
 
         var attr = proxyType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
         attr.Should().NotBeNull();
-        attr!.CallingConvention.Should().Be(CallingConvention.StdCall);
+        attr.CallingConvention.Should().Be(CallingConvention.StdCall);
         attr.CharSet.Should().Be(CharSet.Unicode);
         attr.BestFitMapping.Should().BeFalse();
         attr.ThrowOnUnmappableChar.Should().BeTrue();
@@ -368,6 +357,11 @@ public class UnmanagedLibraryAdvancedTests
     [Fact]
     public void GetFunctionPointerForDelegate_WithNativeFunction_WorksCorrectly()
     {
+        if (TestHelpers.SkipIfNotWindows())
+        {
+            return;
+        }
+
         // Arrange - Get a real native function pointer
         using var library = new UnmanagedLibrary("kernel32.dll");
         var nativeDelegate = library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("GetCurrentProcessId");

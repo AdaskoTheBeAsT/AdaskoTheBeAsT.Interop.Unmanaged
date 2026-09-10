@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <IsPackable>false</IsPackable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <ILLinkTreatWarningsAsErrors>true</ILLinkTreatWarningsAsErrors>
+    <IlcTreatWarningsAsErrors>true</IlcTreatWarningsAsErrors>
+    <PublishTrimmed Condition="'$(SmokePublishMode)' != ''">true</PublishTrimmed>
+    <PublishAot Condition="'$(SmokePublishMode)' == 'Aot'">true</PublishAot>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(SmokePackageVersion)' == ''">
+    <ProjectReference Include="../../src/AdaskoTheBeAsT.Interop.Unmanaged/AdaskoTheBeAsT.Interop.Unmanaged.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(SmokePackageVersion)' != ''">
+    <PackageReference Include="AdaskoTheBeAsT.Interop.Unmanaged" Version="$(SmokePackageVersion)" />
+  </ItemGroup>
+</Project>

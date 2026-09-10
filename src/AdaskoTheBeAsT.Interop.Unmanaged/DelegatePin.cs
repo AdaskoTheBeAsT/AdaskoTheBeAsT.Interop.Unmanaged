@@ -8,12 +8,12 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// <remarks>
 /// This type does not allocate or free unmanaged memory. It only extends the lifetime of a managed
 /// reference for the duration of the surrounding scope.
+/// It does not pin memory, unregister callbacks, invalidate pointers, or synchronize native work.
+/// Unregister retained callbacks and wait for them to finish before releasing this callback root.
 /// </remarks>
 public readonly struct DelegatePin : IDisposable
 {
-#pragma warning disable S4487
     private readonly object _keepAlive;
-#pragma warning restore S4487
 
     internal DelegatePin(
         IntPtr ptr,
@@ -32,11 +32,11 @@ public readonly struct DelegatePin : IDisposable
     /// Ends the keep-alive scope.
     /// </summary>
     /// <remarks>
-    /// This method intentionally performs no work because the managed reference is released by
-    /// leaving the surrounding scope.
+    /// Keeps the managed reference alive through the end of the scope, even when the JIT
+    /// would otherwise consider its last use to have occurred earlier.
     /// </remarks>
     public void Dispose()
     {
-        /* no-op; relies on scope; or free GCHandle if you use one */
+        GC.KeepAlive(_keepAlive);
     }
 }

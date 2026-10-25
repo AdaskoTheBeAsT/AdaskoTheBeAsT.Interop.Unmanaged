@@ -6,6 +6,8 @@ using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
+#pragma warning disable SA1121
+
 public class DelegatePinTests
 {
     private delegate int SimpleDelegate(int x, int y);
@@ -89,7 +91,9 @@ public class DelegatePinTests
     public void Dispose_CalledOnce_DoesNotThrow()
     {
         // Arrange
+#pragma warning disable CC0022
         var delegatePin = new DelegatePin(new IntPtr(12345), new object());
+#pragma warning restore CC0022
 
         // Act & Assert - no exception
 #pragma warning disable IDISP017

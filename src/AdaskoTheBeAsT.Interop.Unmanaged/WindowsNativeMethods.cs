@@ -7,7 +7,8 @@ using System.Security;
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 #pragma warning disable CA1060
-#pragma warning disable SYSLIB1054 // LibraryImport is net7+ only; this class targets all TFMs from net462 upward, so classic DllImport stays
+#pragma warning disable SA1121
+#pragma warning disable SYSLIB1054 // LibraryImport is net7+ only; this class targets all TFMs from net472 upward, so classic DllImport stays
 
 [ExcludeFromCodeCoverage]
 internal static class WindowsNativeMethods

@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+#pragma warning disable SA1121
+
 internal static class RawCallSignature
 {
 #if NET8_0_OR_GREATER
@@ -26,7 +28,7 @@ internal static class RawCallSignature
         }
 
         var method = delegateType.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
-        if (method == null || method.CallingConvention.HasFlag(CallingConventions.VarArgs))
+        if (method?.CallingConvention.HasFlag(CallingConventions.VarArgs) != false)
         {
             throw new InvalidOperationException("The delegate type must have a fixed Invoke signature.");
         }

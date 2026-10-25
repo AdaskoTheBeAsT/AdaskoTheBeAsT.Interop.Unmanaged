@@ -10,6 +10,8 @@ using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
+#pragma warning disable SA1121
+
 [Trait("Category", "Native")]
 public class CollectibleCallbackTests
 {
@@ -23,6 +25,12 @@ public class CollectibleCallbackTests
     {
         var offset = int.Parse("1", System.Globalization.CultureInfo.InvariantCulture);
         return new PluginCallback<int>(value => value + offset);
+    }
+
+    public static Delegate CreateStructCallback()
+    {
+        var offset = int.Parse("1", System.Globalization.CultureInfo.InvariantCulture);
+        return new PluginCallback<PluginValue>(value => value.Amount + offset);
     }
 
     [Fact]
@@ -42,6 +50,23 @@ public class CollectibleCallbackTests
         weak.IsAlive.Should().BeFalse();
     }
 
+    [Fact]
+    [SuppressMessage("Sonar", "S1215", Justification = "Repeated GC verifies collectible context and emitted type reachability.")]
+    public void ReleasedStructCallback_DoesNotRootCollectibleContext()
+    {
+        using var fixture = new NativeFixture();
+        using var library = new UnmanagedLibrary(fixture.LibraryPath);
+        var weak = InvokeCollectibleStructCallback(library);
+        for (var attempt = 0; attempt < 20 && weak.IsAlive; attempt++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
+
+        weak.IsAlive.Should().BeFalse();
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static WeakReference InvokeCollectibleCallback(UnmanagedLibrary library)
     {
@@ -50,7 +75,7 @@ public class CollectibleCallbackTests
         var type = assembly.GetType(typeof(CollectibleCallbackTests).FullName!)!;
         var callback = (Delegate)type.GetMethod(
             nameof(CreateCallback),
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(null, null)!;
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(obj: null, parameters: null)!;
         using (var scope = UnmanagedLibrary.PinDelegate(callback))
         {
             library.GetUnmanagedFunction<NativeInvoke>("fixture_invoke")!(scope.Ptr, 41).Should().Be(42);
@@ -59,6 +84,31 @@ public class CollectibleCallbackTests
         var weak = new WeakReference(context);
         context.Unload();
         return weak;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static WeakReference InvokeCollectibleStructCallback(UnmanagedLibrary library)
+    {
+        var context = new AssemblyLoadContext("struct-callback-test", isCollectible: true);
+        var assembly = context.LoadFromAssemblyPath(typeof(CollectibleCallbackTests).Assembly.Location);
+        var type = assembly.GetType(typeof(CollectibleCallbackTests).FullName!)!;
+        var callback = (Delegate)type.GetMethod(
+            nameof(CreateStructCallback),
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(obj: null, parameters: null)!;
+        using (var scope = UnmanagedLibrary.PinDelegate(callback))
+        {
+            library.GetUnmanagedFunction<NativeInvoke>("fixture_invoke")!(scope.Ptr, 41).Should().Be(42);
+        }
+
+        var weak = new WeakReference(context);
+        context.Unload();
+        return weak;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PluginValue
+    {
+        public readonly int Amount;
     }
 }
 #endif

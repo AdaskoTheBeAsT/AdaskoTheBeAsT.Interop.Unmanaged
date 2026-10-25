@@ -4,6 +4,8 @@ using AdaskoTheBeAsT.Interop.Unmanaged;
 
 namespace NativeSmoke;
 
+#pragma warning disable SA1121
+
 internal sealed class RetainedCallback : IDisposable
 {
     private readonly UnmanagedLibrary _library;

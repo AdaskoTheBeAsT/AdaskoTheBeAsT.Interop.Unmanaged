@@ -6,6 +6,8 @@ using AdaskoTheBeAsT.Interop.Unmanaged;
 
 namespace NativeSmoke;
 
+#pragma warning disable SA1121
+
 [SuppressMessage("Sonar", "S6640", Justification = "Exercises exact C fixture signatures using unmanaged function pointers, with the module owner undisposed.")]
 internal static class Program
 {

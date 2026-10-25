@@ -18,9 +18,10 @@ Windows, Linux, and macOS, with the platform details spelled out below.
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=coverage)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=coverage)
 
-> 🎉 **Welcome to 4.0.0!** Public callback scopes, stricter input and raw-signature
-> validation, and improved loader diagnostics. Check the [changelog](CHANGELOG.md)
-> for what's new and the [migration guide](MIGRATION.md) before upgrading.
+> 🎉 **Welcome to 4.0.1!** Public callback scopes, stricter input and raw-signature
+> validation, improved loader diagnostics, and updated .NET SDK and analyzer toolchains.
+> Check the [changelog](CHANGELOG.md) for what's new and the [migration guide](MIGRATION.md)
+> before upgrading.
 
 ## 🧭 Find your way
 
@@ -178,11 +179,7 @@ Modern non-Windows loading follows the runtime's behavior; only the legacy
 fallback explicitly requests `RTLD_NOW`.
 
 **Targeting is not execution evidence.** The [validation notes](docs/validation.md)
-record an earlier Windows validation pass against nine targets and local
-`3.0.1-*` packages, not a validation of the six-target 4.0.0 release.
-The [native validation workflow](.github/workflows/native-validation.yml) contains
-cross-platform, x86, ARM64, trimmed, and NativeAOT jobs, but still includes removed
-targets and older test commands. It needs alignment before it can validate 4.0.0.
+record local Windows validation passes and remaining cross-platform CI gaps.
 
 Mono execution remains unverified. Modern musl/Alpine execution is also
 unverified; the legacy Linux fallback requires `libdl.so.2` and does not support
@@ -426,7 +423,7 @@ assemblies are not collectible; weak keys alone cannot unload them.
 Want to try the latest changes or contribute a fix? Here's the local setup.
 
 Building from source requires the SDK pinned in [global.json](global.json)
-(currently .NET SDK `10.0.401`). Native tests also require CMake 3.20+ and a C
+(currently .NET SDK `10.0.402`). Native tests also require CMake 3.20+ and a C
 compiler. On Windows, install the Visual Studio C++ build tools and ensure
 `cmake` is on `PATH`, or pass `-p:CMakeCommand="<path-to-cmake.exe>"` when building.
 Install the .NET 8 and 9 runtimes to run those test targets.
@@ -456,6 +453,7 @@ More information:
 - [Trimmed, NativeAOT, and retained-callback samples](samples/README.md)
 - [Callback benchmarks](benchmarks/README.md)
 - [Historical validation evidence and remaining gaps](docs/validation.md)
+- [ADR 0001: DelegatePin constraints, explicit IntPtr types, and 4.0.1 validation alignment](docs/adr/0001-delegate-pin-constraints-and-analyzer-baseline.md)
 - [Changelog](CHANGELOG.md) and [migration guide](MIGRATION.md)
 
 ### 🤝 Contributing

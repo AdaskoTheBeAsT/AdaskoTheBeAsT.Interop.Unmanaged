@@ -2,6 +2,8 @@ using System;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+#pragma warning disable SA1121
+
 /// <summary>
 /// Couples an unmanaged function pointer with a managed object that keeps the originating callback alive.
 /// </summary>

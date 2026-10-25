@@ -6,6 +6,7 @@ using System.Security;
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 #pragma warning disable CA1060
+#pragma warning disable SA1121
 #pragma warning disable SA1300
 #pragma warning disable SA1310
 #pragma warning disable IDE1006

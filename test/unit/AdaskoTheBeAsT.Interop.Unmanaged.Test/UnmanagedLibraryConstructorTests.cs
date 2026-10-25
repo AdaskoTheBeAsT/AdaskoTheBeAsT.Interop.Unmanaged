@@ -5,6 +5,8 @@ using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
+#pragma warning disable SA1121
+
 public class UnmanagedLibraryConstructorTests
 {
     [Fact]
@@ -153,7 +155,9 @@ public class UnmanagedLibraryConstructorTests
 
         // Arrange
 #pragma warning disable CA2000 // Dispose objects before losing scope
+#pragma warning disable CC0022
         var library = new UnmanagedLibrary("kernel32.dll");
+#pragma warning restore CC0022
 #pragma warning restore CA2000 // Dispose objects before losing scope
 
         // Act
@@ -173,7 +177,9 @@ public class UnmanagedLibraryConstructorTests
 
         // Arrange
 #pragma warning disable CA2000 // Dispose objects before losing scope
+#pragma warning disable CC0022
         var library = new UnmanagedLibrary("kernel32.dll");
+#pragma warning restore CC0022
 #pragma warning restore CA2000 // Dispose objects before losing scope
 
         // Act

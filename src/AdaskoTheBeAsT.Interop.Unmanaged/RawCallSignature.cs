@@ -28,7 +28,7 @@ internal static class RawCallSignature
         }
 
         var method = delegateType.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Instance);
-        if (method == null || method.CallingConvention.HasFlag(CallingConventions.VarArgs))
+        if (method?.CallingConvention.HasFlag(CallingConventions.VarArgs) != false)
         {
             throw new InvalidOperationException("The delegate type must have a fixed Invoke signature.");
         }

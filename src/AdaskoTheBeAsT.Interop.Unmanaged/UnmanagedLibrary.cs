@@ -451,7 +451,11 @@ public sealed partial class UnmanagedLibrary : IDisposable
             throw new ArgumentException("Value cannot be null or whitespace.", paramName);
         }
 
+#if NET8_0_OR_GREATER
+        if (value.Contains('\0', StringComparison.Ordinal))
+#else
         if (value.IndexOf('\0') >= 0)
+#endif
         {
             throw new ArgumentException("Value cannot contain a NUL character.", paramName);
         }

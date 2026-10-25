@@ -75,7 +75,7 @@ public class CollectibleCallbackTests
         var type = assembly.GetType(typeof(CollectibleCallbackTests).FullName!)!;
         var callback = (Delegate)type.GetMethod(
             nameof(CreateCallback),
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(null, null)!;
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(obj: null, parameters: null)!;
         using (var scope = UnmanagedLibrary.PinDelegate(callback))
         {
             library.GetUnmanagedFunction<NativeInvoke>("fixture_invoke")!(scope.Ptr, 41).Should().Be(42);
@@ -94,7 +94,7 @@ public class CollectibleCallbackTests
         var type = assembly.GetType(typeof(CollectibleCallbackTests).FullName!)!;
         var callback = (Delegate)type.GetMethod(
             nameof(CreateStructCallback),
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(null, null)!;
+            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(obj: null, parameters: null)!;
         using (var scope = UnmanagedLibrary.PinDelegate(callback))
         {
             library.GetUnmanagedFunction<NativeInvoke>("fixture_invoke")!(scope.Ptr, 41).Should().Be(42);
@@ -108,7 +108,7 @@ public class CollectibleCallbackTests
     [StructLayout(LayoutKind.Sequential)]
     public struct PluginValue
     {
-        public int Amount;
+        public readonly int Amount;
     }
 }
 #endif

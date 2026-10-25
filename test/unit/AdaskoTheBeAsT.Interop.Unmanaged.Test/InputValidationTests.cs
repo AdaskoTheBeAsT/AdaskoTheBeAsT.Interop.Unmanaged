@@ -119,18 +119,18 @@ public class InputValidationTests
     [StructLayout(LayoutKind.Sequential)]
     private struct ReferenceValue
     {
-        public string Text;
+        public readonly string Text;
     }
 
     [StructLayout(LayoutKind.Auto)]
     private struct AutoLayoutValue
     {
-        public int Value;
+        public readonly int Value;
     }
 
     [StructLayout(LayoutKind.Sequential)]
     private struct NestedValue
     {
-        public ReferenceValue Value;
+        public readonly ReferenceValue Value;
     }
 }

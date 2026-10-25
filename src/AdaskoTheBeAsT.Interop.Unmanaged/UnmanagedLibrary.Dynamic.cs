@@ -20,9 +20,15 @@ public sealed partial class UnmanagedLibrary
             nameof(RawCallTarget.Address),
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)!.GetMethod!;
 
+#if NET8_0_OR_GREATER
+    private static readonly ConditionalWeakTable<Type, Lazy<DynamicMethod>[]> RawCallThunks = [];
+
+    private static readonly ConditionalWeakTable<Type, Lazy<Type>> ProxyDelegateTypes = [];
+#else
     private static readonly ConditionalWeakTable<Type, Lazy<DynamicMethod>[]> RawCallThunks = new();
 
     private static readonly ConditionalWeakTable<Type, Lazy<Type>> ProxyDelegateTypes = new();
+#endif
 
 #if NET8_0_OR_GREATER
     [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk.")]
@@ -140,7 +146,7 @@ public sealed partial class UnmanagedLibrary
     [RequiresDynamicCode("Emits a callback proxy assembly.")]
     [RequiresUnreferencedCode("Copies the runtime delegate signature and interop metadata.")]
 #endif
-    private static Type CreateProxyDelegateType(Type delegateType)
+    private static TypeInfo CreateProxyDelegateType(Type delegateType)
     {
         var name = "UnmanagedCallback_" + Guid.NewGuid().ToString("N");
         var proxyAssembly = AssemblyBuilder.DefineDynamicAssembly(
@@ -153,7 +159,7 @@ public sealed partial class UnmanagedLibrary
         var proxyModule = proxyAssembly.DefineDynamicModule(name);
         var proxyTypeBuilder = proxyModule.DefineType(
             name,
-            TypeAttributes.AutoClass | TypeAttributes.AnsiClass | TypeAttributes.Sealed | TypeAttributes.Public,
+            TypeAttributes.AutoClass | TypeAttributes.Sealed | TypeAttributes.Public,
             typeof(MulticastDelegate));
 
         ApplyUnmanagedFunctionPointerAttribute(delegateType, proxyTypeBuilder);

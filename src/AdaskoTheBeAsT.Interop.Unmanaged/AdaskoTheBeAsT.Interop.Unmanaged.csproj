@@ -20,7 +20,7 @@
     <PackageProjectUrl>https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged</PackageProjectUrl>
     <Copyright>Adam "AdaskoTheBeAsT" Pluciński</Copyright>
     <PackageTags>Interop;Unmanaged</PackageTags>
-    <PackageReleaseNotes>Validation hardening: embedded NUL names and unsupported raw calli signatures now fail before native calls. Adds public callback scopes and clearer loader diagnostics.</PackageReleaseNotes>
+    <PackageReleaseNotes>4.0.1: Tighten PinDelegate and PinConcreteDelegate constraints, align validation scripts with the six 4.0 targets, and update .NET SDK and build analyzers.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
@@ -29,7 +29,7 @@
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(TF_BUILD)' == 'true'">
+  <PropertyGroup Condition="'$(TF_BUILD)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
   </PropertyGroup>

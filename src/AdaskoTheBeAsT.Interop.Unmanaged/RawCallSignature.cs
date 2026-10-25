@@ -6,6 +6,8 @@ using System.Runtime.InteropServices;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+#pragma warning disable SA1121
+
 internal static class RawCallSignature
 {
 #if NET8_0_OR_GREATER

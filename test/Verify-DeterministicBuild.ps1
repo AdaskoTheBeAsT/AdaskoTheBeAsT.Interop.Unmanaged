@@ -31,12 +31,12 @@ try {
         if ($WithoutLegacyWorkaround) {
             Set-Content -LiteralPath (Join-Path $copy 'Directory.Build.targets') -Value '<Project />'
         }
-        foreach ($tfm in @('net10.0', 'net462')) {
+        foreach ($tfm in @('net10.0', 'net472')) {
             dotnet build (Join-Path $copy 'src/AdaskoTheBeAsT.Interop.Unmanaged/AdaskoTheBeAsT.Interop.Unmanaged.csproj') -c Release -f $tfm -p:ContinuousIntegrationBuild=true -p:GeneratePackageOnBuild=false --nologo
             if ($LASTEXITCODE -ne 0) { throw "Clean build failed for $name/$tfm." }
         }
     }
-    foreach ($tfm in @('net10.0', 'net462')) {
+    foreach ($tfm in @('net10.0', 'net472')) {
         foreach ($extension in @('dll', 'pdb')) {
             $relative = "src/AdaskoTheBeAsT.Interop.Unmanaged/bin/Release/$tfm/AdaskoTheBeAsT.Interop.Unmanaged.$extension"
             $first = (Get-FileHash -LiteralPath (Join-Path $scratch "first/$relative")).Hash

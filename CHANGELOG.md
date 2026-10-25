@@ -6,6 +6,21 @@ NuGet publication dates.
 
 See the [migration guide](MIGRATION.md) for upgrade steps.
 
+## [4.0.1] - 2026-10-25
+
+### Fixed
+
+- Add `where TDelegate : class, Delegate` to `PinDelegate<TDelegate>` and `PinConcreteDelegate<TDelegate>`, reject abstract `Delegate` and `MulticastDelegate` type arguments in `PinConcreteDelegate<TDelegate>`, and call `Marshal.GetFunctionPointerForDelegate<TDelegate>(callback)`.
+- Enable `ContinuousIntegrationBuild` and `Deterministic` when `GITHUB_ACTIONS` is `true` in `AdaskoTheBeAsT.Interop.Unmanaged.csproj`, and use `$(MSBuildThisFileDirectory)` for the SARIF `ErrorLog` path in `Directory.Build.targets`.
+- Align `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`, and `test/Directory.Build.props` with the six supported `4.0.x` target frameworks (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`).
+
+### Changed
+
+- Update `global.json` to .NET SDK `10.0.402` and upgrade build analyzers (`StyleCop.Analyzers 1.3.151-beta`, `SonarAnalyzer.CSharp 10.35.0.4138`, `Meziantou.Analyzer 3.0.316`, `AdaskoTheBeAsT.CodeCracker.CSharp 1.1.0.270`, `Microsoft.CodeAnalysis.NetAnalyzers 10.0.402`, `Microsoft.VisualStudio.Threading.Analyzers 18.12.1`, `Roslynator.* 5.0.1`) and unit-test packages (`Microsoft.NET.Test.Sdk 18.11.0`, `Microsoft.Testing.Extensions.GitHubActionsReport 2.5.1`, `Moq 4.21.0`, `xunit.v3 4.0.2`, `xunit.analyzers 2.2.0`, `xunit.runner.visualstudio 4.0.1`).
+- Preserve explicit `IntPtr` and `UIntPtr` types across interop declarations with `#pragma warning disable SA1121` and add targeted `CC0022` suppressions in disposal unit tests.
+- Expand unit tests for `PinConcreteDelegate` abstract delegate validation and collectible `AssemblyLoadContext` callbacks using a collectible struct parameter.
+- Add [ADR 0001](docs/adr/0001-delegate-pin-constraints-and-analyzer-baseline.md) and update documentation and validation notes.
+
 ## [4.0.0]
 
 Public callback lifetime scopes, stricter validation, and improved loader
@@ -38,9 +53,6 @@ that require attention when upgrading from 3.0.0.
 - Controlled native fixtures, callback lifecycle and collectible-context tests,
   trimmed/NativeAOT consumer samples, callback benchmarks, and package and
   deterministic-build validation scripts.
-- A cross-platform native validation workflow. Its configuration still needs
-  alignment with the current targets and Microsoft.Testing.Platform runner; it is
-  not evidence of a passing 4.0.0 validation matrix.
 - A migration guide and this changelog.
 
 ### Fixed
@@ -115,6 +127,7 @@ that require attention when upgrading from 3.0.0.
 - Unit tests, XML documentation, and package metadata.
 - Targets for `netstandard2.0`, `net8.0`, `net9.0`, and `net10.0`.
 
+[4.0.1]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v2.0.0...v3.0.0
 [2.0.0]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v1.0.0...v2.0.0

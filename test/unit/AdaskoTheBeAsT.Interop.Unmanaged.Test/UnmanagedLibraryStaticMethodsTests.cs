@@ -6,6 +6,8 @@ using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
+#pragma warning disable SA1121
+
 public class UnmanagedLibraryStaticMethodsTests
 {
     [UnmanagedFunctionPointer(CallingConvention.Winapi)]

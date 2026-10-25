@@ -1,9 +1,30 @@
 # Validation notes
 
-This file separates local evidence from configured-but-not-yet-executed CI coverage.
-The final local pass was run on 2026-09-09 on Windows x64.
+This file separates local evidence from remaining cross-platform CI gaps.
 
-## Local results
+## Current 4.0.1 validation (2026-10-25, Windows x64)
+
+The repository defaults to `Version=4.0.1`, targets **six frameworks** (`net10.0`,
+`net9.0`, `net8.0`, `net481`, `net48`, and `net472`), and selects .NET SDK
+`10.0.402` with `Microsoft.Testing.Platform` in `global.json`.
+
+| Check | Result |
+| --- | --- |
+| Release solution build | Passed for all six TFMs with 0 warnings and 0 errors. |
+| Full test matrix | Passed 858 tests across `net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472` (144 each on modern .NET, 142 each on .NET Framework); 0 failed and 0 skipped. |
+| Package contents | `test/Validate-Package.ps1` verified all six DLL and XML documentation files, portable PDBs in the `.snupkg`, Source Link mappings, license, README, empty dependency groups, and absence of test/native artifact leakage. |
+| Deterministic builds | `test/Verify-DeterministicBuild.ps1` verified identical SHA256 hashes for `net10.0` and `net472` DLL and portable PDB outputs across independent checkout paths. |
+| Consumer smoke and benchmark projects | `samples/NativeSmoke` and `benchmarks/CallbackBenchmarks` built with 0 warnings and 0 errors; `NativeSmoke` passed against `fixture.dll`. |
+
+```powershell
+dotnet build .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release
+dotnet test --solution .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release --no-build
+dotnet pack .\src\AdaskoTheBeAsT.Interop.Unmanaged\AdaskoTheBeAsT.Interop.Unmanaged.csproj -c Release -o artifacts\packages
+.\test\Validate-Package.ps1 -Directory artifacts\packages
+.\test\Verify-DeterministicBuild.ps1
+```
+
+## Historical nine-target validation pass (2026-09-09, Windows x64)
 
 | Check | Result |
 | --- | --- |
@@ -61,32 +82,11 @@ The package consumer pass packed a separate local `3.0.1-final` package, restore
 `Trimmed` and `Aot` modes for `win-x64`, and executed both outputs through
 `test/Run-NativeSmoke.ps1`.
 
-## Configured remote coverage
-
-`.github/workflows/native-validation.yml` defines 18 test jobs:
-
-- `net8.0`, `net9.0`, and `net10.0` on Windows, Linux, and Intel macOS x64
-- all six legacy .NET Framework TFMs on Windows x64
-- `net10.0` on Windows x86
-- `net10.0` on Linux ARM64 and macOS ARM64
-
-It also defines trimmed and NativeAOT package-consumer jobs for Windows x64,
-Linux x64, and Intel macOS x64. Package validation and deterministic-build
-verification run in that workflow. SDK setup reads `global.json` in both job
-groups; test jobs additionally install .NET 8 and 9 for those runtime tests.
-`ci.yml` requires this validation workflow before
-the existing SonarQube/package workflow and passes the NuGet secret only for `v*` tags.
-
-These workflow definitions are not execution evidence. They still need an actual
-GitHub Actions run on the target branch or pull request.
-
 ## Remaining evidence gaps
 
-- Linux and macOS behavior has compile-time support and configured CI jobs, but no local execution evidence from this pass.
-- ARM64 behavior is configured for Linux and macOS CI, but has not been executed locally.
+- Linux, macOS, and ARM64 behavior has compile-time support, but no local execution evidence from this Windows x64 pass.
 - Mono execution on the legacy `net4.x` targets remains unverified.
 - musl/Alpine remains unsupported by the legacy `libdl.so.2` fallback and unverified for modern targets.
 - Windows resource-only loading behavior is covered only on Windows and cannot be claimed as portable inspection behavior.
 - Source Link document mappings are embedded in local symbols; remote source checksums can only be fully resolved after the corresponding commit is published.
-- Remote workflow syntax, runner images, secrets, repository variables, and reusable-workflow behavior require a real GitHub Actions execution.
-- SonarCloud coverage and quality-gate results require a fresh remote analysis; the local XML report does not update them.
+- Remote reusable-workflow execution and SonarCloud coverage/quality-gate results require a GitHub Actions run on the target branch or pull request.

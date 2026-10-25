@@ -6,6 +6,8 @@ using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
+#pragma warning disable SA1121
+
 public class InputValidationTests
 {
     private delegate void StringCallback(string value);
@@ -96,10 +98,14 @@ public class InputValidationTests
         Action pin = () => UnmanagedLibrary.PinDelegate<Action>(null!);
         Action concrete = () => UnmanagedLibrary.PinConcreteDelegate<Action>(null!);
         Action generic = () => UnmanagedLibrary.PinConcreteDelegate<Func<int, int>>(value => value);
+        Action abstractDelegate = () => UnmanagedLibrary.PinConcreteDelegate<Delegate>(new Action(() => { }));
+        Action multicastDelegate = () => UnmanagedLibrary.PinConcreteDelegate<MulticastDelegate>(new Action(() => { }));
 
         pin.Should().Throw<ArgumentNullException>().WithParameterName("callback");
         concrete.Should().Throw<ArgumentNullException>().WithParameterName("callback");
         generic.Should().Throw<ArgumentException>().WithParameterName("callback");
+        abstractDelegate.Should().Throw<ArgumentException>().WithParameterName("callback");
+        multicastDelegate.Should().Throw<ArgumentException>().WithParameterName("callback");
     }
 
     private static void AssertUnsupported<T>()

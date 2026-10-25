@@ -6,6 +6,8 @@ using AdaskoTheBeAsT.Interop.Unmanaged;
 
 namespace NativeSmoke;
 
+#pragma warning disable SA1121
+
 internal static class LifetimeChecks
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

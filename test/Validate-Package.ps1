@@ -1,6 +1,6 @@
 param([Parameter(Mandatory)][string] $Directory)
 $ErrorActionPreference = 'Stop'
-$tfms = @('net10.0', 'net9.0', 'net8.0', 'net481', 'net48', 'net472', 'net471', 'net47', 'net462')
+$tfms = @('net10.0', 'net9.0', 'net8.0', 'net481', 'net48', 'net472')
 $name = 'AdaskoTheBeAsT.Interop.Unmanaged'
 $packages = @(Get-ChildItem -LiteralPath $Directory -Filter "$name.*.nupkg")
 if ($packages.Count -ne 1) { throw "Expected one runtime package, found $($packages.Count)." }

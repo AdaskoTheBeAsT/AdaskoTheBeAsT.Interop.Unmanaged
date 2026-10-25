@@ -7,6 +7,8 @@ using Microsoft.Win32.SafeHandles;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+#pragma warning disable SA1121
+
 /// <summary>
 /// Represents a loaded native module handle that releases the library when disposed.
 /// </summary>

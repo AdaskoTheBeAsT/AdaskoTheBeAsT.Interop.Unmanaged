@@ -9,6 +9,8 @@ using System.Threading;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+#pragma warning disable SA1121
+
 public sealed partial class UnmanagedLibrary
 {
     private const string Invoke = "Invoke";

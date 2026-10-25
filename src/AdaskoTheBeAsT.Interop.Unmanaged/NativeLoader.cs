@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+#pragma warning disable SA1121
+
 /// <summary>
 /// Platform-dispatched native library loading primitives.
 /// </summary>
@@ -13,7 +15,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// to honor <see cref="LoadLibraryFlags"/>, adapting the default flag combination for bare names.
 /// On Linux and macOS running on .NET 8.0 and newer it delegates to
 /// <c>System.Runtime.InteropServices.NativeLibrary</c>; on .NET Framework
-/// (net4.6.2 through net4.8.1, including Mono) it dispatches to platform-specific
+/// (net4.7.2 through net4.8.1, including Mono) it dispatches to platform-specific
 /// <c>dlopen</c>/<c>dlsym</c>/<c>dlclose</c> P/Invokes.
 /// </remarks>
 internal static class NativeLoader

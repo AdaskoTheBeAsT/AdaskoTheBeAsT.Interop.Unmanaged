@@ -10,6 +10,8 @@ using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
+#pragma warning disable SA1121
+
 [Trait("Category", "Native")]
 public class NativeFixtureTests
 {

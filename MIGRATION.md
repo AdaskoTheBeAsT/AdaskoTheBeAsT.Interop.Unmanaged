@@ -233,7 +233,7 @@ published application, not only a normal debug build.
 
 ### Repository contributors
 
-The checkout now uses .NET SDK `10.0.401` and Microsoft.Testing.Platform through
+The checkout now uses .NET SDK `10.0.402` and Microsoft.Testing.Platform through
 `global.json`, with xUnit v3. Use explicit project/solution options:
 
 ```powershell
@@ -242,10 +242,10 @@ dotnet test --solution .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release --no-b
 ```
 
 These commands require the [native test toolchain](test/native/README.md).
-Older validation notes and scripts refer to nine targets, `3.0.1-*` local package
-versions, and the previous test runner. Those records are historical evidence,
-not proof that the current 4.0.0 matrix passes. Workflow and script alignment is
-still needed; see the [README validation caveat](README.md#supported-frameworks-and-platforms).
+`test/Validate-Package.ps1` and `test/Verify-DeterministicBuild.ps1` validate the
+six `4.0.x` targets (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`);
+see the [validation notes](docs/validation.md) for current local evidence and
+remaining platform gaps.
 
 ## Upgrading from 1.x or 2.x
 

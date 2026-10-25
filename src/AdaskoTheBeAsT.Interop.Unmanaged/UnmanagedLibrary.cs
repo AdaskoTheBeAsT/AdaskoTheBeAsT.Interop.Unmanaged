@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
+#pragma warning disable SA1121
+
 /// <summary>
 /// Represents a loaded native dynamic library and exposes its exported functions as managed delegates.
 /// </summary>
@@ -314,7 +316,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
     [RequiresUnreferencedCode("Generic callback proxies inspect the runtime delegate type and its marshaling metadata.")]
 #endif
     public static DelegatePin PinDelegate<TDelegate>(TDelegate callback)
-        where TDelegate : Delegate
+        where TDelegate : class, Delegate
     {
         ThrowIfNull(callback, nameof(callback));
         var pointer = GetFunctionPointerForDelegate(callback, out var binder);
@@ -332,15 +334,17 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// UnmanagedCallersOnly and raw function pointers avoid delegate marshaling entirely.
     /// </remarks>
     public static DelegatePin PinConcreteDelegate<TDelegate>(TDelegate callback)
-        where TDelegate : Delegate
+        where TDelegate : class, Delegate
     {
         ThrowIfNull(callback, nameof(callback));
-        if (callback.GetType().IsGenericType)
+        if (typeof(TDelegate) == typeof(Delegate)
+            || typeof(TDelegate) == typeof(MulticastDelegate)
+            || callback.GetType().IsGenericType)
         {
             throw new ArgumentException("A concrete, non-generic callback delegate is required.", nameof(callback));
         }
 
-        return new DelegatePin(Marshal.GetFunctionPointerForDelegate(callback), callback);
+        return new DelegatePin(Marshal.GetFunctionPointerForDelegate<TDelegate>(callback), callback);
     }
 
     /// <summary>

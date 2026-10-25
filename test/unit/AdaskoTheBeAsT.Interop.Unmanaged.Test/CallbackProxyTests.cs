@@ -7,6 +7,8 @@ using Xunit;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
+#pragma warning disable SA1121
+
 public class CallbackProxyTests
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]

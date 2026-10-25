@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -134,6 +135,22 @@ public class CallbackProxyTests
             });
 
         types.Should().OnlyContain(type => type == types[0]);
+    }
+
+    [Fact]
+    [SuppressMessage("Sonar", "S1215", Justification = "Forced collection is required to verify raw call thunk stability across GC cycles.")]
+    public void RawDelegates_RemainAccurateAcrossGarbageCollectionCycles()
+    {
+        for (var iteration = 0; iteration < 10; iteration++)
+        {
+            DifferentReturnTypes_CreateDistinctProxies();
+            CallbackTypedAsDelegate_UsesRuntimeSignature();
+            MulticastCallback_InvokesEverySubscriber();
+            MarshaledCallback_InvokesWithUnicodeString();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+        }
     }
 
     private static Delegate GetProxy(object binder)

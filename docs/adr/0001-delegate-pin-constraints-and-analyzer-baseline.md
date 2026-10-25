@@ -13,6 +13,7 @@ Following the `4.0.0` release, upgrading the .NET SDK (`10.0.402`), build analyz
 2. **`CC0022` on expression-bodied disposal lambdas:** `AdaskoTheBeAsT.CodeCracker.CSharp 1.1.0.270` reports `CC0022` on test variables whose `.Dispose()` method is invoked inside an expression-bodied `Action` lambda (`Action act = () => instance.Dispose();`).
 3. **`PinDelegate<TDelegate>` and `PinConcreteDelegate<TDelegate>` constraints:** `GetFunctionPointerForDelegate<T>` constrained `T` to `where T : class, Delegate`, whereas `PinDelegate<TDelegate>` and `PinConcreteDelegate<TDelegate>` used `where TDelegate : Delegate`. In `PinConcreteDelegate<TDelegate>`, passing `TDelegate = Delegate` or `MulticastDelegate` with a concrete delegate instance was not rejected, and the non-generic `Marshal.GetFunctionPointerForDelegate(Delegate)` overload was called instead of `Marshal.GetFunctionPointerForDelegate<TDelegate>(TDelegate)`.
 4. **Validation scripts and documentation drift:** `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`, and `test/Directory.Build.props` still referenced the `net462`, `net47`, and `net471` targets removed in `4.0.0`, and `Directory.Build.targets` referenced an undefined `$(RepositoryRoot)` property for SARIF output.
+5. **`.NET Framework` Debug `DynamicMethod` `calli` stub recycling and transient fixture cleanup locks:** On `.NET Framework`, creating an uncached `DynamicMethod` owned by `typeof(UnmanagedLibrary)` for each `GetDelegateForFunctionPointer<T>` call causes Debug builds (`DisableOptimizations`) to emit a non-inlined `PInvokeCalliStub` associated with the `DynamicMethodDesc` and signature token `0x11000001`. Once a `DynamicMethod` is garbage-collected and its `DynamicMethodDesc` is recycled from `DynamicMethodTable::m_FreeList` for a different delegate signature, `.NET Framework` can invoke the stale `PInvokeCalliStub`, corrupting return values or raising `AccessViolationException`. In addition, `NativeFixture.Dispose()` deleting the temporary directory immediately after `FreeLibrary` can transiently encounter `UnauthorizedAccessException` on Windows when a coverage profiler or antivirus filter still holds an image section reference on `fixture.dll`.
 
 ## Decision
 
@@ -29,6 +30,9 @@ Following the `4.0.0` release, upgrading the .NET SDK (`10.0.402`), build analyz
    - Update `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`, and `test/Directory.Build.props` to the six shipped target frameworks (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`).
    - Enable `ContinuousIntegrationBuild` and `Deterministic` when `GITHUB_ACTIONS` is `true`, and use `$(MSBuildThisFileDirectory)` in `Directory.Build.targets`.
    - Align `README.md`, `CHANGELOG.md`, `MIGRATION.md`, and `docs/validation.md` with the current workflow and `4.0.1` validation pass.
+5. **Cache `GetDelegateForFunctionPointer<T>` `DynamicMethod` thunks and harden `NativeFixture.Dispose()`:**
+   - Cache one `DynamicMethod` per `(Type delegateType, CallingConvention conv)` in a `ConditionalWeakTable<Type, Lazy<DynamicMethod>[]>`, hosted on `typeof(object)` with `skipVisibility: true`, and bind each returned delegate to a lightweight `RawCallTarget` holding the target `IntPtr`.
+   - Retry `Directory.Delete` in `NativeFixture.Dispose()` on transient `IOException` or `UnauthorizedAccessException` so Windows image-section teardown under `dotnet-coverage` completes cleanly.
 
 ## Consequences
 

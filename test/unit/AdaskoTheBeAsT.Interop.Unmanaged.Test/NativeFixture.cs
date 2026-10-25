@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
@@ -38,6 +39,21 @@ internal sealed class NativeFixture : IDisposable
     [SuppressMessage("Security", "SCS0018", Justification = "Deletes only the random temporary directory created and owned by this fixture.")]
     public void Dispose()
     {
-        Directory.Delete(DirectoryPath, recursive: true);
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            try
+            {
+                if (Directory.Exists(DirectoryPath))
+                {
+                    Directory.Delete(DirectoryPath, recursive: true);
+                }
+
+                return;
+            }
+            catch (Exception exception) when (attempt < 9 && (exception is IOException or UnauthorizedAccessException))
+            {
+                Thread.Sleep(25);
+            }
+        }
     }
 }

@@ -15,6 +15,13 @@ public sealed partial class UnmanagedLibrary
 {
     private const string Invoke = "Invoke";
 
+    private static readonly MethodInfo RawCallTargetAddressGetter =
+        typeof(RawCallTarget).GetProperty(
+            nameof(RawCallTarget.Address),
+            BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)!.GetMethod!;
+
+    private static readonly ConditionalWeakTable<Type, Lazy<DynamicMethod>[]> RawCallThunks = new();
+
     private static readonly ConditionalWeakTable<Type, Lazy<Type>> ProxyDelegateTypes = new();
 
 #if NET8_0_OR_GREATER
@@ -26,29 +33,73 @@ public sealed partial class UnmanagedLibrary
     {
         EnsureDynamicCode();
         var delegateType = typeof(T);
-        var method = RawCallSignature.Validate(delegateType, conv);
+        _ = RawCallSignature.Validate(delegateType, conv);
+        var thunks = RawCallThunks.GetValue(delegateType, CreateRawCallThunks);
+        var invoke = thunks[(int)conv - 1].Value;
+        return invoke.CreateDelegate(delegateType, new RawCallTarget(ptr)) as T;
+    }
+
+#if NET8_0_OR_GREATER
+    [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk.")]
+    [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields.")]
+#endif
+    private static Lazy<DynamicMethod>[] CreateRawCallThunks(Type delegateType)
+    {
+        return
+        [
+            CreateLazyRawCallThunk(delegateType, CallingConvention.Winapi),
+            CreateLazyRawCallThunk(delegateType, CallingConvention.Cdecl),
+            CreateLazyRawCallThunk(delegateType, CallingConvention.StdCall),
+        ];
+    }
+
+#if NET8_0_OR_GREATER
+    [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk.")]
+    [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields.")]
+#endif
+    private static Lazy<DynamicMethod> CreateLazyRawCallThunk(Type delegateType, CallingConvention conv)
+    {
+        return new Lazy<DynamicMethod>(
+            () => CreateRawCallThunk(delegateType, conv),
+            LazyThreadSafetyMode.ExecutionAndPublication);
+    }
+
+#if NET8_0_OR_GREATER
+    [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk.")]
+    [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields.")]
+#endif
+    private static DynamicMethod CreateRawCallThunk(Type delegateType, CallingConvention conv)
+    {
+        var method = delegateType.GetMethod(Invoke)!;
         var returnType = method.ReturnType;
-        var paramTypes = method.GetParameters().Select(parameter => parameter.ParameterType).ToArray();
-        var invoke = new DynamicMethod(Invoke, returnType, paramTypes, typeof(UnmanagedLibrary));
+        var parameters = method.GetParameters();
+        var paramTypes = new Type[parameters.Length];
+        var invokeParamTypes = new Type[parameters.Length + 1];
+        invokeParamTypes[0] = typeof(RawCallTarget);
+        for (var index = 0; index < parameters.Length; index++)
+        {
+            var parameterType = parameters[index].ParameterType;
+            paramTypes[index] = parameterType;
+            invokeParamTypes[index + 1] = parameterType;
+        }
+
+        var invoke = new DynamicMethod(
+            Invoke,
+            returnType,
+            invokeParamTypes,
+            typeof(object),
+            skipVisibility: true);
         var il = invoke.GetILGenerator();
         for (var index = 0; index < paramTypes.Length; index++)
         {
-            il.Emit(OpCodes.Ldarg, index);
+            il.Emit(OpCodes.Ldarg, index + 1);
         }
 
-        if (IntPtr.Size == sizeof(int))
-        {
-            il.Emit(OpCodes.Ldc_I4, ptr.ToInt32());
-        }
-        else
-        {
-            il.Emit(OpCodes.Ldc_I8, ptr.ToInt64());
-        }
-
-        il.Emit(OpCodes.Conv_I);
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Call, RawCallTargetAddressGetter);
         il.EmitCalli(OpCodes.Calli, conv, returnType, paramTypes);
         il.Emit(OpCodes.Ret);
-        return invoke.CreateDelegate(delegateType) as T;
+        return invoke;
     }
 
     private static void EnsureDynamicCode()
@@ -203,5 +254,10 @@ public sealed partial class UnmanagedLibrary
                 marshalAs.ConstructorArguments.Select(argument => argument.Value!).ToArray(),
                 marshalAs.NamedArguments.Select(argument => (FieldInfo)argument.MemberInfo).ToArray(),
                 marshalAs.NamedArguments.Select(argument => argument.TypedValue.Value!).ToArray()));
+    }
+
+    private sealed class RawCallTarget(IntPtr address)
+    {
+        public IntPtr Address { get; } = address;
     }
 }

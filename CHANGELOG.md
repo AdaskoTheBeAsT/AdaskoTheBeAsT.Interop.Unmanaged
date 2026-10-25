@@ -10,9 +10,10 @@ See the [migration guide](MIGRATION.md) for upgrade steps.
 
 ### Fixed
 
+- Cache `GetDelegateForFunctionPointer<T>` `DynamicMethod` thunks per delegate type and calling convention with a closed target and `typeof(object)` owner so `.NET Framework` `DynamicMethodDesc` recycling in Debug builds cannot reuse a stale `PInvokeCalliStub` across garbage collection cycles.
 - Add `where TDelegate : class, Delegate` to `PinDelegate<TDelegate>` and `PinConcreteDelegate<TDelegate>`, reject abstract `Delegate` and `MulticastDelegate` type arguments in `PinConcreteDelegate<TDelegate>`, and call `Marshal.GetFunctionPointerForDelegate<TDelegate>(callback)`.
 - Enable `ContinuousIntegrationBuild` and `Deterministic` when `GITHUB_ACTIONS` is `true` in `AdaskoTheBeAsT.Interop.Unmanaged.csproj`, and use `$(MSBuildThisFileDirectory)` for the SARIF `ErrorLog` path in `Directory.Build.targets`.
-- Align `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`, and `test/Directory.Build.props` with the six supported `4.0.x` target frameworks (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`).
+- Align `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`, and `test/Directory.Build.props` with the six supported `4.0.x` target frameworks (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`), and retry transient file-lock errors during `NativeFixture.Dispose()` cleanup.
 
 ### Changed
 

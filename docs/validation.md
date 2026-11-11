@@ -2,10 +2,32 @@
 
 This file separates local evidence from remaining cross-platform CI gaps.
 
-## Current 4.0.1 validation (2026-10-25, Windows x64)
+## Current 5.0.0 validation (2026-11-11, Windows x64)
 
-The repository defaults to `Version=4.0.1`, targets **six frameworks** (`net10.0`,
-`net9.0`, `net8.0`, `net481`, `net48`, and `net472`), and selects .NET SDK
+The repository defaults to `Version=5.0.0`, targets **seven frameworks** (`net11.0`,
+`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472`), and selects .NET SDK
+`11.0.100` with `Microsoft.Testing.Platform` in `global.json`.
+
+| Check | Result |
+| --- | --- |
+| Release solution build | Passed for all seven TFMs with 0 warnings and 0 errors. |
+| Full test matrix | Passed 1,009 tests across `net11.0`, `net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472` (145 each on modern .NET, 143 each on .NET Framework); 0 failed and 0 skipped. |
+| Package contents | `test/Validate-Package.ps1` verified all seven DLL and XML documentation files, portable PDBs in the `.snupkg`, Source Link mappings, license, README, empty dependency groups, and absence of test/native artifact leakage. |
+| Deterministic builds | `test/Verify-DeterministicBuild.ps1` verified identical SHA256 hashes for `net11.0`, `net10.0`, and `net472` DLL and portable PDB outputs across independent checkout paths. |
+| Consumer smoke and benchmark projects | `samples/NativeSmoke` and `benchmarks/CallbackBenchmarks` built on `net11.0` with 0 warnings and 0 errors; `NativeSmoke` passed against `fixture.dll`. |
+
+```powershell
+dotnet build .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release
+dotnet test --solution .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release --no-build
+dotnet pack .\src\AdaskoTheBeAsT.Interop.Unmanaged\AdaskoTheBeAsT.Interop.Unmanaged.csproj -c Release -o artifacts\packages
+.\test\Validate-Package.ps1 -Directory artifacts\packages
+.\test\Verify-DeterministicBuild.ps1
+```
+
+## Historical 4.0.1 validation (2026-10-25, Windows x64)
+
+The repository defaulted to `Version=4.0.1`, targeted **six frameworks** (`net10.0`,
+`net9.0`, `net8.0`, `net481`, `net48`, and `net472`), and selected .NET SDK
 `10.0.402` with `Microsoft.Testing.Platform` in `global.json`.
 
 | Check | Result |
@@ -15,14 +37,6 @@ The repository defaults to `Version=4.0.1`, targets **six frameworks** (`net10.0
 | Package contents | `test/Validate-Package.ps1` verified all six DLL and XML documentation files, portable PDBs in the `.snupkg`, Source Link mappings, license, README, empty dependency groups, and absence of test/native artifact leakage. |
 | Deterministic builds | `test/Verify-DeterministicBuild.ps1` verified identical SHA256 hashes for `net10.0` and `net472` DLL and portable PDB outputs across independent checkout paths. |
 | Consumer smoke and benchmark projects | `samples/NativeSmoke` and `benchmarks/CallbackBenchmarks` built with 0 warnings and 0 errors; `NativeSmoke` passed against `fixture.dll`. |
-
-```powershell
-dotnet build .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release
-dotnet test --solution .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release --no-build
-dotnet pack .\src\AdaskoTheBeAsT.Interop.Unmanaged\AdaskoTheBeAsT.Interop.Unmanaged.csproj -c Release -o artifacts\packages
-.\test\Validate-Package.ps1 -Directory artifacts\packages
-.\test\Verify-DeterministicBuild.ps1
-```
 
 ## Historical nine-target validation pass (2026-09-09, Windows x64)
 

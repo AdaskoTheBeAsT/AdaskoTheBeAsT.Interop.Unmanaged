@@ -6,6 +6,18 @@ NuGet publication dates.
 
 See the [migration guide](MIGRATION.md) for upgrade steps.
 
+## [5.0.0] - 2026-11-11
+
+### Added
+
+- Add `net11.0` target framework support to `AdaskoTheBeAsT.Interop.Unmanaged` and unit tests alongside `net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472`, with trimming and AOT analyzers enabled on `net11.0`.
+- Include `/test/native/` fixture sources and CMake build targets in `AdaskoTheBeAsT.Interop.Unmanaged.slnx`.
+
+### Changed
+
+- Update `global.json` to .NET SDK `11.0.100` and upgrade build analyzers (`Meziantou.Analyzer 3.0.324`, `Microsoft.CodeAnalysis.NetAnalyzers 11.0.100`, `SonarAnalyzer.CSharp 10.36.0.15337`, `StyleCop.Analyzers 1.3.180`) and unit-test packages (`Microsoft.NET.Test.Sdk 18.11.1`, `Microsoft.Testing.Extensions.GitHubActionsReport 2.5.2`, `xunit.v3 4.0.3`, `xunit.analyzers 2.3.0`).
+- Align `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`, `samples/NativeSmoke`, `benchmarks/CallbackBenchmarks`, and documentation with the seven `5.0.0` target frameworks and .NET SDK `11.0.100`.
+
 ## [4.0.1] - 2026-10-25
 
 ### Fixed
@@ -128,6 +140,7 @@ that require attention when upgrading from 3.0.0.
 - Unit tests, XML documentation, and package metadata.
 - Targets for `netstandard2.0`, `net8.0`, `net9.0`, and `net10.0`.
 
+[5.0.0]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v4.0.1...v5.0.0
 [4.0.1]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v4.0.0...v4.0.1
 [4.0.0]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v3.0.0...v4.0.0
 [3.0.0]: https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged/compare/v2.0.0...v3.0.0

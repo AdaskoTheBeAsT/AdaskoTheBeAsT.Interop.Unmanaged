@@ -9,7 +9,7 @@ Windows, Linux, and macOS, with the platform details spelled out below.
 [![NuGet](https://img.shields.io/nuget/v/AdaskoTheBeAsT.Interop.Unmanaged.svg)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/AdaskoTheBeAsT.Interop.Unmanaged.svg)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![Target frameworks](https://img.shields.io/badge/.NET-8%20%7C%209%20%7C%2010-512BD4?logo=dotnet)
+![Target frameworks](https://img.shields.io/badge/.NET-8%20%7C%209%20%7C%2010%20%7C%2011-512BD4?logo=dotnet)
 ![Framework targets](https://img.shields.io/badge/.NET_Framework-4.7.2%20%7C%204.8%20%7C%204.8.1-512BD4)
 ![Platforms](https://img.shields.io/badge/platforms-Windows%20%7C%20Linux%20%7C%20macOS-blue)
 
@@ -18,10 +18,10 @@ Windows, Linux, and macOS, with the platform details spelled out below.
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=coverage)](https://sonarcloud.io/component_measures?id=AdaskoTheBeAsT_AdaskoTheBeAsT.Interop.Unmanaged&metric=coverage)
 
-> 🎉 **Welcome to 4.0.1!** Public callback scopes, stricter input and raw-signature
-> validation, improved loader diagnostics, and updated .NET SDK and analyzer toolchains.
-> Check the [changelog](CHANGELOG.md) for what's new and the [migration guide](MIGRATION.md)
-> before upgrading.
+> 🎉 **Welcome to 5.0.0!** Native `.NET 11` (`net11.0`) package support alongside
+> `.NET 8`, `.NET 9`, `.NET 10`, and `.NET Framework 4.7.2–4.8.1`, plus `.NET SDK 11.0.100`
+> and updated analyzer and test toolchains. Check the [changelog](CHANGELOG.md) for
+> what's new and the [migration guide](MIGRATION.md) before upgrading.
 
 ## 🧭 Find your way
 
@@ -163,14 +163,14 @@ delegate uint GetTickCount();
 
 ## 🌍 Supported frameworks and platforms
 
-The current project builds **six target frameworks**:
+The current project builds **seven target frameworks**:
 
 | Runtime family | Package targets | Loader behavior |
 | --- | --- | --- |
-| Modern .NET | `net10.0`, `net9.0`, `net8.0` | Windows: `LoadLibraryEx`. Linux/macOS: `NativeLibrary`. |
+| Modern .NET | `net11.0`, `net10.0`, `net9.0`, `net8.0` | Windows: `LoadLibraryEx`. Linux/macOS: `NativeLibrary`. |
 | .NET Framework | `net481`, `net48`, `net472` | Windows: `LoadLibraryEx`. Legacy Mono fallback: `dlopen`/`dlsym`. |
 
-4.0.0 removes the `net462`, `net47`, and `net471` targets present in 3.0.0.
+5.0.0 adds `net11.0`. 4.0.0 removed the `net462`, `net47`, and `net471` targets present in 3.0.0.
 There is no `netstandard2.0` asset; it was removed in 3.0.0.
 
 Windows honors `LoadLibraryFlags`, with the default bare-name adjustment described
@@ -423,10 +423,10 @@ assemblies are not collectible; weak keys alone cannot unload them.
 Want to try the latest changes or contribute a fix? Here's the local setup.
 
 Building from source requires the SDK pinned in [global.json](global.json)
-(currently .NET SDK `10.0.402`). Native tests also require CMake 3.20+ and a C
+(currently .NET SDK `11.0.100`). Native tests also require CMake 3.20+ and a C
 compiler. On Windows, install the Visual Studio C++ build tools and ensure
 `cmake` is on `PATH`, or pass `-p:CMakeCommand="<path-to-cmake.exe>"` when building.
-Install the .NET 8 and 9 runtimes to run those test targets.
+Install the .NET 8, 9, and 10 runtimes to run those test targets.
 
 From the repository root on Windows:
 
@@ -438,7 +438,7 @@ dotnet test --solution .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release --no-b
 For one modern target, including on Linux/macOS:
 
 ```shell
-dotnet test --project test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/AdaskoTheBeAsT.Interop.Unmanaged.Test.csproj -c Release -f net10.0
+dotnet test --project test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/AdaskoTheBeAsT.Interop.Unmanaged.Test.csproj -c Release -f net11.0
 ```
 
 The current checkout uses Microsoft.Testing.Platform through `global.json`.

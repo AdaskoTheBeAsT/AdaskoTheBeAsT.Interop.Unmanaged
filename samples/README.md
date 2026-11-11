@@ -8,11 +8,11 @@ process and must not unwind into an unload while native threads are active.
 Build the fixture first:
 
 ```powershell
-dotnet build test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test -c Release -f net10.0
+dotnet build test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test -c Release -f net11.0
 dotnet publish samples/NativeSmoke -c Release -r win-x64 --self-contained true -p:SmokePublishMode=Trimmed -o artifacts/trimmed
-test/Run-NativeSmoke.ps1 -Executable artifacts/trimmed/NativeSmoke.exe -Library test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/bin/Release/net10.0/native/fixture.dll
+test/Run-NativeSmoke.ps1 -Executable artifacts/trimmed/NativeSmoke.exe -Library test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/bin/Release/net11.0/native/fixture.dll
 dotnet publish samples/NativeSmoke -c Release -r win-x64 --self-contained true -p:SmokePublishMode=Aot -o artifacts/aot
-test/Run-NativeSmoke.ps1 -Executable artifacts/aot/NativeSmoke.exe -Library test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/bin/Release/net10.0/native/fixture.dll
+test/Run-NativeSmoke.ps1 -Executable artifacts/aot/NativeSmoke.exe -Library test/unit/AdaskoTheBeAsT.Interop.Unmanaged.Test/bin/Release/net11.0/native/fixture.dll
 ```
 
 For Linux use `linux-x64`, `NativeSmoke`, and `libfixture.so`; for macOS use
@@ -28,8 +28,8 @@ that guarded example and the expected NativeAOT rejection tests, not library cod
 To test the produced package rather than a project reference:
 
 ```powershell
-dotnet build src/AdaskoTheBeAsT.Interop.Unmanaged -c Release -p:Version=4.0.1-local
-dotnet pack src/AdaskoTheBeAsT.Interop.Unmanaged -c Release -p:Version=4.0.1-local -o artifacts/packages
+dotnet build src/AdaskoTheBeAsT.Interop.Unmanaged -c Release -p:Version=5.0.0-local
+dotnet pack src/AdaskoTheBeAsT.Interop.Unmanaged -c Release -p:Version=5.0.0-local -o artifacts/packages
 test/Validate-Package.ps1 -Directory artifacts/packages
 $packages = (Resolve-Path artifacts/packages).Path
 @"
@@ -42,8 +42,8 @@ $packages = (Resolve-Path artifacts/packages).Path
   </packageSources>
 </configuration>
 "@ | Set-Content artifacts/NuGet.config
-dotnet restore samples/NativeSmoke -r win-x64 --configfile artifacts/NuGet.config -p:SmokePackageVersion=4.0.1-local -p:SmokePublishMode=Aot
-dotnet publish samples/NativeSmoke -c Release -r win-x64 --self-contained true --no-restore -p:SmokePackageVersion=4.0.1-local -p:SmokePublishMode=Aot -o artifacts/package-aot
+dotnet restore samples/NativeSmoke -r win-x64 --configfile artifacts/NuGet.config -p:SmokePackageVersion=5.0.0-local -p:SmokePublishMode=Aot
+dotnet publish samples/NativeSmoke -c Release -r win-x64 --self-contained true --no-restore -p:SmokePackageVersion=5.0.0-local -p:SmokePublishMode=Aot -o artifacts/package-aot
 ```
 
 `RetainedCallback` stores its callback root in `_binder`. It calls the fixture's

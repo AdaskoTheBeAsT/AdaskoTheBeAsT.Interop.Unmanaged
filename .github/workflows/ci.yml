@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
     tags:
       - "v*"
 
@@ -12,6 +12,7 @@ permissions:
   contents: read
   issues: write
   pull-requests: write
+  id-token: write
 
 jobs:
   build:
@@ -29,4 +30,4 @@ jobs:
       use_global_json: ${{ vars.USE_GLOBAL_JSON == 'true' }}
     secrets:
       sonar_token: ${{ secrets.SONAR_TOKEN }}
-      nuget_api_key: ${{ secrets.NUGET_API_KEY }}
+      nuget_user: ${{ secrets.NUGET_USER }}

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net10.0;net9.0;net8.0;net481;net48;net472</TargetFrameworks>
+    <TargetFrameworks>net11.0;net10.0;net9.0;net8.0;net481;net48;net472</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
@@ -20,11 +20,11 @@
     <PackageProjectUrl>https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged</PackageProjectUrl>
     <Copyright>Adam "AdaskoTheBeAsT" Pluciński</Copyright>
     <PackageTags>Interop;Unmanaged</PackageTags>
-    <PackageReleaseNotes>4.0.1: Tighten PinDelegate and PinConcreteDelegate constraints, align validation scripts with the six 4.0 targets, and update .NET SDK and build analyzers.</PackageReleaseNotes>
+    <PackageReleaseNotes>5.0.0: Add net11.0 target framework support, update repository toolchain to .NET SDK 11.0.100, and upgrade build analyzers and test packages.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
-  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
+  <PropertyGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net11.0')) OR $([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net10.0'))">
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
   </PropertyGroup>

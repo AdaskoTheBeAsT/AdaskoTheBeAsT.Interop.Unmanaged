@@ -1,10 +1,16 @@
 # Migration guide
 
-This guide covers upgrading to **4.0.0**, including the changes from 3.0.0 and
-additional notes for consumers upgrading from 1.x or 2.x.
+This guide covers upgrading to **5.0.0**, including the breaking changes from
+4.0.0 and 3.0.0 and additional notes for consumers upgrading from 1.x or 2.x.
 
 See the [changelog](CHANGELOG.md) for release history and the [README](README.md)
 for complete examples.
+
+## From 4.0.x to 5.0.0
+
+5.0.0 adds a dedicated `net11.0` package asset while retaining all six `4.0.x`
+targets (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472`). There
+are no public API removals or runtime behavior changes relative to 4.0.1.
 
 ## Upgrade checklist
 
@@ -233,7 +239,7 @@ published application, not only a normal debug build.
 
 ### Repository contributors
 
-The checkout now uses .NET SDK `10.0.402` and Microsoft.Testing.Platform through
+The checkout now uses .NET SDK `11.0.100` and Microsoft.Testing.Platform through
 `global.json`, with xUnit v3. Use explicit project/solution options:
 
 ```powershell
@@ -243,7 +249,7 @@ dotnet test --solution .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release --no-b
 
 These commands require the [native test toolchain](test/native/README.md).
 `test/Validate-Package.ps1` and `test/Verify-DeterministicBuild.ps1` validate the
-six `4.0.x` targets (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`);
+seven `5.0.x` targets (`net11.0`, `net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, `net472`);
 see the [validation notes](docs/validation.md) for current local evidence and
 remaining platform gaps.
 

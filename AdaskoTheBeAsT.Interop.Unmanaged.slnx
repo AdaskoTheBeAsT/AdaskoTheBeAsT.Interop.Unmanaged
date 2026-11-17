@@ -28,6 +28,16 @@
     <File Path="test/native/fixture-x86.def" />
     <File Path="test/native/fixture.c" />
     <File Path="test/native/fixture.h" />
+    <File Path="test/native/iso_child.c" />
+    <File Path="test/native/iso_compact.c" />
+    <File Path="test/native/iso_delay.c" />
+    <File Path="test/native/iso_helper.c" />
+    <File Path="test/native/iso_hook.c" />
+    <File Path="test/native/iso_hook_dep.c" />
+    <File Path="test/native/iso_hook_dep.def" />
+    <File Path="test/native/iso_leaf.c" />
+    <File Path="test/native/iso_parent.c" />
+    <File Path="test/native/iso_unused.c" />
     <File Path="test/native/NativeFixture.targets" />
     <File Path="test/native/README.md" />
   </Folder>

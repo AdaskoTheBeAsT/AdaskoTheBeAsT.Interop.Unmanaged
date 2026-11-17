@@ -13,6 +13,8 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 [ExcludeFromCodeCoverage]
 internal static class WindowsNativeMethods
 {
+    internal const uint GetModuleHandleExFlagFromAddress = 0x00000004;
+
     private const string KernelLib = "kernel32";
 
     [SuppressUnmanagedCodeSecurity]
@@ -33,6 +35,15 @@ internal static class WindowsNativeMethods
     [SuppressUnmanagedCodeSecurity]
     [DllImport(KernelLib, CharSet = CharSet.Ansi, EntryPoint = nameof(GetProcAddress), ExactSpelling = true, BestFitMapping = false, ThrowOnUnmappableChar = true)]
     internal static extern IntPtr GetProcAddress(IntPtr hModule, string procname);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport(KernelLib, ExactSpelling = true, SetLastError = true, EntryPoint = nameof(GetModuleFileNameW))]
+    internal static extern uint GetModuleFileNameW(IntPtr hModule, IntPtr lpFilename, uint nSize);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport(KernelLib, ExactSpelling = true, SetLastError = true, EntryPoint = nameof(GetModuleHandleExW))]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetModuleHandleExW(uint dwFlags, IntPtr lpModuleAddress, out IntPtr phModule);
 }
 #pragma warning restore SYSLIB1054
 #pragma warning restore CA1060

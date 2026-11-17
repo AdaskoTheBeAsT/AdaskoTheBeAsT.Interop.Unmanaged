@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Versioning;
 using AdaskoTheBeAsT.Interop.Unmanaged;
 
 namespace NativeSmoke;
@@ -26,14 +27,18 @@ internal static class Program
         }
 
         using var library = new UnmanagedLibrary(args[0]);
-        if (!library.TryGetExport("fixture_add", out var address))
+        var address = library.GetRequiredExport("fixture_add");
+        if (OperatingSystem.IsWindows())
         {
-            return 3;
+            VerifyWindowsFeatures(library, args[0]);
         }
 
-        var add = (delegate* unmanaged[Cdecl]<int, int, int>)address;
-        Check(add(20, 22));
-        Check(library.GetUnmanagedFunction<Binary>("fixture_add")!(20, 22));
+        using (NativeExecutionGuard.EnterScope())
+        {
+            var add = (delegate* unmanaged[Cdecl]<int, int, int>)address;
+            Check(add(20, 22));
+            Check(library.GetUnmanagedFunction<Binary>("fixture_add")!(20, 22));
+        }
 
         using var handle = UnmanagedLibrary.LoadLibrary(args[0]);
         Check(UnmanagedLibrary.GetUnmanagedFunction<Binary>(handle, "fixture_add")!(20, 22));
@@ -74,6 +79,74 @@ internal static class Program
         if (result != 42)
         {
             throw new InvalidOperationException("Native smoke test returned an unexpected result.");
+        }
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void VerifyWindowsFeatures(UnmanagedLibrary library, string fixturePath)
+    {
+        if (library.BaseAddress == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Expected non-zero module BaseAddress on Windows.");
+        }
+
+        var loadedPath = library.GetLoadedFilePath();
+        var fixtureAdd = library.GetRequiredExport("fixture_add");
+        if (string.IsNullOrWhiteSpace(loadedPath)
+            || !library.ContainsAddress(fixtureAdd)
+            || !UnmanagedLibrary.TryGetLoadedModuleFromAddress(fixtureAdd, out var modBase, out _)
+            || modBase != library.BaseAddress
+            || UnmanagedLibrary.GetRequiredSystemExport("kernel32.dll", "CompareStringW") == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Module provenance or system export verification failed.");
+        }
+
+        var identity = LoadedModuleMemory.Inspect(library);
+        LoadedModuleMemory.VerifyIdentity(library, identity);
+
+        var editor = PeImageEditor.FromFile(fixturePath, PeImageValidationOptions.ForCurrentProcessArchitecture());
+        if (editor.SizeOfImage == 0 || editor.TimeDateStamp != identity.TimeDateStamp || editor.GetExportModuleName() is null)
+        {
+            throw new InvalidOperationException("Expected matching PE metadata and export directory name.");
+        }
+
+        VerifySlotCacheScratchAndByteStringHelpers();
+
+        if (!string.Equals(WorkerModuleNaming.FormatFixedLengthName("DFORRT.dll", 0), "DFOR00.dll", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Unexpected WorkerModuleNaming output.");
+        }
+    }
+
+    private static void VerifySlotCacheScratchAndByteStringHelpers()
+    {
+        var allocator = new WorkerSlotAllocator(maxExclusive: 4, excludedSlots: [0], preferThreadStickySlot: true);
+        using (var slot = allocator.Acquire())
+        {
+            if (slot.SlotIndex != 1)
+            {
+                throw new InvalidOperationException("Unexpected initial WorkerSlotAllocator index.");
+            }
+        }
+
+        Span<byte> shortBuf = stackalloc byte[12];
+        NativeByteString.WriteShortStringAscii("CFG01", shortBuf);
+        if (!string.Equals(NativeByteString.ReadShortStringAscii(shortBuf), "CFG01", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("NativeByteString ShortString round-trip failed.");
+        }
+
+        var cache = PinnedLibraryCache.CreateOrdinalIgnoreCase<string>();
+        if (!string.Equals(cache.GetOrLoad("k1", static key => key.ToUpperInvariant()), "K1", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("PinnedLibraryCache GetOrLoad failed.");
+        }
+
+        using var scratch = new UnmanagedScratchBuffer(16);
+        using var pointerLease = scratch.AcquirePointerLease();
+        if (pointerLease.Pointer == IntPtr.Zero || pointerLease.ByteLength != 16)
+        {
+            throw new InvalidOperationException("UnmanagedScratchBuffer PointerLease failed.");
         }
     }
 

@@ -137,6 +137,15 @@ internal static class NativeLoader
 #endif
     }
 
+    internal static bool IsWindows()
+    {
+#if NET5_0_OR_GREATER
+        return OperatingSystem.IsWindows();
+#else
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#endif
+    }
+
     private static IntPtr LoadWindowsLibrary(string fileName, LoadLibraryFlags flags)
     {
         // DLL_LOAD_DIR requires a full path. For a bare name, keep the default
@@ -157,15 +166,6 @@ internal static class NativeLoader
         }
 
         return handle;
-    }
-
-    private static bool IsWindows()
-    {
-#if NET5_0_OR_GREATER
-        return OperatingSystem.IsWindows();
-#else
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#endif
     }
 
 #if !NET8_0_OR_GREATER

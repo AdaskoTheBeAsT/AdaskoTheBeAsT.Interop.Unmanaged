@@ -33,7 +33,7 @@ public sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
     /// parameterless constructor (CA1419) so that reflection- and serialization-based
     /// consumers can instantiate the type; the loader path no longer relies on the P/Invoke
     /// marshaller since exports are resolved via <see cref="IntPtr"/> and wrapped with
-    /// <see cref="SafeLibraryHandle(IntPtr, bool)"/>. Consumers obtain instances through
+    /// <see cref="SafeLibraryHandle(IntPtr, bool, string)"/>. Consumers obtain instances through
     /// <see cref="UnmanagedLibrary"/> APIs.
     /// </summary>
     [ExcludeFromCodeCoverage]
@@ -49,11 +49,18 @@ public sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
     /// </summary>
     /// <param name="existingHandle">Native handle to take ownership of.</param>
     /// <param name="ownsHandle">Whether the handle should be released when disposed.</param>
-    internal SafeLibraryHandle(IntPtr existingHandle, bool ownsHandle)
+    /// <param name="moduleName">Optional module name or path used in diagnostic messages.</param>
+    internal SafeLibraryHandle(IntPtr existingHandle, bool ownsHandle, string? moduleName = null)
         : base(ownsHandle)
     {
         SetHandle(existingHandle);
+        ModuleName = moduleName;
     }
+
+    /// <summary>
+    /// Gets the module name or path that produced this handle, when available.
+    /// </summary>
+    internal string? ModuleName { get; }
 
     /// <inheritdoc />
     protected override bool ReleaseHandle()

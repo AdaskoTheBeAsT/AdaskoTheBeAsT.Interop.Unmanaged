@@ -2,19 +2,21 @@
 
 This file separates local evidence from remaining cross-platform CI gaps.
 
-## Current 5.0.0 validation (2026-11-11, Windows x64)
+## Current 5.0.0 validation (2026-11-17, Windows x64 + x86)
 
-The repository defaults to `Version=5.0.0`, targets **seven frameworks** (`net11.0`,
-`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472`), and selects .NET SDK
-`11.0.100` with `Microsoft.Testing.Platform` in `global.json`.
+The repository defaults to `Version=5.0.0`, targets **five frameworks** (`net11.0`,
+`net10.0`, `net481`, `net48`, and `net472`), and selects .NET SDK `11.0.100`
+with `Microsoft.Testing.Platform` in `global.json`.
 
 | Check | Result |
 | --- | --- |
-| Release solution build | Passed for all seven TFMs with 0 warnings and 0 errors. |
-| Full test matrix | Passed 1,009 tests across `net11.0`, `net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472` (145 each on modern .NET, 143 each on .NET Framework); 0 failed and 0 skipped. |
-| Package contents | `test/Validate-Package.ps1` verified all seven DLL and XML documentation files, portable PDBs in the `.snupkg`, Source Link mappings, license, README, empty dependency groups, and absence of test/native artifact leakage. |
+| Release solution build | Passed for all five TFMs (`net11.0`, `net10.0`, `net481`, `net48`, `net472`) with 0 warnings and 0 errors. |
+| Full x64 test matrix | Passed 1,165 tests across `net11.0`, `net10.0`, `net481`, `net48`, and `net472` (236 each on modern .NET, 231 each on .NET Framework); 0 failed and 0 skipped. |
+| Full x86 test matrix | Passed 1,165 tests across 32-bit `net11.0`, `net10.0`, `net481`, `net48`, and `net472` (236 each on 32-bit modern .NET, 231 each on 32-bit .NET Framework); 0 failed and 0 skipped. |
+| Package contents | `test/Validate-Package.ps1` verified all five DLL and XML documentation files, `buildTransitive/AdaskoTheBeAsT.Interop.Unmanaged.targets`, portable PDBs in the `.snupkg`, Source Link mappings, license, README, empty dependency groups, and absence of test/native artifact leakage. |
 | Deterministic builds | `test/Verify-DeterministicBuild.ps1` verified identical SHA256 hashes for `net11.0`, `net10.0`, and `net472` DLL and portable PDB outputs across independent checkout paths. |
-| Consumer smoke and benchmark projects | `samples/NativeSmoke` and `benchmarks/CallbackBenchmarks` built on `net11.0` with 0 warnings and 0 errors; `NativeSmoke` passed against `fixture.dll`. |
+| Consumer smoke, Trimmed, NativeAOT, and benchmark projects | `samples/NativeSmoke` and `benchmarks/CallbackBenchmarks` built on `net11.0` with 0 warnings and 0 errors; `NativeSmoke` passed `test/Run-NativeSmoke.ps1` in `Release`, self-contained `Trimmed`, and self-contained `NativeAOT` (`Aot`) publish modes. |
+| Cross-platform gaps | Linux (`glibc`/`musl`), macOS, ARM64, and Mono runtime matrices require their respective CI runners and were not executed on this Windows workstation. |
 
 ```powershell
 dotnet build .\AdaskoTheBeAsT.Interop.Unmanaged.slnx -c Release

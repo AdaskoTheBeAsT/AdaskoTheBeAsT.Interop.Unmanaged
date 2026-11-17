@@ -1,6 +1,6 @@
 param([Parameter(Mandatory)][string] $Directory)
 $ErrorActionPreference = 'Stop'
-$tfms = @('net11.0', 'net10.0', 'net9.0', 'net8.0', 'net481', 'net48', 'net472')
+$tfms = @('net11.0', 'net10.0', 'net481', 'net48', 'net472')
 $name = 'AdaskoTheBeAsT.Interop.Unmanaged'
 $packages = @(Get-ChildItem -LiteralPath $Directory -Filter "$name.*.nupkg")
 if ($packages.Count -ne 1) { throw "Expected one runtime package, found $($packages.Count)." }
@@ -18,7 +18,7 @@ try {
     if ($paths -match '(^|/)(native|fixture|test|samples|artifacts)(/|[._])|\.(so|dylib)$') {
         throw 'Test or native build artifacts leaked into the runtime package.'
     }
-    foreach ($file in @('LICENSE', 'README.md')) {
+    foreach ($file in @('LICENSE', 'README.md', 'buildTransitive/AdaskoTheBeAsT.Interop.Unmanaged.targets')) {
         if ($paths -cnotcontains $file) { throw "Missing $file." }
     }
     $reader = [IO.StreamReader]::new($zip.GetEntry("$name.nuspec").Open())

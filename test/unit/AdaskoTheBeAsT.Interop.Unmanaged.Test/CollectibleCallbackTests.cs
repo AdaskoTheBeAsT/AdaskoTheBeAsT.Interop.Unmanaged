@@ -12,6 +12,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
 #pragma warning disable SA1121
 
+[Collection(ProcessErrorModeTestCollection.Name)]
 [Trait("Category", "Native")]
 public class CollectibleCallbackTests
 {

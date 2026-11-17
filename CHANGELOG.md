@@ -6,17 +6,93 @@ NuGet publication dates.
 
 See the [migration guide](MIGRATION.md) for upgrade steps.
 
-## [5.0.0] - 2026-11-11
+## [5.0.0] - 2026-11-15
+
+### Breaking changes
+
+- Remove the out-of-support `net8.0` and `net9.0` package targets. Supported
+  targets are now `net11.0`, `net10.0`, `net481`, `net48`, and `net472`.
 
 ### Added
 
-- Add `net11.0` target framework support to `AdaskoTheBeAsT.Interop.Unmanaged` and unit tests alongside `net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472`, with trimming and AOT analyzers enabled on `net11.0`.
-- Include `/test/native/` fixture sources and CMake build targets in `AdaskoTheBeAsT.Interop.Unmanaged.slnx`.
+- Add `net11.0` target framework support to `AdaskoTheBeAsT.Interop.Unmanaged`
+  and unit tests alongside `net10.0`, `net481`, `net48`, and `net472`, with
+  trimming and AOT analyzers enabled on `net11.0`.
+- Add `UnmanagedLibrary.GetRequiredExport` (instance and static overloads) and
+  Windows-only `UnmanagedLibrary.BaseAddress` / `GetBaseAddress(SafeLibraryHandle)`,
+  `GetLoadedFilePath`, `ContainsAddress`, `TryGetLoadedModuleFromAddress`, and
+  `GetRequiredSystemExport`.
+- Add Windows `PeImageEditor` (`PeMachine`, `PeImageValidationOptions` including
+  `ForExecutable`, `PeImportModuleRemoval`, `PeImportSymbolRewrite`,
+  `PeVerifiedBytePatch`) for bounds-checked PE32/PE32+ export-name rewrites,
+  witness-verified import-module descriptor removal, import and delay-load import
+  rewrites, import-by-name symbol rewrites, verified RVA byte and ASCII/UTF-16/Delphi
+  `ShortString` patches, `FileOffsetToRva`, `SetLargeAddressAware`, Authenticode
+  clearing with PE checksum recalculation, and atomic idempotent `SaveIfChanged`
+  staging.
+- Add Windows `LoadedModuleMemory` and `LoadedModuleIdentity` for live mapped-PE
+  identity verification (`Machine`, `TimeDateStamp`, `SizeOfImage`), runtime named
+  and ordinal IAT redirection (`RedirectImportFunction`, `TryRedirectImportFunction`,
+  `TryRedirectImportOrdinal`), scoped-`VirtualProtect` `WriteVerifiedBytesAtRva`
+  (with `FlushInstructionCache` on executable sections), and writable-only
+  `ClearWritableBytesAtRva` `.data`/`.bss` scratch resets.
+- Add Windows `IsolatedLibrarySet` (`IsolatedLibrarySetOptions`,
+  `IsolatedModuleSpecification`, `CompanionCopyMode`,
+  `IsolatedCompanionFileSpecification`, `IsolatedCompanionDirectorySpecification`,
+  `StaleDirectorySweepResult`) and `WorkerModuleNaming` for staging and loading
+  independent per-worker copies of stateful native DLL dependency graphs and
+  pre-`DllMain` companion files/directories (with `TransformBytes` and
+  traversal/reparse/collision checks), path-length and ASCII path preflight guards,
+  `PinModulesForProcessLifetime` lease-retaining support, namespace/generation
+  scoping, reverse-topological unload, `.unmanaged-isolation.marker` and
+  `.unmanaged-isolation.lease` directory ownership, optional owning-thread
+  affinity, and `SweepStaleWorkerDirectories` crash cleanup.
+- Add `WorkerSlotAllocator` and `WorkerSlotLease` for bounded `00..99` worker-slot
+  leasing with excluded-slot reservations and per-instance thread-sticky slot
+  preference.
+- Add `NativeByteString` for fixed-width NUL-terminated ASCII/Latin-1, Fortran
+  space-padded ASCII, and Delphi/Pascal `ShortString` byte-buffer marshaling, plus
+  opt-in `buildTransitive/AdaskoTheBeAsT.Interop.Unmanaged.targets`
+  (`EnableLargeAddressAwareAppHost`) to stamp `IMAGE_FILE_LARGE_ADDRESS_AWARE` on
+  `win-x86` apphosts during build and publish.
+- Add `PinnedLibraryCache` / `PinnedLibraryCache<TKey, THandles>` single-flight
+  fault-evicting process-lifetime handle caches and `UnmanagedScratchBuffer`
+  `SafeBuffer`-backed unmanaged scratch buffers with ref-counted `PointerLease`
+  scopes.
+- Add `NativeExecutionGuard`, `NativeExecutionScope`, and `NativeErrorMode` for
+  thread-affine FPU/SSE exception masking and sticky-flag clearing (preserving
+  caller rounding and x86 precision modes), per-thread Windows error-dialog
+  suppression (`SetThreadErrorMode`), and explicit process-wide
+  `SuppressProcessErrorDialogs`.
+- Include `/test/native/` fixture sources and CMake build targets in
+  `AdaskoTheBeAsT.Interop.Unmanaged.slnx`, extended with stateful multi-DLL
+  (`isoleaf0`, `isochild`, delay-loaded `isodelay`, `isoparent`), import-compaction
+  (`isocompact`, `isounused`), executable (`isohelper`), runtime IAT/memory/pre-`DllMain`
+  (`isohook`, `isohookdep`), and x86/x64 FPU trap/rounding fixtures.
 
 ### Changed
 
-- Update `global.json` to .NET SDK `11.0.100` and upgrade build analyzers (`Meziantou.Analyzer 3.0.324`, `Microsoft.CodeAnalysis.NetAnalyzers 11.0.100`, `SonarAnalyzer.CSharp 10.36.0.15337`, `StyleCop.Analyzers 1.3.180`) and unit-test packages (`Microsoft.NET.Test.Sdk 18.11.1`, `Microsoft.Testing.Extensions.GitHubActionsReport 2.5.2`, `xunit.v3 4.0.3`, `xunit.analyzers 2.3.0`).
-- Align `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`, `samples/NativeSmoke`, `benchmarks/CallbackBenchmarks`, and documentation with the seven `5.0.0` target frameworks and .NET SDK `11.0.100`.
+- Update `global.json` to .NET SDK `11.0.100`, set `<LangVersion>` to `14.0`,
+  and upgrade build analyzers (`AdaskoTheBeAsT.*` `*.300`, `Meziantou.Analyzer 3.0.341`,
+  `Microsoft.CodeAnalysis.* 5.12.0`, `Microsoft.CodeAnalysis.NetAnalyzers 11.0.100`,
+  `Microsoft.VisualStudio.Threading.Analyzers 18.12.1`, `Roslynator.* 5.0.1`,
+  `SonarAnalyzer.CSharp 10.36.0.15337`, `StyleCop.Analyzers 1.3.180`) and
+  unit-test packages (`Microsoft.NET.Test.Sdk 18.12.0`,
+  `Microsoft.Testing.Extensions.GitHubActionsReport 2.5.3`, `AwesomeAssertions 9.6.0`,
+  `xunit.v3 4.0.3`, `xunit.analyzers 2.3.0`).
+- Align `test/Validate-Package.ps1`, `test/Verify-DeterministicBuild.ps1`,
+  `samples/NativeSmoke`, `benchmarks/CallbackBenchmarks`, and documentation with
+  the five `5.0.0` target frameworks (`net11.0`, `net10.0`, `net481`, `net48`,
+  `net472`) and .NET SDK `11.0.100`.
+- Add [ADR 0002](docs/adr/0002-net11-upgrade-and-target-framework-lifecycle.md),
+  [ADR 0003](docs/adr/0003-verified-pe-image-editor.md),
+  [ADR 0004](docs/adr/0004-isolated-native-library-sets-and-directory-leases.md),
+  [ADR 0005](docs/adr/0005-native-execution-guards-and-export-ergonomics.md),
+  [ADR 0006](docs/adr/0006-pe-export-rewrites-import-compaction-and-string-patches.md),
+  [ADR 0007](docs/adr/0007-loaded-module-iat-redirection-and-provenance.md),
+  [ADR 0008](docs/adr/0008-companion-staging-path-guards-and-process-lifetime-pinning.md),
+  and [ADR 0009](docs/adr/0009-worker-slot-leasing-native-byte-strings-and-pinned-caches.md)
+  documenting the `5.0.0` architecture decisions.
 
 ## [4.0.1] - 2026-10-25
 

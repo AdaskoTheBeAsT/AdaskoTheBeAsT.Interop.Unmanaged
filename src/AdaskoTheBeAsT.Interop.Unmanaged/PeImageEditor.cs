@@ -830,12 +830,12 @@ public sealed class PeImageEditor
             throw new ArgumentException("Path cannot be null or whitespace.", paramName);
         }
 
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (path.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("Path cannot contain a NUL character.", paramName);
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
     }
 
     private static void ValidateModuleRewriteArguments(string originalModuleName, string replacementModuleName)
@@ -1548,7 +1548,7 @@ public sealed class PeImageEditor
     private string ReadValidatedModuleCString(uint stringRva, out int fileOffset)
     {
         var text = ReadBoundedAsciiCString(stringRva, allowSpaces: true, out fileOffset);
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (text.IndexOf('/') >= 0
             || text.IndexOf('\\') >= 0
             || text.IndexOf(':') >= 0
@@ -1559,7 +1559,7 @@ public sealed class PeImageEditor
                 _imageLabel,
                 $"PE import module name '{text}' contains prohibited path components.");
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
 
         return text;
     }

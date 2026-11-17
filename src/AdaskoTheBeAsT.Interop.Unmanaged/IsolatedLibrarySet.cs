@@ -449,12 +449,12 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
 #endif
 
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (string.IsNullOrWhiteSpace(options.SourceDirectory) || options.SourceDirectory.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("SourceDirectory cannot be null, whitespace, or contain NUL.", nameof(options));
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
 
         if (options.WorkerIndex is < 0 or > 99)
         {
@@ -494,14 +494,14 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static string ValidateAndNormalizeIsolationRoot(string? isolationRootDirectory, string? fullSourceDirectory)
     {
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (isolationRootDirectory is null
             || string.IsNullOrWhiteSpace(isolationRootDirectory)
             || isolationRootDirectory.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("IsolationRootDirectory cannot be null, whitespace, or contain NUL.", nameof(isolationRootDirectory));
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
 
         var fullRoot = TrimTrailingSeparatorsExceptRoot(Path.GetFullPath(isolationRootDirectory));
         var pathRoot = Path.GetPathRoot(fullRoot);
@@ -991,14 +991,14 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static string ValidateRelativeSubPath(string? relativePath, string paramName)
     {
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (relativePath is null || string.IsNullOrWhiteSpace(relativePath) || relativePath.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("Companion relative path cannot be null, whitespace, or contain NUL.", paramName);
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
 
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (Path.IsPathRooted(relativePath)
             || relativePath.IndexOf(':') >= 0
             || relativePath[0] == '/'
@@ -1006,7 +1006,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         {
             throw new ArgumentException($"Companion path '{relativePath}' must be a relative subpath without root or drive specifiers.", paramName);
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
 
         var segments = relativePath.Split(['/', '\\'], StringSplitOptions.None);
         foreach (var segment in segments)
@@ -1024,7 +1024,7 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static void ValidateSearchPattern(string? searchPattern, string paramName)
     {
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (searchPattern is null
             || string.IsNullOrWhiteSpace(searchPattern)
             || searchPattern.IndexOf('\0') >= 0
@@ -1034,7 +1034,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         {
             throw new ArgumentException("Companion directory SearchPattern must be a non-empty bare file pattern.", paramName);
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
     }
 
     private static string ResolveBoundedChildPath(string baseDirectory, string validatedRelativePath, string paramName)

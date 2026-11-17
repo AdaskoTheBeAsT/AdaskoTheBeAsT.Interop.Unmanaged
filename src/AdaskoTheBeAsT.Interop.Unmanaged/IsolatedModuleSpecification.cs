@@ -25,12 +25,12 @@ public sealed class IsolatedModuleSpecification
     /// <param name="sourceFileName">Bare ASCII DLL filename inside <see cref="IsolatedLibrarySetOptions.SourceDirectory"/>.</param>
     public IsolatedModuleSpecification(string logicalName, string sourceFileName)
     {
-#pragma warning disable CA2249
+#pragma warning disable CA2249,MA0001
         if (string.IsNullOrWhiteSpace(logicalName) || logicalName.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("Logical module name cannot be null, whitespace, or contain NUL.", nameof(logicalName));
         }
-#pragma warning restore CA2249
+#pragma warning restore CA2249,MA0001
 
         WorkerModuleNaming.SplitValidatedDllFileName(sourceFileName, nameof(sourceFileName), out _, out _);
         LogicalName = logicalName;

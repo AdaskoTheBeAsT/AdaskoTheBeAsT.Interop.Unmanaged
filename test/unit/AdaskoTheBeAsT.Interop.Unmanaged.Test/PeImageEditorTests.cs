@@ -147,7 +147,7 @@ public class PeImageEditorTests
         }
 
         var editor = PeImageEditor.FromFile(parentPath, PeImageValidationOptions.ForCurrentProcessArchitecture());
-        editor.RvaToFileOffset(asciiRva).Should().BeGreaterThan(0);
+        editor.RvaToFileOffset(asciiRva).Should().BePositive();
 
         var asciiPatch = PeVerifiedBytePatch.FromAsciiLiteral(asciiRva, "ORIG_TAG_000000", "WORK_TAG_42");
         var utf16Patch = PeVerifiedBytePatch.FromUtf16Literal(utf16Rva, "WKR_ORIG", "WKR_42");
@@ -155,7 +155,7 @@ public class PeImageEditorTests
         editor.ApplyVerifiedBytePatch(utf16Patch).ApplyVerifiedBytePatch(utf16Patch);
 
         Action mismatch = () => editor.ReplaceVerifiedBytesAtRva(asciiRva, Encoding.ASCII.GetBytes("WRONG_EXPECTED!"), Encoding.ASCII.GetBytes("OTHER_VALUE_123"));
-        mismatch.Should().Throw<BadImageFormatException>().Which.Message.Should().Contain("RVA 0x");
+        mismatch.Should().Throw<BadImageFormatException>().WithMessage("*RVA 0x*");
 
         var stagedPath = Path.Combine(fixture.DirectoryPath, "isoparent_patched.dll");
         editor.ClearAuthenticodeAndRecalculateChecksum().SaveIfChanged(stagedPath);
@@ -229,7 +229,7 @@ public class PeImageEditorTests
         editor.HasAuthenticodeSignature.Should().BeFalse();
         editor.CheckSum.Should().NotBe(0u);
         var result = editor.ToArray();
-        result.Length.Should().Be(raw.Length);
+        result.Should().HaveCount(raw.Length);
         (PeHeaderParser.ReadUInt16(result, optOffset + 70) & 0x0080).Should().Be(0);
     }
 
@@ -275,7 +275,7 @@ public class PeImageEditorTests
 
         var managedAssemblyPath = typeof(UnmanagedLibrary).Assembly.Location;
         Action loadManaged = () => PeImageEditor.FromFile(managedAssemblyPath);
-        loadManaged.Should().Throw<BadImageFormatException>().Which.Message.Should().Contain("CLI/CLR");
+        loadManaged.Should().Throw<BadImageFormatException>().WithMessage("*CLI/CLR*");
 
         var allowManaged = PeImageEditor.FromFile(
             managedAssemblyPath,
@@ -529,7 +529,7 @@ public class PeImageEditorTests
         signedEditor.SetLargeAddressAware(enabled: (signedEditor.Characteristics & 0x0020) == 0);
         var saveTarget = Path.Combine(fixture.DirectoryPath, "signed_modified.dll");
         Action saveWithoutClear = () => signedEditor.SaveIfChanged(saveTarget);
-        saveWithoutClear.Should().Throw<InvalidOperationException>().Which.Message.Should().Contain("Authenticode");
+        saveWithoutClear.Should().Throw<InvalidOperationException>().WithMessage("*Authenticode*");
 
         signedEditor.ClearAuthenticodeAndRecalculateChecksum().SaveIfChanged(saveTarget);
         File.Exists(saveTarget).Should().BeTrue();

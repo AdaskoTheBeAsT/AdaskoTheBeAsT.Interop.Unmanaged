@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.InteropServices;
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
 using System.Text;
@@ -18,7 +18,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// Provides Windows-only bounded in-memory PE inspection, runtime import address table (IAT) redirection,
 /// provenance-verified RVA byte patching, and writable-section clearing on mapped native module handles.
 /// </summary>
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
 public static class LoadedModuleMemory
@@ -45,10 +45,15 @@ public static class LoadedModuleMemory
     /// <returns>The module's <see cref="LoadedModuleIdentity"/>.</returns>
     public static LoadedModuleIdentity Inspect(SafeLibraryHandle libraryHandle)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(libraryHandle);
+#endif
+#if NET472_OR_GREATER
         if (libraryHandle is null)
         {
             throw new ArgumentNullException(nameof(libraryHandle));
         }
+#endif
 
         var addedRef = false;
         try
@@ -72,10 +77,15 @@ public static class LoadedModuleMemory
     /// <returns>The module's <see cref="LoadedModuleIdentity"/>.</returns>
     public static LoadedModuleIdentity Inspect(UnmanagedLibrary library)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         return Inspect(library.SafeHandle);
     }
@@ -98,10 +108,15 @@ public static class LoadedModuleMemory
     /// <param name="expected">Expected PE header identity.</param>
     public static void VerifyIdentity(UnmanagedLibrary library, LoadedModuleIdentity expected)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         VerifyIdentity(library.SafeHandle, expected);
     }
@@ -145,10 +160,15 @@ public static class LoadedModuleMemory
         string exportName,
         IntPtr replacementFunction)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         return RedirectImportFunction(library.SafeHandle, importedModuleName, exportName, replacementFunction);
     }
@@ -169,10 +189,15 @@ public static class LoadedModuleMemory
         IntPtr replacementFunction,
         out IntPtr originalFunction)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(libraryHandle);
+#endif
+#if NET472_OR_GREATER
         if (libraryHandle is null)
         {
             throw new ArgumentNullException(nameof(libraryHandle));
         }
+#endif
 
         PeNameValidator.ValidateModuleNameArgument(importedModuleName, nameof(importedModuleName));
         PeNameValidator.ValidateSymbolNameArgument(exportName, nameof(exportName));
@@ -204,10 +229,15 @@ public static class LoadedModuleMemory
         IntPtr replacementFunction,
         out IntPtr originalFunction)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         return TryRedirectImportFunction(library.SafeHandle, importedModuleName, exportName, replacementFunction, out originalFunction);
     }
@@ -228,10 +258,15 @@ public static class LoadedModuleMemory
         IntPtr replacementFunction,
         out IntPtr originalFunction)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(libraryHandle);
+#endif
+#if NET472_OR_GREATER
         if (libraryHandle is null)
         {
             throw new ArgumentNullException(nameof(libraryHandle));
         }
+#endif
 
         PeNameValidator.ValidateModuleNameArgument(importedModuleName, nameof(importedModuleName));
         if (ordinal == 0)
@@ -266,10 +301,15 @@ public static class LoadedModuleMemory
         IntPtr replacementFunction,
         out IntPtr originalFunction)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         return TryRedirectImportOrdinal(library.SafeHandle, importedModuleName, ordinal, replacementFunction, out originalFunction);
     }
@@ -293,20 +333,35 @@ public static class LoadedModuleMemory
         byte[] replacementBytes,
         bool flushInstructionCache = false)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(libraryHandle);
+#endif
+#if NET472_OR_GREATER
         if (libraryHandle is null)
         {
             throw new ArgumentNullException(nameof(libraryHandle));
         }
+#endif
 
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(expectedCurrentBytes);
+#endif
+#if NET472_OR_GREATER
         if (expectedCurrentBytes is null)
         {
             throw new ArgumentNullException(nameof(expectedCurrentBytes));
         }
+#endif
 
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(replacementBytes);
+#endif
+#if NET472_OR_GREATER
         if (replacementBytes is null)
         {
             throw new ArgumentNullException(nameof(replacementBytes));
         }
+#endif
 
         ValidateWriteBytesArguments(rva, expectedCurrentBytes.Length, replacementBytes.Length);
         WriteVerifiedBytesCore(libraryHandle, expectedIdentity, rva, expectedCurrentBytes, replacementBytes, flushInstructionCache);
@@ -329,15 +384,20 @@ public static class LoadedModuleMemory
         byte[] replacementBytes,
         bool flushInstructionCache = false)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         WriteVerifiedBytesAtRva(library.SafeHandle, expectedIdentity, rva, expectedCurrentBytes, replacementBytes, flushInstructionCache);
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Verifies <paramref name="expectedIdentity"/> and that the mapped bytes at <paramref name="rva"/> match
     /// <paramref name="expectedCurrentBytes"/> (or <paramref name="replacementBytes"/> for idempotence), then writes
@@ -357,10 +417,15 @@ public static class LoadedModuleMemory
         ReadOnlySpan<byte> replacementBytes,
         bool flushInstructionCache = false)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(libraryHandle);
+#endif
+#if NET472_OR_GREATER
         if (libraryHandle is null)
         {
             throw new ArgumentNullException(nameof(libraryHandle));
         }
+#endif
 
         ValidateWriteBytesArguments(rva, expectedCurrentBytes.Length, replacementBytes.Length);
         WriteVerifiedBytesCore(
@@ -389,10 +454,15 @@ public static class LoadedModuleMemory
         ReadOnlySpan<byte> replacementBytes,
         bool flushInstructionCache = false)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         WriteVerifiedBytesAtRva(library.SafeHandle, expectedIdentity, rva, expectedCurrentBytes, replacementBytes, flushInstructionCache);
     }
@@ -412,10 +482,15 @@ public static class LoadedModuleMemory
         uint rva,
         int byteCount)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(libraryHandle);
+#endif
+#if NET472_OR_GREATER
         if (libraryHandle is null)
         {
             throw new ArgumentNullException(nameof(libraryHandle));
         }
+#endif
 
         if (rva == 0)
         {
@@ -475,10 +550,15 @@ public static class LoadedModuleMemory
         uint rva,
         int byteCount)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(library);
+#endif
+#if NET472_OR_GREATER
         if (library is null)
         {
             throw new ArgumentNullException(nameof(library));
         }
+#endif
 
         ClearWritableBytesAtRva(library.SafeHandle, expectedIdentity, rva, byteCount);
     }
@@ -513,7 +593,7 @@ public static class LoadedModuleMemory
             throw new ArgumentOutOfRangeException(
                 replacementParamName,
                 replacementLength,
-                $"Replacement byte length ({replacementLength}) must equal expected byte length ({expectedLength}).");
+                $"Replacement byte length ({replacementLength.ToString(CultureInfo.InvariantCulture)}) must equal expected byte length ({expectedLength.ToString(CultureInfo.InvariantCulture)}).");
         }
     }
 
@@ -1042,7 +1122,7 @@ public static class LoadedModuleMemory
                 || virtualAddress >= sizeOfImage
                 || (ulong)virtualAddress + mappedLength > sizeOfImage)
             {
-                throw PeHeaderParser.CreateBadImage(label, $"Mapped section #{i} exceeds SizeOfImage bounds.");
+                throw PeHeaderParser.CreateBadImage(label, $"Mapped section #{i.ToString(CultureInfo.InvariantCulture)} exceeds SizeOfImage bounds.");
             }
 
             sections[i] = new MappedSection(virtualAddress, mappedLength, characteristics);

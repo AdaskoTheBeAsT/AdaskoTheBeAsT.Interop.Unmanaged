@@ -3,8 +3,7 @@
   <!-- Based on article https://www.thomaslevesque.com/2017/09/18/common-msbuild-properties-and-items-with-directory-build-props/ -->
   <PropertyGroup>
     <!-- Common ruleset shared by all projects -->
-    <CodeAnalysisRuleset>$(MSBuildThisFileDirectory)AdaskoTheBeAsT.ruleset</CodeAnalysisRuleset>
-    <LangVersion>14.0</LangVersion>
+    <LangVersion>15.0</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);1701;1702;1591</NoWarn>

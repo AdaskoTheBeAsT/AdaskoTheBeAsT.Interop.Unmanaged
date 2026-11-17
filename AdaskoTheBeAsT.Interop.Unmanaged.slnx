@@ -3,7 +3,6 @@
     <File Path=".editorconfig" />
     <File Path=".gitignore" />
     <File Path="AdaskoTheBeAsT.Interop.Unmanaged.sln.DotSettings" />
-    <File Path="AdaskoTheBeAsT.ruleset" />
     <File Path="DeterministicBuild.targets" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
@@ -11,7 +10,6 @@
     <File Path="LICENSE" />
     <File Path="README.md" />
     <File Path="SecurityCodeScan.config.yml" />
-    <File Path="Settings.StyleCop" />
     <File Path="stylecop.json" />
   </Folder>
   <Folder Name="/src/">

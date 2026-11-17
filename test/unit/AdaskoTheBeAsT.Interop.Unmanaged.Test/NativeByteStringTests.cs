@@ -75,7 +75,7 @@ public class NativeByteStringTests
         truncatedShort.Should().Throw<ArgumentException>();
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [Fact]
     public void SpanOverloads_RoundTripCStringFortranAndShortString()
     {

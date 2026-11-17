@@ -139,7 +139,7 @@ internal static class NativeLoader
 
     internal static bool IsWindows()
     {
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         return OperatingSystem.IsWindows();
 #else
         return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -171,7 +171,7 @@ internal static class NativeLoader
 #if !NET8_0_OR_GREATER
     private static bool IsLinux()
     {
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         return OperatingSystem.IsLinux();
 #else
         return RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
@@ -180,7 +180,7 @@ internal static class NativeLoader
 
     private static bool IsOsx()
     {
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         return OperatingSystem.IsMacOS();
 #else
         return RuntimeInformation.IsOSPlatform(OSPlatform.OSX);

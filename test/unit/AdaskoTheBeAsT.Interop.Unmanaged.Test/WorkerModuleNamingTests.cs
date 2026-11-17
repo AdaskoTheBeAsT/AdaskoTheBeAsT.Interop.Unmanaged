@@ -23,7 +23,7 @@ public class WorkerModuleNamingTests
         var actual = WorkerModuleNaming.FormatFixedLengthName(originalFileName, workerIndex);
 
         actual.Should().Be(expected);
-        actual.Length.Should().Be(originalFileName.Length);
+        actual.Should().HaveLength(originalFileName.Length);
     }
 
     [Fact]
@@ -34,18 +34,18 @@ public class WorkerModuleNamingTests
 
         var candidates = new[]
         {
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, null, 0, generation: 0),
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, "pA", 0, generation: 0),
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, "pB", 0, generation: 0),
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, "pA", 0, generation: 1),
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, "pA", 0, generation: 36),
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, "pA", 1, generation: 36),
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, null, 0, generation: 1295),
+            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: null, workerIndex: 0, generation: 0),
+            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pA", workerIndex: 0, generation: 0),
+            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pB", workerIndex: 0, generation: 0),
+            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pA", workerIndex: 0, generation: 1),
+            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pA", workerIndex: 0, generation: 36),
+            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pA", workerIndex: 1, generation: 36),
+            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: null, workerIndex: 0, generation: 1295),
         };
 
         foreach (var name in candidates)
         {
-            name.Length.Should().Be(original.Length);
+            name.Should().HaveLength(original.Length);
             seen.Add(name).Should().BeTrue($"'{name}' should be unique across pool/generation combinations");
         }
     }

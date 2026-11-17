@@ -79,6 +79,7 @@ public static class WorkerModuleNaming
         var nsPart = namespaceId ?? string.Empty;
         var workerPart = workerIndex.ToString("D2", CultureInfo.InvariantCulture);
         string token;
+#pragma warning disable CC0014
         if (generation == 0)
         {
             token = nsPart + workerPart;
@@ -91,6 +92,7 @@ public static class WorkerModuleNaming
         {
             token = nsPart + FormatBase36Compact(generation) + workerPart;
         }
+#pragma warning restore CC0014
 
         return FormatFixedLengthToken(originalFileName, token);
     }

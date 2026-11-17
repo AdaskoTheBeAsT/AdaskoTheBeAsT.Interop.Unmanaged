@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Threading;
 
@@ -61,7 +62,7 @@ public sealed class WorkerSlotAllocator
                     throw new ArgumentOutOfRangeException(
                         nameof(excludedSlots),
                         slot,
-                        $"Excluded slot index {slot} must be between 0 and {maxExclusive - 1}.");
+                        $"Excluded slot index {slot.ToString(CultureInfo.InvariantCulture)} must be between 0 and {(maxExclusive - 1).ToString(CultureInfo.InvariantCulture)}.");
                 }
 
                 if (!_excluded[slot])
@@ -108,7 +109,7 @@ public sealed class WorkerSlotAllocator
         }
 
         throw new InvalidOperationException(
-            $"All {_capacity} non-excluded worker slots in this WorkerSlotAllocator are currently leased.");
+            $"All {_capacity.ToString(CultureInfo.InvariantCulture)} non-excluded worker slots in this WorkerSlotAllocator are currently leased.");
     }
 
     /// <summary>
@@ -191,7 +192,7 @@ public sealed class WorkerSlotAllocator
             throw new ArgumentOutOfRangeException(
                 nameof(preferredSlot),
                 preferredSlot.Value,
-                $"Preferred slot index {preferredSlot.Value} must be between 0 and {_maxExclusive - 1}.");
+                $"Preferred slot index {preferredSlot.Value.ToString(CultureInfo.InvariantCulture)} must be between 0 and {(_maxExclusive - 1).ToString(CultureInfo.InvariantCulture)}.");
         }
 
         lock (_syncRoot)

@@ -57,7 +57,7 @@ public class NativeExecutionGuardTests
             ownerThreadId.Should().Be((uint)Environment.CurrentManagedThreadId);
             (activeThreadMode & (uint)NativeErrorMode.FailCriticalErrors).Should().NotBe(0u);
             (activeThreadMode & (uint)NativeErrorMode.NoOpenFileErrorBox).Should().NotBe(0u);
-            processDuringScope.Should().Be(0u);
+            processDuringScope.Should().Be(4u);
             threadAfter.Should().Be(threadBefore);
         }
         finally

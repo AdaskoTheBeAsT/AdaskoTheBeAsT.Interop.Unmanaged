@@ -14,7 +14,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 public class PinnedLibraryCacheAndScratchBufferTests
 {
     [Fact]
-    public async Task PinnedLibraryCache_SingleFlightUnderSixteenThreadContention_AndParallelDistinctKeys()
+    public async Task PinnedLibraryCache_SingleFlightUnderSixteenThreadContention_AndParallelDistinctKeysAsync()
     {
         var ct = TestContext.Current.CancellationToken;
         var cache = PinnedLibraryCache.CreateOrdinalIgnoreCase<DummyHandles>();

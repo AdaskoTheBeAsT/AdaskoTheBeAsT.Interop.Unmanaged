@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
 
@@ -279,7 +279,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// </summary>
     /// <param name="safeLibraryHandle">Handle for the loaded Windows module.</param>
     /// <returns>The full path returned by <c>GetModuleFileNameW</c>, expanding dynamically beyond <c>MAX_PATH</c> when necessary.</returns>
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public static string GetLoadedFilePath(SafeLibraryHandle safeLibraryHandle)
@@ -324,7 +324,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// <param name="moduleBaseAddress">Receives the owning module's base address when found; otherwise <see cref="IntPtr.Zero"/>.</param>
     /// <param name="moduleFilePath">Receives the owning module's loaded filesystem path when found; otherwise <see langword="null"/>.</param>
     /// <returns><see langword="true"/> if <paramref name="address"/> belongs to a loaded Windows module; otherwise <see langword="false"/>.</returns>
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public static bool TryGetLoadedModuleFromAddress(
@@ -369,7 +369,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// <param name="systemModuleName">Bare Windows system DLL filename (for example <c>"kernel32.dll"</c> or <c>"ole32.dll"</c>) without path separators.</param>
     /// <param name="exportName">Case-sensitive ASCII export name.</param>
     /// <returns>The non-zero native address of the requested export.</returns>
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public static IntPtr GetRequiredSystemExport(string systemModuleName, string exportName)
@@ -655,7 +655,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// Gets the full filesystem path reported by the Windows loader for this loaded library.
     /// </summary>
     /// <returns>The full path returned by <c>GetModuleFileNameW</c>.</returns>
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public string GetLoadedFilePath()
@@ -668,7 +668,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// </summary>
     /// <param name="address">Native code or data address to test.</param>
     /// <returns><see langword="true"/> if <paramref name="address"/> maps to this loaded module; otherwise <see langword="false"/>.</returns>
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public bool ContainsAddress(IntPtr address)

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Text;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
@@ -24,10 +25,15 @@ public static class NativeByteString
     /// <returns>The number of non-NUL ASCII character bytes written (<c>value.Length</c>).</returns>
     public static int WriteNullTerminatedAscii(string value, byte[] destination, int offset, int count)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(value);
+#endif
+#if NET472_OR_GREATER
         if (value is null)
         {
             throw new ArgumentNullException(nameof(value));
         }
+#endif
 
         ValidateBufferSlice(destination, offset, count, nameof(destination), nameof(count));
         if (count < 1)
@@ -41,7 +47,7 @@ public static class NativeByteString
             throw new ArgumentOutOfRangeException(
                 nameof(value),
                 value.Length,
-                $"ASCII string length ({value.Length}) exceeds null-terminated buffer capacity ({count - 1} characters).");
+                $"ASCII string length ({value.Length}) exceeds null-terminated buffer capacity ({(count - 1).ToString(CultureInfo.InvariantCulture)} characters).");
         }
 
         for (var i = 0; i < value.Length; i++)
@@ -53,7 +59,7 @@ public static class NativeByteString
         return value.Length;
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Encodes <paramref name="value"/> as 7-bit ASCII into <paramref name="destination"/>, writes a trailing NUL terminator,
     /// and zeroes all remaining bytes in <paramref name="destination"/>.
@@ -74,7 +80,7 @@ public static class NativeByteString
             throw new ArgumentOutOfRangeException(
                 nameof(value),
                 value.Length,
-                $"ASCII span length ({value.Length}) exceeds null-terminated destination capacity ({destination.Length - 1} characters).");
+                $"ASCII span length ({value.Length}) exceeds null-terminated destination capacity ({(destination.Length - 1).ToString(CultureInfo.InvariantCulture)} characters).");
         }
 
         for (var i = 0; i < value.Length; i++)
@@ -108,7 +114,7 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at buffer index {length}.");
+                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at buffer index {length.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             length++;
@@ -117,7 +123,7 @@ public static class NativeByteString
         return length == 0 ? string.Empty : Encoding.ASCII.GetString(source, offset, length);
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Decodes a NUL-terminated (or fixed-width when no NUL byte is present) 7-bit ASCII string from <paramref name="source"/>.
     /// </summary>
@@ -136,7 +142,7 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at span index {length}.");
+                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at span index {length.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             length++;
@@ -176,7 +182,7 @@ public static class NativeByteString
         return new string(chars);
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Decodes a NUL-terminated (or fixed-width when no NUL byte is present) ISO-8859-1 (Latin-1) string from <paramref name="source"/>.
     /// </summary>
@@ -200,10 +206,15 @@ public static class NativeByteString
     /// <param name="count">Fixed character buffer width (<c>N</c>).</param>
     public static void WriteSpacePaddedAscii(string value, byte[] destination, int offset, int count)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(value);
+#endif
+#if NET472_OR_GREATER
         if (value is null)
         {
             throw new ArgumentNullException(nameof(value));
         }
+#endif
 
         ValidateBufferSlice(destination, offset, count, nameof(destination), nameof(count));
         ValidateAsciiCharactersNoEmbeddedNull(value);
@@ -212,7 +223,7 @@ public static class NativeByteString
             throw new ArgumentOutOfRangeException(
                 nameof(value),
                 value.Length,
-                $"ASCII string length ({value.Length}) exceeds fixed CHARACTER*{count} buffer width.");
+                $"ASCII string length ({value.Length}) exceeds fixed CHARACTER*{count.ToString(CultureInfo.InvariantCulture)} buffer width.");
         }
 
         for (var i = 0; i < value.Length; i++)
@@ -226,7 +237,7 @@ public static class NativeByteString
         }
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Encodes <paramref name="value"/> as 7-bit ASCII into a fixed-width Fortran <c>CHARACTER*N</c> span,
     /// padding trailing bytes with ASCII spaces (<c>0x20</c>) without writing a NUL terminator.
@@ -275,7 +286,7 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at Fortran buffer index {effectiveEnd}.");
+                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at Fortran buffer index {effectiveEnd.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             effectiveEnd++;
@@ -289,7 +300,7 @@ public static class NativeByteString
         return effectiveEnd == 0 ? string.Empty : Encoding.ASCII.GetString(source, offset, effectiveEnd);
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Decodes a fixed-width Fortran <c>CHARACTER*N</c> 7-bit ASCII span, trimming trailing ASCII spaces (<c>0x20</c>).
     /// </summary>
@@ -308,7 +319,7 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at Fortran span index {effectiveEnd}.");
+                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at Fortran span index {effectiveEnd.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             effectiveEnd++;
@@ -333,10 +344,15 @@ public static class NativeByteString
     /// <param name="capacity">Total <c>ShortString</c> slot byte length including the leading length byte (<c>1..256</c>).</param>
     public static void WriteShortStringAscii(string value, byte[] destination, int offset, int capacity)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(value);
+#endif
+#if NET472_OR_GREATER
         if (value is null)
         {
             throw new ArgumentNullException(nameof(value));
         }
+#endif
 
         ValidateBufferSlice(destination, offset, capacity, nameof(destination), nameof(capacity));
         if (capacity is < 1 or > MaxShortStringBufferBytes)
@@ -354,7 +370,7 @@ public static class NativeByteString
             throw new ArgumentOutOfRangeException(
                 nameof(value),
                 value.Length,
-                $"ASCII string length ({value.Length}) exceeds ShortString payload capacity ({maxChars} characters).");
+                $"ASCII string length ({value.Length}) exceeds ShortString payload capacity ({maxChars.ToString(CultureInfo.InvariantCulture)} characters).");
         }
 
         destination[offset] = (byte)value.Length;
@@ -371,7 +387,7 @@ public static class NativeByteString
         }
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Encodes <paramref name="value"/> as a length-prefixed Pascal / Borland Delphi <c>ShortString</c> into <paramref name="destination"/>,
     /// zeroing unused trailing bytes.
@@ -395,7 +411,7 @@ public static class NativeByteString
             throw new ArgumentOutOfRangeException(
                 nameof(value),
                 value.Length,
-                $"ASCII span length ({value.Length}) exceeds ShortString payload capacity ({maxChars} characters).");
+                $"ASCII span length ({value.Length}) exceeds ShortString payload capacity ({maxChars.ToString(CultureInfo.InvariantCulture)} characters).");
         }
 
         destination[0] = (byte)value.Length;
@@ -427,7 +443,7 @@ public static class NativeByteString
         if (payloadLength > maxLength - 1)
         {
             throw new ArgumentException(
-                $"ShortString length prefix ({payloadLength}) exceeds available buffer payload capacity ({maxLength - 1} bytes).",
+                $"ShortString length prefix ({payloadLength}) exceeds available buffer payload capacity ({(maxLength - 1).ToString(CultureInfo.InvariantCulture)} bytes).",
                 nameof(source));
         }
 
@@ -436,14 +452,14 @@ public static class NativeByteString
             var b = source[offset + i];
             if (b is 0 or > 0x7F)
             {
-                throw new DecoderFallbackException($"Invalid ShortString ASCII byte 0x{b:X2} at payload index {i - 1}.");
+                throw new DecoderFallbackException($"Invalid ShortString ASCII byte 0x{b:X2} at payload index {(i - 1).ToString(CultureInfo.InvariantCulture)}.");
             }
         }
 
         return payloadLength == 0 ? string.Empty : Encoding.ASCII.GetString(source, offset + 1, payloadLength);
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     /// <summary>
     /// Decodes a length-prefixed Pascal / Borland Delphi <c>ShortString</c> from <paramref name="source"/>.
     /// </summary>
@@ -460,7 +476,7 @@ public static class NativeByteString
         if (payloadLength > source.Length - 1)
         {
             throw new ArgumentException(
-                $"ShortString length prefix ({payloadLength}) exceeds available span payload capacity ({source.Length - 1} bytes).",
+                $"ShortString length prefix ({payloadLength}) exceeds available span payload capacity ({(source.Length - 1).ToString(CultureInfo.InvariantCulture)} bytes).",
                 nameof(source));
         }
 
@@ -469,7 +485,7 @@ public static class NativeByteString
             var b = source[i];
             if (b is 0 or > 0x7F)
             {
-                throw new DecoderFallbackException($"Invalid ShortString ASCII byte 0x{b:X2} at payload index {i - 1}.");
+                throw new DecoderFallbackException($"Invalid ShortString ASCII byte 0x{b:X2} at payload index {(i - 1).ToString(CultureInfo.InvariantCulture)}.");
             }
         }
 
@@ -511,7 +527,7 @@ public static class NativeByteString
         }
     }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     private static void ValidateAsciiCharactersNoEmbeddedNull(ReadOnlySpan<char> value)
     {
         foreach (var ch in value)

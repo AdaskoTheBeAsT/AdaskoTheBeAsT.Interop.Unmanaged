@@ -1,7 +1,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
 using System.Threading.Tasks;
@@ -156,7 +156,7 @@ public class ExportAndBaseAddressTests
     }
 
     [Fact]
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     [SuppressMessage("IDisposableAnalyzers", "IDISP001", Justification = "IsolatedLibrarySet owns module handles.")]
@@ -216,7 +216,7 @@ public class ExportAndBaseAddressTests
     }
 
     [Fact]
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     public void TryGetLoadedModuleFromAddress_AndGetRequiredSystemExport_ValidateEdgeCases()

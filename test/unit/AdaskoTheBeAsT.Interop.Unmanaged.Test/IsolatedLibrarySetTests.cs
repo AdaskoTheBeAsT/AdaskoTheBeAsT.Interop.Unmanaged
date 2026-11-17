@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
 using System.Threading;
@@ -198,7 +198,7 @@ public class IsolatedLibrarySetTests
         {
             using var colliding = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "plAA", generation: 36));
         };
-        prefixCollision.Should().Throw<InvalidOperationException>().Which.Message.Should().Contain("collision");
+        prefixCollision.Should().Throw<InvalidOperationException>().WithMessage("*collision*");
 
         poolA0.GetLibrary("isoparent").GetUnmanagedFunction<StepFn>("iso_parent_step")!(2).Should().Be(11322);
     }
@@ -384,7 +384,7 @@ public class IsolatedLibrarySetTests
     }
 
     [Fact]
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     [SuppressMessage("Security", "SCS0018", Justification = "Stages clean source subset inside test-owned directory.")]
@@ -554,7 +554,7 @@ public class IsolatedLibrarySetTests
     }
 
     [Fact]
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
     [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Verifies post-dispose ObjectDisposedException.")]

@@ -1,7 +1,7 @@
 using System;
 using System.Globalization;
 using System.Runtime.InteropServices;
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
 
@@ -11,7 +11,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// Captures the PE identity header fields (<see cref="Machine"/>, <see cref="TimeDateStamp"/>, and <see cref="SizeOfImage"/>)
 /// of a mapped Windows native module for provenance verification before in-memory patching or writable-section clearing.
 /// </summary>
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
 [StructLayout(LayoutKind.Auto)]

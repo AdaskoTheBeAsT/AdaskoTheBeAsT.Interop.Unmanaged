@@ -33,15 +33,25 @@ public sealed class PeVerifiedBytePatch
             throw new ArgumentOutOfRangeException(nameof(rva), rva, "RVA must be non-zero.");
         }
 
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(expectedOriginal);
+#endif
+#if NET472_OR_GREATER
         if (expectedOriginal is null)
         {
             throw new ArgumentNullException(nameof(expectedOriginal));
         }
+#endif
 
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(replacement);
+#endif
+#if NET472_OR_GREATER
         if (replacement is null)
         {
             throw new ArgumentNullException(nameof(replacement));
         }
+#endif
 
         if (expectedOriginal.Length == 0)
         {

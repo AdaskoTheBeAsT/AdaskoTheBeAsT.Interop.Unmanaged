@@ -60,15 +60,25 @@ public sealed class PinnedLibraryCache<TKey, THandles>
         TKey key,
         Func<TKey, THandles> loader)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(key);
+#endif
+#if NET472_OR_GREATER
         if (key is null)
         {
             throw new ArgumentNullException(nameof(key));
         }
+#endif
 
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(loader);
+#endif
+#if NET472_OR_GREATER
         if (loader is null)
         {
             throw new ArgumentNullException(nameof(loader));
         }
+#endif
 
         var candidate = new Lazy<Entry>(
             () =>
@@ -123,7 +133,7 @@ public sealed class PinnedLibraryCache<TKey, THandles>
     private void EvictFaultedEntry(TKey key, Lazy<Entry> faultedEntry)
     {
         var pair = new KeyValuePair<TKey, Lazy<Entry>>(key, faultedEntry);
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         _ = _entries.TryRemove(pair);
 #else
         _ = ((ICollection<KeyValuePair<TKey, Lazy<Entry>>>)_entries).Remove(pair);

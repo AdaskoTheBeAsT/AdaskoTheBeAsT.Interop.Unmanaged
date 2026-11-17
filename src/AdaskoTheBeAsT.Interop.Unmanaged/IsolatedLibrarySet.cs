@@ -204,10 +204,15 @@ public sealed class IsolatedLibrarySet : IDisposable
     /// <param name="other">Another live <see cref="IsolatedLibrarySet"/> to compare against.</param>
     public void VerifyDistinctFrom(IsolatedLibrarySet other)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(other);
+#endif
+#if NET472_OR_GREATER
         if (other is null)
         {
             throw new ArgumentNullException(nameof(other));
         }
+#endif
 
         ThrowIfDisposed();
         other.ThrowIfDisposed();
@@ -256,7 +261,7 @@ public sealed class IsolatedLibrarySet : IDisposable
 
         if (_pinModulesForProcessLifetime)
         {
-            var pinnedLease = Interlocked.Exchange(ref _leaseStream, null);
+            var pinnedLease = Interlocked.Exchange(ref _leaseStream, value: null);
             PinnedProcessSets.Add(new PinnedSetRetention(_orderedLibraries, pinnedLease));
             return;
         }
@@ -272,7 +277,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         finally
         {
             ReleaseReservations(_reservedCompanionModuleNames, _workerDirectory);
-            var lease = Interlocked.Exchange(ref _leaseStream, null);
+            var lease = Interlocked.Exchange(ref _leaseStream, value: null);
             lease?.Dispose();
             if (_deleteDirectoryOnDispose)
             {
@@ -426,10 +431,15 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static void ValidateOptionFields(IsolatedLibrarySetOptions options)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(options);
+#endif
+#if NET472_OR_GREATER
         if (options is null)
         {
             throw new ArgumentNullException(nameof(options));
         }
+#endif
 
         if (string.IsNullOrWhiteSpace(options.SourceDirectory) || options.SourceDirectory.IndexOf('\0') >= 0)
         {
@@ -1091,7 +1101,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         if (options.MaxWorkerFilePathLength.HasValue && candidatePath.Length > options.MaxWorkerFilePathLength.Value)
         {
             throw new PathTooLongException(
-                $"Worker path '{candidatePath}' has length {candidatePath.Length}, exceeding MaxWorkerFilePathLength ({options.MaxWorkerFilePathLength.Value}).");
+                $"Worker path '{candidatePath}' has length {candidatePath.Length}, exceeding MaxWorkerFilePathLength ({options.MaxWorkerFilePathLength.Value.ToString(CultureInfo.InvariantCulture)}).");
         }
     }
 
@@ -1299,7 +1309,7 @@ public sealed class IsolatedLibrarySet : IDisposable
             throw new InvalidOperationException($"Ownership marker '{markerPath}' cannot be a reparse point.");
         }
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         var pid = Environment.ProcessId;
 #else
         var pid = Process.GetCurrentProcess().Id;
@@ -1535,7 +1545,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         if (currentThreadId != _owningThreadId)
         {
             throw new InvalidOperationException(
-                $"This IsolatedLibrarySet enforces owning-thread affinity to managed thread {_owningThreadId} and cannot be accessed or disposed from thread {currentThreadId}.");
+                $"This IsolatedLibrarySet enforces owning-thread affinity to managed thread {_owningThreadId.ToString(CultureInfo.InvariantCulture)} and cannot be accessed or disposed from thread {currentThreadId.ToString(CultureInfo.InvariantCulture)}.");
         }
     }
 

@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Threading;
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
@@ -86,7 +87,7 @@ public sealed class NativeExecutionScope : IDisposable
         if (currentThreadId != _ownerThreadId)
         {
             throw new InvalidOperationException(
-                $"NativeExecutionScope is thread-affine to managed thread {_ownerThreadId} and cannot be used or disposed from thread {currentThreadId}.");
+                $"NativeExecutionScope is thread-affine to managed thread {_ownerThreadId.ToString(CultureInfo.InvariantCulture)} and cannot be used or disposed from thread {currentThreadId.ToString(CultureInfo.InvariantCulture)}.");
         }
     }
 

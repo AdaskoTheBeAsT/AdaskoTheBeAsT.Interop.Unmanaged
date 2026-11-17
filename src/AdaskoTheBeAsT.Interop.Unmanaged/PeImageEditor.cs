@@ -125,10 +125,15 @@ public sealed class PeImageEditor
         string? imageName = null,
         PeImageValidationOptions? validation = null)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(imageBytes);
+#endif
+#if NET472_OR_GREATER
         if (imageBytes is null)
         {
             throw new ArgumentNullException(nameof(imageBytes));
         }
+#endif
 
         var label = imageName is null || string.IsNullOrWhiteSpace(imageName) ? "<memory>" : imageName;
         return CreateValidated((byte[])imageBytes.Clone(), label, sourceFullPath: null, validation);
@@ -397,10 +402,15 @@ public sealed class PeImageEditor
     /// <returns>This <see cref="PeImageEditor"/> instance for fluent chaining.</returns>
     public PeImageEditor RewriteImportSymbol(PeImportSymbolRewrite rewrite)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(rewrite);
+#endif
+#if NET472_OR_GREATER
         if (rewrite is null)
         {
             throw new ArgumentNullException(nameof(rewrite));
         }
+#endif
 
         var matchingModule = FindSingleDescriptorByModuleName(ParseOrdinaryImportDescriptors(), rewrite.ModuleName);
         var thunks = CollectModuleNamedThunks(matchingModule);
@@ -415,10 +425,15 @@ public sealed class PeImageEditor
     /// <returns>This <see cref="PeImageEditor"/> instance for fluent chaining.</returns>
     public PeImageEditor ApplyVerifiedBytePatch(PeVerifiedBytePatch patch)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(patch);
+#endif
+#if NET472_OR_GREATER
         if (patch is null)
         {
             throw new ArgumentNullException(nameof(patch));
         }
+#endif
 
         ReplaceVerifiedBytesCore(patch.Rva, patch.ExpectedOriginalBuffer, patch.ReplacementBuffer);
         return this;
@@ -836,10 +851,15 @@ public sealed class PeImageEditor
 
     private static void ValidateImportModuleRemovalArgument(PeImportModuleRemoval removal)
     {
+#if NET10_0_OR_GREATER
+        ArgumentNullException.ThrowIfNull(removal);
+#endif
+#if NET472_OR_GREATER
         if (removal is null)
         {
             throw new ArgumentNullException(nameof(removal));
         }
+#endif
 
         PeNameValidator.ValidateModuleNameArgument(removal.ModuleName, nameof(removal));
         if (removal.WitnessRemainingModuleName is not null)

@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 using System.Runtime.Versioning;
 #endif
 using System.Text;
@@ -13,7 +13,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
 #pragma warning disable SA1121
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
 [Trait("Category", "Native")]
@@ -169,7 +169,7 @@ public class LoadedModuleMemoryTests
         LoadedModuleMemory.WriteVerifiedBytesAtRva(library, identity, rdataRva, originalBytes, patchedBytes);
         sumMagic().Should().Be(SumAscii(patchedBytes));
 
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         using var handleRef = UnmanagedLibrary.LoadLibrary(stagedHook);
         ReadOnlySpan<byte> spanExpected = patchedBytes;
         var spanNext = "SPAN__V3"u8;

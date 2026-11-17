@@ -87,12 +87,16 @@ public sealed class IsolatedLibrarySet : IDisposable
     /// <summary>
     /// Gets the full path of the private worker directory holding the staged DLL copies.
     /// </summary>
+#pragma warning disable RCS1085 // Use auto-implemented property
     public string WorkerDirectory => _workerDirectory;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Gets the managed thread ID of the thread that created and loaded this <see cref="IsolatedLibrarySet"/>.
     /// </summary>
+#pragma warning disable RCS1085 // Use auto-implemented property
     public int OwningThreadId => _owningThreadId;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Gets the logical module names in deterministic topological load order (dependencies first, dependents last).
@@ -102,12 +106,16 @@ public sealed class IsolatedLibrarySet : IDisposable
     /// <summary>
     /// Gets the loaded <see cref="UnmanagedLibrary"/> instances keyed by logical module name (case-insensitive).
     /// </summary>
+#pragma warning disable RCS1085 // Use auto-implemented property
     public IReadOnlyDictionary<string, UnmanagedLibrary> Libraries => _librariesByLogicalName;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Gets the staged worker file paths keyed by logical module name (case-insensitive).
     /// </summary>
+#pragma warning disable RCS1085 // Use auto-implemented property
     public IReadOnlyDictionary<string, string> StagedFilePaths => _stagedPathsByLogicalName;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Gets the loaded <see cref="UnmanagedLibrary"/> for <paramref name="logicalName"/>. Ownership remains with this <see cref="IsolatedLibrarySet"/>.
@@ -418,7 +426,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
 
         fullIsolationRoot = ValidateAndNormalizeIsolationRoot(options.IsolationRootDirectory, fullSourceDir);
-        var nsSegment = options.NamespaceId is null || options.NamespaceId.Length == 0 ? "default" : options.NamespaceId;
+        var nsSegment = string.IsNullOrEmpty(options.NamespaceId) ? "default" : options.NamespaceId;
         var childName = string.Format(
             CultureInfo.InvariantCulture,
             "worker-{0}-w{1:D4}-g{2:D4}",
@@ -441,10 +449,12 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
 #endif
 
+#pragma warning disable CA2249
         if (string.IsNullOrWhiteSpace(options.SourceDirectory) || options.SourceDirectory.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("SourceDirectory cannot be null, whitespace, or contain NUL.", nameof(options));
         }
+#pragma warning restore CA2249
 
         if (options.WorkerIndex is < 0 or > 99)
         {
@@ -473,7 +483,7 @@ public sealed class IsolatedLibrarySet : IDisposable
             throw new ArgumentException("IsolatedLibrarySetOptions.CompanionDirectories cannot be null.", nameof(options));
         }
 
-        if (options.MaxWorkerFilePathLength.HasValue && options.MaxWorkerFilePathLength.Value <= 0)
+        if (options.MaxWorkerFilePathLength <= 0)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(options),
@@ -484,17 +494,18 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static string ValidateAndNormalizeIsolationRoot(string? isolationRootDirectory, string? fullSourceDirectory)
     {
+#pragma warning disable CA2249
         if (isolationRootDirectory is null
             || string.IsNullOrWhiteSpace(isolationRootDirectory)
             || isolationRootDirectory.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("IsolationRootDirectory cannot be null, whitespace, or contain NUL.", nameof(isolationRootDirectory));
         }
+#pragma warning restore CA2249
 
         var fullRoot = TrimTrailingSeparatorsExceptRoot(Path.GetFullPath(isolationRootDirectory));
         var pathRoot = Path.GetPathRoot(fullRoot);
-        if (pathRoot is not null
-            && pathRoot.Length > 0
+        if (pathRoot?.Length > 0
             && string.Equals(TrimTrailingSeparatorsExceptRoot(pathRoot), fullRoot, StringComparison.OrdinalIgnoreCase))
         {
             throw new ArgumentException($"IsolationRootDirectory '{fullRoot}' cannot be a filesystem root.", nameof(isolationRootDirectory));
@@ -980,11 +991,14 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static string ValidateRelativeSubPath(string? relativePath, string paramName)
     {
+#pragma warning disable CA2249
         if (relativePath is null || string.IsNullOrWhiteSpace(relativePath) || relativePath.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("Companion relative path cannot be null, whitespace, or contain NUL.", paramName);
         }
+#pragma warning restore CA2249
 
+#pragma warning disable CA2249
         if (Path.IsPathRooted(relativePath)
             || relativePath.IndexOf(':') >= 0
             || relativePath[0] == '/'
@@ -992,6 +1006,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         {
             throw new ArgumentException($"Companion path '{relativePath}' must be a relative subpath without root or drive specifiers.", paramName);
         }
+#pragma warning restore CA2249
 
         var segments = relativePath.Split(['/', '\\'], StringSplitOptions.None);
         foreach (var segment in segments)
@@ -1009,6 +1024,7 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static void ValidateSearchPattern(string? searchPattern, string paramName)
     {
+#pragma warning disable CA2249
         if (searchPattern is null
             || string.IsNullOrWhiteSpace(searchPattern)
             || searchPattern.IndexOf('\0') >= 0
@@ -1018,6 +1034,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         {
             throw new ArgumentException("Companion directory SearchPattern must be a non-empty bare file pattern.", paramName);
         }
+#pragma warning restore CA2249
     }
 
     private static string ResolveBoundedChildPath(string baseDirectory, string validatedRelativePath, string paramName)
@@ -1551,10 +1568,15 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private void ThrowIfDisposed()
     {
+#if NET10_0_OR_GREATER
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, instance: this);
+#endif
+#if NET472_OR_GREATER
         if (Volatile.Read(ref _disposed) != 0)
         {
             throw new ObjectDisposedException(nameof(IsolatedLibrarySet));
         }
+#endif
     }
 
     private sealed class ModuleNode

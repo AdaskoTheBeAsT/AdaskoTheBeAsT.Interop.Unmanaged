@@ -76,9 +76,13 @@ public sealed class PeVerifiedBytePatch
     /// </summary>
     public uint Rva { get; }
 
+#pragma warning disable RCS1085 // Use auto-implemented property
     internal byte[] ExpectedOriginalBuffer => _expectedOriginal;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
+#pragma warning disable RCS1085 // Use auto-implemented property
     internal byte[] ReplacementBuffer => _replacement;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Creates a verified ASCII string-literal patch (for example, a verified <c>LoadLibraryA</c> operand) with zero-filled trailing bytes.

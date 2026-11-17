@@ -600,10 +600,16 @@ public static class LoadedModuleMemory
     private static IntPtr AcquireMappedModuleBase(SafeLibraryHandle libraryHandle, ref bool addedRef)
     {
         libraryHandle.DangerousAddRef(ref addedRef);
+
+#if NET10_0_OR_GREATER
+        ObjectDisposedException.ThrowIf(libraryHandle.IsInvalid, instance: libraryHandle);
+#endif
+#if NET472_OR_GREATER
         if (libraryHandle.IsInvalid)
         {
             throw new ObjectDisposedException(nameof(SafeLibraryHandle));
         }
+#endif
 
         if (!NativeLoader.IsWindows())
         {
@@ -1198,6 +1204,7 @@ public static class LoadedModuleMemory
         var minChar = allowSpaces ? 0x20 : 0x21;
         var bytes = new byte[maxBytes];
         var length = 0;
+#pragma warning disable RCS1239 // Use 'for' statement instead of 'while' statement
         while (length < maxBytes)
         {
             var b = Marshal.ReadByte(AddRva(baseAddress, stringRva), length);
@@ -1223,6 +1230,7 @@ public static class LoadedModuleMemory
             bytes[length] = b;
             length++;
         }
+#pragma warning restore RCS1239 // Use 'for' statement instead of 'while' statement
 
         throw PeHeaderParser.CreateBadImage(
             label,

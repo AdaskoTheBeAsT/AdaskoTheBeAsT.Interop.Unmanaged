@@ -46,6 +46,7 @@ internal static class WindowsMemoryNativeMethods
     [DllImport(KernelLib, ExactSpelling = true, EntryPoint = nameof(GetCurrentProcess))]
     internal static extern IntPtr GetCurrentProcess();
 
+#pragma warning disable CC0074
     [StructLayout(LayoutKind.Sequential)]
     internal struct MemoryBasicInformation
     {
@@ -57,6 +58,7 @@ internal static class WindowsMemoryNativeMethods
         public uint Protect;
         public uint Type;
     }
+#pragma warning restore CC0074
 }
 #pragma warning restore SYSLIB1054
 #pragma warning restore CA1060

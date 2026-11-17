@@ -779,6 +779,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
     private static void ValidateBareSystemModuleName(string? value, string paramName)
     {
         ValidateTextArgument(value, paramName);
+#pragma warning disable CA2249
         if (value!.IndexOf('/') >= 0
             || value.IndexOf('\\') >= 0
             || value.IndexOf(':') >= 0
@@ -789,6 +790,7 @@ public sealed partial class UnmanagedLibrary : IDisposable
                 "System module name must be a bare file name without directory or drive separators.",
                 paramName);
         }
+#pragma warning restore CA2249
     }
 
     private static TDelegate? GetUnmanagedFunctionCore<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName)

@@ -80,7 +80,9 @@ public sealed class WorkerSlotAllocator
     /// <summary>
     /// Gets the total number of non-excluded slots managed by this allocator.
     /// </summary>
+#pragma warning disable RCS1085 // Use auto-implemented property
     public int Capacity => _capacity;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Gets the number of non-excluded slots currently available for acquisition.

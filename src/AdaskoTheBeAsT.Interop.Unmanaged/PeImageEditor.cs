@@ -693,7 +693,7 @@ public sealed class PeImageEditor
         }
 
         var directory = Path.GetDirectoryName(fullDestination);
-        if (directory is not null && directory.Length > 0)
+        if (directory?.Length > 0)
         {
             Directory.CreateDirectory(directory);
         }
@@ -778,7 +778,7 @@ public sealed class PeImageEditor
     [SuppressMessage("Security", "SEC0112", Justification = "Creates random temporary file adjacent to caller-chosen private staging destination.")]
     internal static void WriteAtomically(string fullDestination, string? directory, byte[] content)
     {
-        var tempDirectory = directory is null || directory.Length == 0 ? "." : directory;
+        var tempDirectory = string.IsNullOrEmpty(directory) ? "." : directory;
         var tempPath = Path.Combine(
             tempDirectory,
             Path.GetFileName(fullDestination) + "." + Guid.NewGuid().ToString("N") + ".tmp");
@@ -830,10 +830,12 @@ public sealed class PeImageEditor
             throw new ArgumentException("Path cannot be null or whitespace.", paramName);
         }
 
+#pragma warning disable CA2249
         if (path.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("Path cannot contain a NUL character.", paramName);
         }
+#pragma warning restore CA2249
     }
 
     private static void ValidateModuleRewriteArguments(string originalModuleName, string replacementModuleName)
@@ -1546,6 +1548,7 @@ public sealed class PeImageEditor
     private string ReadValidatedModuleCString(uint stringRva, out int fileOffset)
     {
         var text = ReadBoundedAsciiCString(stringRva, allowSpaces: true, out fileOffset);
+#pragma warning disable CA2249
         if (text.IndexOf('/') >= 0
             || text.IndexOf('\\') >= 0
             || text.IndexOf(':') >= 0
@@ -1556,6 +1559,7 @@ public sealed class PeImageEditor
                 _imageLabel,
                 $"PE import module name '{text}' contains prohibited path components.");
         }
+#pragma warning restore CA2249
 
         return text;
     }
@@ -1572,6 +1576,7 @@ public sealed class PeImageEditor
         fileOffset = MapRvaRangeToFileOffset(stringRva, length: 1, out var remainingInSection);
         var minChar = allowSpaces ? 0x20 : 0x21;
         var length = 0;
+#pragma warning disable RCS1239 // Use 'for' statement instead of 'while' statement
         while (length < remainingInSection)
         {
             var b = _buffer[fileOffset + length];
@@ -1596,6 +1601,7 @@ public sealed class PeImageEditor
 
             length++;
         }
+#pragma warning restore RCS1239 // Use 'for' statement instead of 'while' statement
 
         throw PeHeaderParser.CreateBadImage(
             _imageLabel,

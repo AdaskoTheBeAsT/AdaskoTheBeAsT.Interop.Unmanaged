@@ -33,38 +33,43 @@ internal static class PeNameValidator
 
     public static void ValidateSymbolNameArgument(string? value, string paramName)
     {
-        if (value is null || value.Length == 0)
+        if (string.IsNullOrEmpty(value))
         {
             throw new ArgumentException("Symbol name cannot be null or empty.", paramName);
         }
 
+#pragma warning disable CS8604
         if (HasCharOutsideAsciiRange(value, minInclusive: (char)0x21, maxInclusive: (char)0x7E))
         {
             throw new ArgumentException("Symbol name must contain only non-whitespace printable ASCII characters.", paramName);
         }
+#pragma warning restore CS8604
     }
 
     public static void ValidateAsciiLiteralArgument(string? value, string paramName)
     {
-        if (value is null || value.Length == 0)
+        if (string.IsNullOrEmpty(value))
         {
             throw new ArgumentException("ASCII literal cannot be null or empty.", paramName);
         }
 
+#pragma warning disable CS8604
         if (HasCharOutsideAsciiRange(value, minInclusive: (char)0x20, maxInclusive: (char)0x7E))
         {
             throw new ArgumentException("Literal must contain only printable ASCII characters without embedded NULs.", paramName);
         }
+#pragma warning restore CS8604
     }
 
     public static void ValidateUtf16LiteralArgument(string? value, string paramName)
     {
-        if (value is null || value.Length == 0)
+        if (string.IsNullOrEmpty(value))
         {
             throw new ArgumentException("UTF-16 literal cannot be null or empty.", paramName);
         }
 
         var index = 0;
+#pragma warning disable CS8602,CS8604,RCS1239
         while (index < value.Length)
         {
             var ch = value[index];
@@ -75,11 +80,13 @@ internal static class PeNameValidator
 
             index++;
         }
+#pragma warning restore CS8602,CS8604,RCS1239
     }
 
     private static bool HasCharOutsideAsciiRange(string value, char minInclusive, char maxInclusive)
     {
         var index = 0;
+#pragma warning disable RCS1239 // Use 'for' statement instead of 'while' statement
         while (index < value.Length)
         {
             var ch = value[index];
@@ -90,6 +97,7 @@ internal static class PeNameValidator
 
             index++;
         }
+#pragma warning restore RCS1239 // Use 'for' statement instead of 'while' statement
 
         return false;
     }

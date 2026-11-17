@@ -71,7 +71,7 @@ public static class WorkerModuleNaming
                 "Generation must be between 0 and 1295 inclusive.");
         }
 
-        if ((namespaceId is null || namespaceId.Length == 0) && generation == 0)
+        if (string.IsNullOrEmpty(namespaceId) && generation == 0)
         {
             return FormatFixedLengthName(originalFileName, workerIndex);
         }
@@ -116,16 +116,22 @@ public static class WorkerModuleNaming
         }
 
         var prefixLength = stem.Length - suffixToken.Length;
+
+#if NET10_0_OR_GREATER
+        return string.Concat(stem.AsSpan(0, prefixLength), suffixToken, extension);
+#endif
+#if NET472_OR_GREATER
         return stem.Substring(0, prefixLength) + suffixToken + extension;
+#endif
     }
 
     internal static void ValidateNamespaceId(string? namespaceId, string paramName)
     {
-        if (namespaceId is null || namespaceId.Length == 0)
+        if (string.IsNullOrEmpty(namespaceId))
         {
             return;
         }
-
+#pragma warning disable CS8602
         if (namespaceId.Length > 4)
         {
             throw new ArgumentException("NamespaceId must be between 1 and 4 ASCII alphanumeric characters.", paramName);
@@ -141,6 +147,7 @@ public static class WorkerModuleNaming
                 throw new ArgumentException("NamespaceId may contain only ASCII letters and digits ([A-Za-z0-9]).", paramName);
             }
         }
+#pragma warning restore CS8602
     }
 
     internal static void SplitValidatedDllFileName(
@@ -172,11 +179,12 @@ public static class WorkerModuleNaming
 
     private static void ValidateSuffixToken(string? token, string paramName)
     {
-        if (token is null || token.Length == 0)
+        if (string.IsNullOrEmpty(token))
         {
             throw new ArgumentException("Suffix token cannot be null or empty.", paramName);
         }
 
+#pragma warning disable CS8602
         foreach (var ch in token)
         {
             var valid = (ch is >= '0' and <= '9')
@@ -188,6 +196,7 @@ public static class WorkerModuleNaming
                 throw new ArgumentException("Suffix token may contain only ASCII letters, digits, '_', or '-'.", paramName);
             }
         }
+#pragma warning restore CS8602
     }
 
     private static string FormatBase36Compact(int value)

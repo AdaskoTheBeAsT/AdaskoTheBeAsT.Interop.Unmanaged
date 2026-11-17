@@ -84,10 +84,12 @@ public sealed class PinnedLibraryCache<TKey, THandles>
             () =>
             {
                 var loaded = loader(key);
+#pragma warning disable IDE0270
                 if (loaded is null)
                 {
                     throw new InvalidOperationException("PinnedLibraryCache loader callback returned null.");
                 }
+#pragma warning restore IDE0270
 
                 return new Entry { Value = loaded };
             },

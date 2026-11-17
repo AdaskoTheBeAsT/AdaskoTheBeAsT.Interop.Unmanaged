@@ -58,7 +58,9 @@ public sealed class UnmanagedScratchBuffer : SafeBuffer
     /// <summary>
     /// Gets the size of this unmanaged scratch buffer in bytes.
     /// </summary>
+#pragma warning disable RCS1085 // Use auto-implemented property
     public new int ByteLength => _byteLength;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Zeroes the entire scratch buffer.
@@ -158,10 +160,12 @@ public sealed class UnmanagedScratchBuffer : SafeBuffer
             ByteLength = byteLength;
         }
 
+#pragma warning disable MA0102
         /// <summary>
         /// Gets the native pointer to the start of the scratch buffer, or <see cref="IntPtr.Zero"/> once disposed.
         /// </summary>
         public IntPtr Pointer => _pointer;
+#pragma warning restore MA0102
 
         /// <summary>
         /// Gets the total byte length of the leased scratch buffer.

@@ -8,20 +8,17 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace System.Runtime.CompilerServices;
 
+#pragma warning disable MA0182
 [EditorBrowsable(EditorBrowsableState.Never)]
 [ExcludeFromCodeCoverage]
-internal static class IsExternalInit
-{
-}
+internal static class IsExternalInit;
 
 [AttributeUsage(
     AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Field | AttributeTargets.Property,
     Inherited = false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 [ExcludeFromCodeCoverage]
-internal sealed class RequiredMemberAttribute : Attribute
-{
-}
+internal sealed class RequiredMemberAttribute : Attribute;
 
 [AttributeUsage(AttributeTargets.All, AllowMultiple = true, Inherited = false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -41,5 +38,6 @@ internal sealed class CompilerFeatureRequiredAttribute : Attribute
 
     public bool IsOptional { get; init; }
 }
+#pragma warning restore MA0182
 
 #endif

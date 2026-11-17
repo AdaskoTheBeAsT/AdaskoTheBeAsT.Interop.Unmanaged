@@ -336,8 +336,10 @@ dotnet_diagnostic.CC0014.severity = warning
 dotnet_diagnostic.CC0030.severity = warning
 dotnet_diagnostic.CC0061.severity = warning
 dotnet_diagnostic.CC0065.severity = warning
+dotnet_diagnostic.CC0074.severity = warning
 
 # Meziantou.Analyzer
+dotnet_diagnostic.MA0001.severity = warning
 dotnet_diagnostic.MA0003.severity = warning
 dotnet_diagnostic.MA0015.severity = none
 dotnet_diagnostic.MA0016.severity = none
@@ -346,6 +348,9 @@ dotnet_diagnostic.MA0040.severity = warning
 dotnet_diagnostic.MA0042.severity = warning
 dotnet_diagnostic.MA0076.severity = warning
 dotnet_diagnostic.MA0089.severity = warning
+dotnet_diagnostic.MA0102.severity = warning
+dotnet_diagnostic.MA0182.severity = warning
+dotnet_diagnostic.MA0206.severity = warning
 
 # Microsoft.CodeAnalysis.NetAnalyzers / ManagedCodeAnalysis
 dotnet_diagnostic.CA1001.severity = warning
@@ -367,8 +372,10 @@ dotnet_diagnostic.CA1405.severity = warning
 dotnet_diagnostic.CA1410.severity = warning
 dotnet_diagnostic.CA1415.severity = warning
 dotnet_diagnostic.CA1510.severity = warning
+dotnet_diagnostic.CA1513.severity = warning
 dotnet_diagnostic.CA1821.severity = warning
 dotnet_diagnostic.CA1822.severity = none
+dotnet_diagnostic.CA1845.severity = warning
 dotnet_diagnostic.CA1861.severity = warning
 dotnet_diagnostic.CA1900.severity = warning
 dotnet_diagnostic.CA1901.severity = warning
@@ -417,12 +424,14 @@ dotnet_diagnostic.CA2238.severity = warning
 dotnet_diagnostic.CA2240.severity = warning
 dotnet_diagnostic.CA2241.severity = warning
 dotnet_diagnostic.CA2242.severity = warning
+dotnet_diagnostic.CA2249.severity = warning
 dotnet_diagnostic.CA2263.severity = warning
 
 # Microsoft.CodeAnalysis.CSharp
 dotnet_diagnostic.CS1591.severity = none
 dotnet_diagnostic.IDE0016.severity = warning
 dotnet_diagnostic.IDE0028.severity = warning
+dotnet_diagnostic.IDE0270.severity = warning
 
 # Moq.Analyzers
 dotnet_diagnostic.Moq1410.severity = warning
@@ -432,14 +441,20 @@ dotnet_diagnostic.ParallelCheckerInfo.severity = silent
 
 # Roslynator.CSharp.Analyzers
 dotnet_diagnostic.RCS1058.severity = warning
+dotnet_diagnostic.RCS1085.severity = warning
+dotnet_diagnostic.RCS1113.severity = warning
 dotnet_diagnostic.RCS1118.severity = warning
+dotnet_diagnostic.RCS1146.severity = warning
 dotnet_diagnostic.RCS1163.severity = warning
 dotnet_diagnostic.RCS1175.severity = warning
 dotnet_diagnostic.RCS1192.severity = warning
 dotnet_diagnostic.RCS1196.severity = warning
 dotnet_diagnostic.RCS1197.severity = warning
+dotnet_diagnostic.RCS1199.severity = warning
 dotnet_diagnostic.RCS1212.severity = warning
 dotnet_diagnostic.RCS1222.severity = none
+dotnet_diagnostic.RCS1239.severity = warning
+dotnet_diagnostic.RCS1251.severity = warning
 dotnet_diagnostic.RCS1261.severity = warning
 dotnet_diagnostic.RCS1266.severity = warning
 

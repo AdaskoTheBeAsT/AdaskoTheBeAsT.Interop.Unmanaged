@@ -40,7 +40,9 @@ public sealed class NativeExecutionScope : IDisposable
     /// <summary>
     /// Gets the managed thread ID of the thread that entered this execution scope.
     /// </summary>
+#pragma warning disable RCS1085 // Use auto-implemented property
     public int OwnerThreadId => _ownerThreadId;
+#pragma warning restore RCS1085 // Use auto-implemented property
 
     /// <summary>
     /// Clears pending floating-point status flags and restores the caller's captured floating-point control state
@@ -51,11 +53,15 @@ public sealed class NativeExecutionScope : IDisposable
     public void RestoreFloatingPointState()
     {
         EnsureOwningThread();
+#if NET10_0_OR_GREATER
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, instance: this);
+#endif
+#if NET472_OR_GREATER
         if (Volatile.Read(ref _disposed) != 0)
         {
             throw new ObjectDisposedException(nameof(NativeExecutionScope));
         }
-
+#endif
         RestoreFloatingPointCore();
     }
 

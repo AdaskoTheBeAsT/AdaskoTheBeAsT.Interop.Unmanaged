@@ -249,8 +249,8 @@ public class NativeFixtureTests
                 StringComparison.Ordinal));
         library.GetUnmanagedFunction<InvokeText>("fixture_invoke_text")!(text.Ptr).Should().Be(1);
         using var byRef = UnmanagedLibrary.PinDelegate<RefCallback<int>>((
-            ref int value,
-            out int copy) =>
+            ref value,
+            out copy) =>
         {
             copy = ++value;
             return value;

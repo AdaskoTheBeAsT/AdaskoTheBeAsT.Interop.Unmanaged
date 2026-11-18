@@ -250,19 +250,20 @@ public class UnmanagedLibraryIntegrationTests
     public void ManagedToNative_CallbackScenario_WorksCorrectly()
     {
         // Arrange
-        Func<int, int, int> managedCallback = (
-            a,
-            b) => a * b;
+        static int ManagedCallback(
+            int a,
+            int b) =>
+            a * b;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(managedCallback, out var binder);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(ManagedCallback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
         binder.Should().NotBeNull();
 
         // Can still invoke the original callback
-        var result = managedCallback(5, 7);
+        var result = ManagedCallback(5, 7);
         result.Should().Be(35);
     }
 
@@ -270,8 +271,8 @@ public class UnmanagedLibraryIntegrationTests
     public void DelegatePin_InRealScenario_PreservesDelegateLifetime()
     {
         // Arrange
-        Func<int, int> callback = x => x * 2;
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        static int Callback(int x) => x * 2;
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(Callback, out var binder);
 
         // Act
         using var pin = new DelegatePin(ptr, binder);
@@ -281,7 +282,7 @@ public class UnmanagedLibraryIntegrationTests
         pin.Ptr.Should().NotBe(IntPtr.Zero);
 
         // Can still invoke callback
-        var result = callback(10);
+        var result = Callback(10);
         result.Should().Be(20);
     }
 

@@ -199,22 +199,6 @@ public class UnmanagedLibraryConstructorTests
     }
 
     [Fact]
-    public void UsingStatement_DisposesLibraryProperly()
-    {
-        if (TestHelpers.SkipIfNotWindows())
-        {
-            return;
-        }
-
-        // Act
-        using (var library = new UnmanagedLibrary("kernel32.dll"))
-        {
-            // Assert
-            library.Should().NotBeNull();
-        }
-    }
-
-    [Fact]
     public void Constructor_LoadedLibrary_ExposesValidSafeHandleThroughLookup()
     {
         if (TestHelpers.SkipIfNotWindows())

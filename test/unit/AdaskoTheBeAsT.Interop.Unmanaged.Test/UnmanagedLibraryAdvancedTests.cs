@@ -37,12 +37,12 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithSimpleDelegate_ReturnsValidPointer()
     {
         // Arrange
-        SimpleDelegate callback = (
-            x,
-            y) => x + y;
+        static int Callback(
+int x,
+int y) => x + y;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate((SimpleDelegate)Callback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
@@ -81,10 +81,10 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithGenericDelegate_ReturnsValidPointer()
     {
         // Arrange
-        GenericDelegate<int> callback = value => Console.WriteLine(value);
+        static void Callback(int value) => Console.WriteLine(value);
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<int>)Callback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
@@ -95,11 +95,11 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithGenericDelegate_CreatesDynamicAssembly()
     {
         // Arrange
-        GenericDelegate<string> callback = value => Console.WriteLine(value);
+        static void Callback(string value) => Console.WriteLine(value);
         var assembliesBefore = AppDomain.CurrentDomain.GetAssemblies().Length;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var _);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<string>)Callback, out var _);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
@@ -111,10 +111,10 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithGenericDelegate_BinderContainsBothDelegates()
     {
         // Arrange
-        GenericDelegate<int> callback = value => Console.WriteLine(value);
+        static void Callback(int value) => Console.WriteLine(value);
 
         // Act
-        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<int>)Callback, out var binder);
 
         // Assert
         binder.Should().NotBeNull();
@@ -127,12 +127,12 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_SameGenericDelegateTypeTwice_ReusesProxyAssembly()
     {
         // Arrange
-        GenericDelegate<int> callback1 = value => Console.WriteLine(value);
-        GenericDelegate<int> callback2 = value => Console.WriteLine(value * 2);
+        static void Callback1(int value) => Console.WriteLine(value);
+        static void Callback2(int value) => Console.WriteLine(value * 2);
 
         // Act
-        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out var binder1);
-        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out var binder2);
+        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<int>)Callback1, out var binder1);
+        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<int>)Callback2, out var binder2);
 
         // Assert
         ptr1.Should().NotBe(IntPtr.Zero);
@@ -146,12 +146,12 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_DifferentGenericTypes_CreatesSeparateProxies()
     {
         // Arrange
-        GenericDelegate<int> callback1 = value => Console.WriteLine(value);
-        GenericDelegate<string> callback2 = value => Console.WriteLine(value);
+        static void Callback1(int value) => Console.WriteLine(value);
+        static void Callback2(string value) => Console.WriteLine(value);
 
         // Act
-        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out var _);
-        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out var _);
+        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<int>)Callback1, out var _);
+        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<string>)Callback2, out var _);
 
         // Assert
         ptr1.Should().NotBe(IntPtr.Zero);
@@ -246,10 +246,10 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_GenericDelegate_PropagatesUnmanagedFunctionPointerAttribute()
     {
         // Arrange - generic delegate decorated with [UnmanagedFunctionPointer(Cdecl)]
-        CdeclGenericDelegate<int> callback = x => x + 1;
+        static int Callback(int x) => x + 1;
 
         // Act
-        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate((CdeclGenericDelegate<int>)Callback, out var binder);
 
         // Assert - binder is Tuple<originalDelegate, proxyDelegate>; the proxy type should carry the attribute
         binder.Should().BeOfType<Tuple<Delegate, Delegate>>();
@@ -265,10 +265,10 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_GenericDelegate_PropagatesAllUnmanagedFunctionPointerFields()
     {
         // Arrange - generic delegate decorated with every UnmanagedFunctionPointer field
-        FullyDecoratedGenericDelegate<int> callback = x => x + 1;
+        static int Callback(int x) => x + 1;
 
         // Act
-        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate((FullyDecoratedGenericDelegate<int>)Callback, out var binder);
 
         // Assert - the proxy type should carry ALL configured fields, not only CallingConvention
         binder.Should().BeOfType<Tuple<Delegate, Delegate>>();
@@ -288,19 +288,19 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithManagedCallback_ReturnsValidPointer()
     {
         // Arrange
-        SimpleDelegate originalCallback = (
-            x,
-            y) => x + y;
+        static int OriginalCallback(
+int x,
+int y) => x + y;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(originalCallback, out var binder);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate((SimpleDelegate)OriginalCallback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
         binder.Should().NotBeNull();
 
         // Can invoke the original callback
-        var result = originalCallback(10, 20);
+        var result = OriginalCallback(10, 20);
         result.Should().Be(30);
     }
 
@@ -308,41 +308,41 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithMultipleCallbacks_ReturnsValidPointers()
     {
         // Arrange
-        SimpleDelegate callback1 = (
-            x,
-            y) => x + y;
-        SimpleDelegate callback2 = (
-            x,
-            y) => x * y;
+        static int Callback1(
+int x,
+int y) => x + y;
+        static int Callback2(
+int x,
+int y) => x * y;
 
         // Act
-        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out _);
-        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback2, out _);
+        var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate((SimpleDelegate)Callback1, out _);
+        var ptr2 = UnmanagedLibrary.GetFunctionPointerForDelegate((SimpleDelegate)Callback2, out _);
 
         // Assert
         ptr1.Should().NotBe(IntPtr.Zero);
         ptr2.Should().NotBe(IntPtr.Zero);
         ptr1.Should().NotBe(ptr2);
-        callback1(10, 20).Should().Be(30);
-        callback2(10, 20).Should().Be(200);
+        Callback1(10, 20).Should().Be(30);
+        Callback2(10, 20).Should().Be(200);
     }
 
     [Fact]
     public void GetFunctionPointerForDelegate_WithFuncDelegate_WorksCorrectly()
     {
         // Arrange
-        Func<int, int, int, int> callback = (
-            a,
-            b,
-            c) => a + b + c;
+        static int Callback(
+int a,
+int b,
+int c) => a + b + c;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(Callback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
         binder.Should().NotBeNull();
-        callback(5, 10, 15).Should().Be(30);
+        Callback(5, 10, 15).Should().Be(30);
     }
 
     [Fact]
@@ -350,15 +350,15 @@ public class UnmanagedLibraryAdvancedTests
     {
         // Arrange
         var called = false;
-        Action callback = () => called = true;
+        void Callback() => called = true;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(Callback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
         binder.Should().NotBeNull();
-        callback();
+        Callback();
         called.Should().BeTrue();
     }
 
@@ -366,15 +366,15 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithStringFunc_WorksCorrectly()
     {
         // Arrange
-        Func<string, int> callback = str => str.Length;
+        static int Callback(string str) => str.Length;
 
         // Act
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(Callback, out var binder);
 
         // Assert
         ptr.Should().NotBe(IntPtr.Zero);
         binder.Should().NotBeNull();
-        callback("Hello").Should().Be(5);
+        Callback("Hello").Should().Be(5);
     }
 
     [Fact]
@@ -403,10 +403,10 @@ public class UnmanagedLibraryAdvancedTests
         GetFunctionPointerForDelegate_GenericDelegate_WithoutUnmanagedFunctionPointerAttribute_DoesNotCopyAttribute()
     {
         // Arrange - a generic delegate type WITHOUT [UnmanagedFunctionPointer]
-        GenericDelegate<double> callback = value => Console.WriteLine(value);
+        static void Callback(double value) => Console.WriteLine(value);
 
         // Act
-        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate((GenericDelegate<double>)Callback, out var binder);
 
         // Assert - proxy exists but has no UFP attribute (we do not synthesize one)
         binder.Should().BeOfType<Tuple<Delegate, Delegate>>();

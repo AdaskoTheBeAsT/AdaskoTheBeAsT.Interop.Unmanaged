@@ -21,11 +21,11 @@ public class CallbackProxyTests
     [Fact]
     public void DifferentReturnTypes_CreateDistinctProxies()
     {
-        Func<int> first = () => 42;
-        Func<long> second = () => long.MaxValue;
+        static int First() => 42;
+        static long Second() => long.MaxValue;
 
-        var firstPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(first, out var firstBinder);
-        var secondPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(second, out var secondBinder);
+        var firstPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(First, out var firstBinder);
+        var secondPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(Second, out var secondBinder);
 
         var firstCallback =
             UnmanagedLibrary.GetDelegateForFunctionPointer<Func<int>>(firstPointer, CallingConvention.Winapi);
@@ -41,11 +41,11 @@ public class CallbackProxyTests
     [Fact]
     public void SameSimpleName_PreservesEachCallingConvention()
     {
-        CdeclCallbacks.Callback<int> first = value => value + 1;
-        StdCallCallbacks.Callback<int> second = value => value + 2;
+        static int First(int value) => value + 1;
+        static int Second(int value) => value + 2;
 
-        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(first, out var firstBinder);
-        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(second, out var secondBinder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate((CdeclCallbacks.Callback<int>)First, out var firstBinder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate((StdCallCallbacks.Callback<int>)Second, out var secondBinder);
 
         var firstType = GetProxy(firstBinder).GetType();
         var secondType = GetProxy(secondBinder).GetType();
@@ -90,9 +90,9 @@ public class CallbackProxyTests
     [Fact]
     public void MarshaledCallback_PreservesReturnAndParameterAttributes()
     {
-        MarshaledCallback<string> callback = value => value.Length == 2;
+        static bool Callback(string value) => value.Length == 2;
 
-        _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        _ = UnmanagedLibrary.GetFunctionPointerForDelegate((MarshaledCallback<string>)Callback, out var binder);
 
         var invoke = GetProxy(binder).GetType().GetMethod("Invoke")!;
         var returnAttribute = invoke.ReturnParameter.GetCustomAttribute<MarshalAsAttribute>();
@@ -106,8 +106,8 @@ public class CallbackProxyTests
     [Fact]
     public void MarshaledCallback_InvokesWithUnicodeString()
     {
-        MarshaledCallback<string> callback = value => string.Equals(value, "AB", StringComparison.Ordinal);
-        var pointer = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        static bool Callback(string value) => string.Equals(value, "AB", StringComparison.Ordinal);
+        var pointer = UnmanagedLibrary.GetFunctionPointerForDelegate((MarshaledCallback<string>)Callback, out var binder);
         var text = Marshal.StringToHGlobalUni("AB");
         try
         {
@@ -132,8 +132,8 @@ public class CallbackProxyTests
             types.Length,
             index =>
             {
-                ConcurrentCallback<int> callback = value => value + 1;
-                _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+                static int Callback(int value) => value + 1;
+                _ = UnmanagedLibrary.GetFunctionPointerForDelegate((ConcurrentCallback<int>)Callback, out var binder);
                 types[index] = GetProxy(binder).GetType();
             });
 

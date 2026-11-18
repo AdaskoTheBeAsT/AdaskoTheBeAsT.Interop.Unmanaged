@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
-    [string]$Solution = 'AhuNew.slnx'
+    [string]$Solution = 'AdaskoTheBeAsT.Interop.Unmanaged.slnx'
 )
 
 Set-StrictMode -Version Latest
@@ -24,7 +24,7 @@ try {
     }
 
     Write-Host "==> Step 2/3: Running ReSharper cleanupcode (Built-in: Reformat Code) on $solutionPath..." -ForegroundColor Cyan
-    dotnet jb cleanupcode $solutionPath --profile="Built-in: Reformat Code" --exclude="lib/**;**/bin/**;**/obj/**;**/net10.0/*.xml"
+    dotnet jb cleanupcode $solutionPath --profile="Built-in: Reformat Code" --exclude="lib/**;**/bin/**;**/obj/**;**/net11.0/*.xml;**/*.props;**/*.targets"
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet jb cleanupcode failed with exit code $LASTEXITCODE."
     }

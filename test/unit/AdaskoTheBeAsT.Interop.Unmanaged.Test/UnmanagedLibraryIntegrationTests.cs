@@ -88,7 +88,8 @@ public class UnmanagedLibraryIntegrationTests
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
-        var getProcessId = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var getProcessId =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
         var processId = getProcessId!();
         UnmanagedLibrary.FreeLibrary(handle);
 
@@ -249,7 +250,9 @@ public class UnmanagedLibraryIntegrationTests
     public void ManagedToNative_CallbackScenario_WorksCorrectly()
     {
         // Arrange
-        Func<int, int, int> managedCallback = (a, b) => a * b;
+        Func<int, int, int> managedCallback = (
+            a,
+            b) => a * b;
 
         // Act
         var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(managedCallback, out var binder);

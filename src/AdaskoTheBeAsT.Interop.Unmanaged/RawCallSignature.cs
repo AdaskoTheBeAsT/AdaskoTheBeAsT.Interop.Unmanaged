@@ -13,7 +13,9 @@ internal static class RawCallSignature
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("Inspects delegate signatures and nested field metadata.")]
 #endif
-    public static MethodInfo Validate(Type delegateType, CallingConvention conv)
+    public static MethodInfo Validate(
+        Type delegateType,
+        CallingConvention conv)
     {
         if (delegateType.BaseType != typeof(MulticastDelegate)
             || delegateType.IsAbstract
@@ -48,7 +50,9 @@ internal static class RawCallSignature
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("Inspects nested field metadata.")]
 #endif
-    private static bool IsSupportedParameter(ParameterInfo parameter, bool isReturn)
+    private static bool IsSupportedParameter(
+        ParameterInfo parameter,
+        bool isReturn)
     {
         if (parameter.IsDefined(typeof(MarshalAsAttribute), inherit: false))
         {
@@ -65,13 +69,18 @@ internal static class RawCallSignature
         return (isReturn && type == typeof(void)) || IsSupportedValue(type);
     }
 
-    [SuppressMessage("Sonar", "S3011", Justification = "Inspect private field types, without reading values, to reject hidden managed references.")]
+    [SuppressMessage(
+        "Sonar",
+        "S3011",
+        Justification = "Inspect private field types, without reading values, to reject hidden managed references.")]
 #if NET8_0_OR_GREATER
     [RequiresUnreferencedCode("Inspects all instance fields, including private fields, recursively.")]
 #endif
     private static bool IsSupportedValue(Type type)
     {
-        if (type.IsPointer || type == typeof(IntPtr) || type == typeof(UIntPtr))
+        if (type.IsPointer
+            || type == typeof(IntPtr)
+            || type == typeof(UIntPtr))
         {
             return true;
         }
@@ -96,7 +105,7 @@ internal static class RawCallSignature
 
         var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
         return fields.Length != 0
-            && fields.All(field => !field.IsDefined(typeof(MarshalAsAttribute), inherit: false)
-                && IsSupportedValue(field.FieldType));
+               && fields.All(field => !field.IsDefined(typeof(MarshalAsAttribute), inherit: false)
+                                      && IsSupportedValue(field.FieldType));
     }
 }

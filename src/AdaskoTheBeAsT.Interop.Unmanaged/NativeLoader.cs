@@ -20,7 +20,9 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// </remarks>
 internal static class NativeLoader
 {
-    public static IntPtr Load(string fileName, LoadLibraryFlags flags)
+    public static IntPtr Load(
+        string fileName,
+        LoadLibraryFlags flags)
     {
         if (IsWindows())
         {
@@ -113,7 +115,9 @@ internal static class NativeLoader
 #endif
     }
 
-    public static IntPtr GetExport(IntPtr handle, string name)
+    public static IntPtr GetExport(
+        IntPtr handle,
+        string name)
     {
         if (IsWindows())
         {
@@ -146,7 +150,9 @@ internal static class NativeLoader
 #endif
     }
 
-    private static IntPtr LoadWindowsLibrary(string fileName, LoadLibraryFlags flags)
+    private static IntPtr LoadWindowsLibrary(
+        string fileName,
+        LoadLibraryFlags flags)
     {
         // DLL_LOAD_DIR requires a full path. For a bare name, keep the default
         // search restricted to System32 rather than falling back to legacy search.

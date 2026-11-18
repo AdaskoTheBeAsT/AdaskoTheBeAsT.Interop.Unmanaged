@@ -6,6 +6,7 @@
     <File Path="DeterministicBuild.targets" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
+    <File Path="format.ps1" />
     <File Path="global.json" />
     <File Path="LICENSE" />
     <File Path="README.md" />

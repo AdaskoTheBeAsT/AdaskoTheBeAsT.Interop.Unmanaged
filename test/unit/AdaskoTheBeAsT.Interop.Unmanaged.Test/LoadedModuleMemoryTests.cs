@@ -29,11 +29,18 @@ public class LoadedModuleMemoryTests
     private delegate IntPtr GetPtrFn();
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void WriteQuadIntFn(int a, int b, int c, int d);
+    private delegate void WriteQuadIntFn(
+        int a,
+        int b,
+        int c,
+        int d);
 
     [Fact]
     [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Verifies disposed handle rejection.")]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit Dispose tests ObjectDisposedException.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP017",
+        Justification = "Explicit Dispose tests ObjectDisposedException.")]
     public void InspectAndVerifyIdentity_MatchOfflineHeaders_AndRejectMismatchDatafileOrDisposed()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -51,8 +58,10 @@ public class LoadedModuleMemoryTests
             id.Machine.Should().Be(offline.Machine);
             id.TimeDateStamp.Should().Be(offline.TimeDateStamp);
             id.SizeOfImage.Should().Be(offline.SizeOfImage);
-            (id == new LoadedModuleIdentity(offline.Machine, offline.TimeDateStamp, offline.SizeOfImage)).Should().BeTrue();
-            (id != new LoadedModuleIdentity(offline.Machine, offline.TimeDateStamp + 1u, offline.SizeOfImage)).Should().BeTrue();
+            (id == new LoadedModuleIdentity(offline.Machine, offline.TimeDateStamp, offline.SizeOfImage)).Should()
+                .BeTrue();
+            (id != new LoadedModuleIdentity(offline.Machine, offline.TimeDateStamp + 1u, offline.SizeOfImage)).Should()
+                .BeTrue();
             id.Equals((object)id).Should().BeTrue();
             id.GetHashCode().Should().Be(LoadedModuleMemory.Inspect(library).GetHashCode());
             id.ToString().Should().Contain("SizeOfImage=0x");
@@ -77,7 +86,10 @@ public class LoadedModuleMemoryTests
     }
 
     [Fact]
-    [SuppressMessage("Security", "SCS0018", Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
     public void RedirectImportFunction_RedirectsNamedImportChainsOriginalAndRestoresCleanly()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -94,27 +106,50 @@ public class LoadedModuleMemoryTests
         var capturedOriginal = IntPtr.Zero;
         using var callbackScope = UnmanagedLibrary.PinConcreteDelegate<UnaryIntFn>(value =>
         {
-            var origFn = UnmanagedLibrary.GetDelegateForFunctionPointer<UnaryIntFn>(capturedOriginal, CallingConvention.Cdecl)!;
+            var origFn = UnmanagedLibrary.GetDelegateForFunctionPointer<UnaryIntFn>(
+                capturedOriginal,
+                CallingConvention.Cdecl)!;
             return (origFn(value) * 10) + 1;
         });
 
-        LoadedModuleMemory.TryRedirectImportFunction(library, "isohookdep.dll", "missing_export_xyz", callbackScope.Ptr, out _)
-            .Should().BeFalse();
+        LoadedModuleMemory.TryRedirectImportFunction(
+                library,
+                "isohookdep.dll",
+                "missing_export_xyz",
+                callbackScope.Ptr,
+                out _)
+            .Should()
+            .BeFalse();
 
-        Action missingThrow = () => LoadedModuleMemory.RedirectImportFunction(library, "isohookdep.dll", "missing_export_xyz", callbackScope.Ptr);
+        Action missingThrow = () => LoadedModuleMemory.RedirectImportFunction(
+            library,
+            "isohookdep.dll",
+            "missing_export_xyz",
+            callbackScope.Ptr);
         missingThrow.Should().Throw<EntryPointNotFoundException>();
 
-        capturedOriginal = LoadedModuleMemory.RedirectImportFunction(library, "isohookdep.dll", "iso_hook_dep_calc", callbackScope.Ptr);
+        capturedOriginal = LoadedModuleMemory.RedirectImportFunction(
+            library,
+            "isohookdep.dll",
+            "iso_hook_dep_calc",
+            callbackScope.Ptr);
         capturedOriginal.Should().NotBe(IntPtr.Zero);
         callNamed(5).Should().Be(151);
 
-        var secondPrev = LoadedModuleMemory.RedirectImportFunction(library, "isohookdep.dll", "iso_hook_dep_calc", capturedOriginal);
+        var secondPrev = LoadedModuleMemory.RedirectImportFunction(
+            library,
+            "isohookdep.dll",
+            "iso_hook_dep_calc",
+            capturedOriginal);
         secondPrev.Should().Be(callbackScope.Ptr);
         callNamed(5).Should().Be(15);
     }
 
     [Fact]
-    [SuppressMessage("Security", "SCS0018", Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
     public void TryRedirectImportOrdinal_RedirectsOrdinalImportAndRestoresOriginal()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -130,21 +165,32 @@ public class LoadedModuleMemoryTests
 
         using var replacementScope = UnmanagedLibrary.PinConcreteDelegate<UnaryIntFn>(value => (value * 100) + 7);
         LoadedModuleMemory.TryRedirectImportOrdinal(library, "isohookdep.dll", 99, replacementScope.Ptr, out _)
-            .Should().BeFalse();
+            .Should()
+            .BeFalse();
 
-        LoadedModuleMemory.TryRedirectImportOrdinal(library, "isohookdep.dll", 7, replacementScope.Ptr, out var originalFn)
-            .Should().BeTrue();
+        LoadedModuleMemory.TryRedirectImportOrdinal(
+                library,
+                "isohookdep.dll",
+                7,
+                replacementScope.Ptr,
+                out var originalFn)
+            .Should()
+            .BeTrue();
         originalFn.Should().NotBe(IntPtr.Zero);
         callOrdinal(6).Should().Be(607);
 
         LoadedModuleMemory.TryRedirectImportOrdinal(library, "isohookdep.dll", 7, originalFn, out var previousHook)
-            .Should().BeTrue();
+            .Should()
+            .BeTrue();
         previousHook.Should().Be(replacementScope.Ptr);
         callOrdinal(6).Should().Be(18);
     }
 
     [Fact]
-    [SuppressMessage("Security", "SCS0018", Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
     public void WriteVerifiedBytesAtRva_PatchesReadOnlySectionIdempotently_AndFailsClosedOnMismatch()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -173,13 +219,27 @@ public class LoadedModuleMemoryTests
         using var handleRef = UnmanagedLibrary.LoadLibrary(stagedHook);
         ReadOnlySpan<byte> spanExpected = patchedBytes;
         var spanNext = "SPAN__V3"u8;
-        LoadedModuleMemory.WriteVerifiedBytesAtRva(handleRef, identity, rdataRva, spanExpected, spanNext, flushInstructionCache: true);
+        LoadedModuleMemory.WriteVerifiedBytesAtRva(
+            handleRef,
+            identity,
+            rdataRva,
+            spanExpected,
+            spanNext,
+            flushInstructionCache: true);
         LoadedModuleMemory.WriteVerifiedBytesAtRva(handleRef, identity, rdataRva, spanExpected, spanNext);
         sumMagic().Should().Be(SumAscii(spanNext.ToArray()));
 #endif
 
-        var badIdentity = new LoadedModuleIdentity(identity.Machine, identity.TimeDateStamp + 99u, identity.SizeOfImage);
-        Action wrongId = () => LoadedModuleMemory.WriteVerifiedBytesAtRva(library, badIdentity, rdataRva, originalBytes, patchedBytes);
+        var badIdentity = new LoadedModuleIdentity(
+            identity.Machine,
+            identity.TimeDateStamp + 99u,
+            identity.SizeOfImage);
+        Action wrongId = () => LoadedModuleMemory.WriteVerifiedBytesAtRva(
+            library,
+            badIdentity,
+            rdataRva,
+            originalBytes,
+            patchedBytes);
         wrongId.Should().Throw<BadImageFormatException>();
 
         Action wrongExpected = () => LoadedModuleMemory.WriteVerifiedBytesAtRva(
@@ -192,7 +252,10 @@ public class LoadedModuleMemoryTests
     }
 
     [Fact]
-    [SuppressMessage("Security", "SCS0018", Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Copies test DLLs into fixture-owned private subdirectory.")]
     public void ClearWritableBytesAtRva_ZeroesDataAndBssSections_AndRejectsReadOnlyOrCodeSections()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -233,8 +296,13 @@ public class LoadedModuleMemoryTests
         clearText.Should().Throw<InvalidOperationException>();
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Stages test-owned copies inside NativeFixture.DirectoryPath.")]
-    private static string StagePrivateHookCopy(NativeFixture fixture, string suffix)
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Stages test-owned copies inside NativeFixture.DirectoryPath.")]
+    private static string StagePrivateHookCopy(
+        NativeFixture fixture,
+        string suffix)
     {
         var dir = Path.Combine(fixture.DirectoryPath, "hook_" + suffix);
         Directory.CreateDirectory(dir);

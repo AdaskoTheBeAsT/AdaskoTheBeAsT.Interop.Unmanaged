@@ -29,7 +29,9 @@ public class ExportAndBaseAddressTests
         instancePtr.Should().Be(expectedPtr);
         staticPtr.Should().Be(expectedPtr);
 
-        var fn = UnmanagedLibrary.GetDelegateForFunctionPointer<Func<int, int, int>>(instancePtr, CallingConvention.Cdecl)!;
+        var fn = UnmanagedLibrary.GetDelegateForFunctionPointer<Func<int, int, int>>(
+            instancePtr,
+            CallingConvention.Cdecl)!;
         fn(19, 23).Should().Be(42);
     }
 
@@ -162,7 +164,9 @@ public class ExportAndBaseAddressTests
     [SuppressMessage("IDisposableAnalyzers", "IDISP001", Justification = "IsolatedLibrarySet owns module handles.")]
     [SuppressMessage("IDisposableAnalyzers", "IDISP004", Justification = "IsolatedLibrarySet owns module handles.")]
     [SuppressMessage("Security", "SCS0018", Justification = "Uses test-owned isolation root.")]
+#pragma warning disable MA0051 // Method is too long
     public void GetLoadedFilePath_AndContainsAddress_DistinguishConcurrentIsolatedWorkers()
+#pragma warning restore MA0051 // Method is too long
     {
         if (TestHelpers.SkipIfNotWindows())
         {
@@ -173,22 +177,36 @@ public class ExportAndBaseAddressTests
         var isoRoot = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "unm-prov-" + Guid.NewGuid().ToString("N"));
         try
         {
-            using var worker0 = IsolatedLibrarySet.Create(new IsolatedLibrarySetOptions
-            {
-                SourceDirectory = fixture.DirectoryPath,
-                IsolationRootDirectory = isoRoot,
-                NamespaceId = "prv0",
-                WorkerIndex = 70,
-                Modules = [new IsolatedModuleSpecification("isoleaf0.dll") { AlwaysRenameWithWorkerSuffix = true }],
-            });
-            using var worker1 = IsolatedLibrarySet.Create(new IsolatedLibrarySetOptions
-            {
-                SourceDirectory = fixture.DirectoryPath,
-                IsolationRootDirectory = isoRoot,
-                NamespaceId = "prv0",
-                WorkerIndex = 71,
-                Modules = [new IsolatedModuleSpecification("isoleaf0.dll") { AlwaysRenameWithWorkerSuffix = true }],
-            });
+            using var worker0 = IsolatedLibrarySet.Create(
+                new IsolatedLibrarySetOptions
+                {
+                    SourceDirectory = fixture.DirectoryPath,
+                    IsolationRootDirectory = isoRoot,
+                    NamespaceId = "prv0",
+                    WorkerIndex = 70,
+                    Modules =
+                    [
+                        new IsolatedModuleSpecification("isoleaf0.dll")
+                        {
+                            AlwaysRenameWithWorkerSuffix = true,
+                        },
+                    ],
+                });
+            using var worker1 = IsolatedLibrarySet.Create(
+                new IsolatedLibrarySetOptions
+                {
+                    SourceDirectory = fixture.DirectoryPath,
+                    IsolationRootDirectory = isoRoot,
+                    NamespaceId = "prv0",
+                    WorkerIndex = 71,
+                    Modules =
+                    [
+                        new IsolatedModuleSpecification("isoleaf0.dll")
+                        {
+                            AlwaysRenameWithWorkerSuffix = true,
+                        },
+                    ],
+                });
 
             var lib0 = worker0.GetLibrary("isoleaf0");
             var lib1 = worker1.GetLibrary("isoleaf0");
@@ -226,7 +244,9 @@ public class ExportAndBaseAddressTests
             return;
         }
 
-        UnmanagedLibrary.TryGetLoadedModuleFromAddress(IntPtr.Zero, out var zeroBase, out var zeroPath).Should().BeFalse();
+        UnmanagedLibrary.TryGetLoadedModuleFromAddress(IntPtr.Zero, out var zeroBase, out var zeroPath)
+            .Should()
+            .BeFalse();
         zeroBase.Should().Be(IntPtr.Zero);
         zeroPath.Should().BeNull();
 
@@ -243,8 +263,10 @@ public class ExportAndBaseAddressTests
         var compareString = UnmanagedLibrary.GetRequiredSystemExport("kernel32.dll", "CompareStringW");
         compareString.Should().NotBe(IntPtr.Zero);
 
-        Action missingExport = () => UnmanagedLibrary.GetRequiredSystemExport("kernel32.dll", "NonExistentWin32Api_9999");
-        Action rootedModule = () => UnmanagedLibrary.GetRequiredSystemExport("C:\\Windows\\System32\\kernel32.dll", "CompareStringW");
+        Action missingExport = () =>
+            UnmanagedLibrary.GetRequiredSystemExport("kernel32.dll", "NonExistentWin32Api_9999");
+        Action rootedModule = () =>
+            UnmanagedLibrary.GetRequiredSystemExport("C:\\Windows\\System32\\kernel32.dll", "CompareStringW");
         Action relativeModule = () => UnmanagedLibrary.GetRequiredSystemExport("..\\kernel32.dll", "CompareStringW");
 
         missingExport.Should().Throw<EntryPointNotFoundException>();

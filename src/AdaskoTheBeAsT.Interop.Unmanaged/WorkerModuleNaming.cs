@@ -25,7 +25,9 @@ public static class WorkerModuleNaming
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="workerIndex"/> is outside <c>0..99</c>.
     /// </exception>
-    public static string FormatFixedLengthName(string originalFileName, int workerIndex)
+    public static string FormatFixedLengthName(
+        string originalFileName,
+        int workerIndex)
     {
         if (workerIndex is < 0 or > 99)
         {
@@ -71,7 +73,8 @@ public static class WorkerModuleNaming
                 "Generation must be between 0 and 1295 inclusive.");
         }
 
-        if (string.IsNullOrEmpty(namespaceId) && generation == 0)
+        if (string.IsNullOrEmpty(namespaceId)
+            && generation == 0)
         {
             return FormatFixedLengthName(originalFileName, workerIndex);
         }
@@ -104,7 +107,9 @@ public static class WorkerModuleNaming
     /// <param name="originalFileName">Bare ASCII DLL filename.</param>
     /// <param name="suffixToken">ASCII identifier token (<c>[A-Za-z0-9_-]</c>) to place at the end of the stem.</param>
     /// <returns>A fixed-length ASCII DLL filename of the exact same length as <paramref name="originalFileName"/>.</returns>
-    public static string FormatFixedLengthToken(string originalFileName, string suffixToken)
+    public static string FormatFixedLengthToken(
+        string originalFileName,
+        string suffixToken)
     {
         SplitValidatedDllFileName(originalFileName, nameof(originalFileName), out var stem, out var extension);
         ValidateSuffixToken(suffixToken, nameof(suffixToken));
@@ -125,7 +130,9 @@ public static class WorkerModuleNaming
 #endif
     }
 
-    internal static void ValidateNamespaceId(string? namespaceId, string paramName)
+    internal static void ValidateNamespaceId(
+        string? namespaceId,
+        string paramName)
     {
         if (string.IsNullOrEmpty(namespaceId))
         {
@@ -134,17 +141,21 @@ public static class WorkerModuleNaming
 #pragma warning disable CS8602
         if (namespaceId.Length > 4)
         {
-            throw new ArgumentException("NamespaceId must be between 1 and 4 ASCII alphanumeric characters.", paramName);
+            throw new ArgumentException(
+                "NamespaceId must be between 1 and 4 ASCII alphanumeric characters.",
+                paramName);
         }
 
         foreach (var ch in namespaceId)
         {
             var isAlphaNum = (ch is >= '0' and <= '9')
-                || (ch is >= 'A' and <= 'Z')
-                || (ch is >= 'a' and <= 'z');
+                             || (ch is >= 'A' and <= 'Z')
+                             || (ch is >= 'a' and <= 'z');
             if (!isAlphaNum)
             {
-                throw new ArgumentException("NamespaceId may contain only ASCII letters and digits ([A-Za-z0-9]).", paramName);
+                throw new ArgumentException(
+                    "NamespaceId may contain only ASCII letters and digits ([A-Za-z0-9]).",
+                    paramName);
             }
         }
 #pragma warning restore CS8602
@@ -171,13 +182,17 @@ public static class WorkerModuleNaming
         stem = fileName.Substring(0, fileName.Length - ext.Length);
         if (stem.Length == 0)
         {
-            throw new ArgumentException($"Module filename '{fileName}' must have a non-empty stem before '.dll'.", paramName);
+            throw new ArgumentException(
+                $"Module filename '{fileName}' must have a non-empty stem before '.dll'.",
+                paramName);
         }
 
         extension = ext;
     }
 
-    private static void ValidateSuffixToken(string? token, string paramName)
+    private static void ValidateSuffixToken(
+        string? token,
+        string paramName)
     {
         if (string.IsNullOrEmpty(token))
         {
@@ -188,12 +203,14 @@ public static class WorkerModuleNaming
         foreach (var ch in token)
         {
             var valid = (ch is >= '0' and <= '9')
-                || (ch is >= 'A' and <= 'Z')
-                || (ch is >= 'a' and <= 'z')
-                || ch is '_' or '-';
+                        || (ch is >= 'A' and <= 'Z')
+                        || (ch is >= 'a' and <= 'z')
+                        || ch is '_' or '-';
             if (!valid)
             {
-                throw new ArgumentException("Suffix token may contain only ASCII letters, digits, '_', or '-'.", paramName);
+                throw new ArgumentException(
+                    "Suffix token may contain only ASCII letters, digits, '_', or '-'.",
+                    paramName);
             }
         }
 #pragma warning restore CS8602

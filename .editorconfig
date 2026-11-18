@@ -87,6 +87,15 @@ resharper_wrap_before_extends_colon = true
 resharper_wrap_chained_binary_expressions = chop_if_long
 resharper_wrap_multiple_type_parameter_constraints_style = chop_always
 resharper_wrap_object_and_collection_initializer_style = chop_always
+resharper_csharp_wrap_extends_list_style = chop_always
+resharper_place_type_constraints_on_same_line = false
+resharper_wrap_before_extends_colon = true
+resharper_keep_existing_primary_constructor_declaration_parens_arrangement = false
+resharper_place_primary_constructor_initializer_on_same_line = false
+resharper_max_primary_constructor_parameters_on_line = 1
+resharper_wrap_after_lambda_and_anonymous_function_declaration_lpar = true
+resharper_wrap_before_primary_constructor_declaration_rpar = false
+resharper_wrap_primary_constructor_parameters_style = chop_always
 
 # ReSharper inspection severities
 resharper_arrange_redundant_parentheses_highlighting = hint
@@ -431,7 +440,12 @@ dotnet_diagnostic.CA2263.severity = warning
 dotnet_diagnostic.CS1591.severity = none
 dotnet_diagnostic.IDE0016.severity = warning
 dotnet_diagnostic.IDE0028.severity = warning
+dotnet_diagnostic.IDE0130.severity = warning
+dotnet_diagnostic.IDE0251.severity = warning
 dotnet_diagnostic.IDE0270.severity = warning
+dotnet_diagnostic.IDE0290.severity = warning
+dotnet_diagnostic.IDE0305.severity = warning
+dotnet_diagnostic.IDE1006.severity = warning
 
 # Moq.Analyzers
 dotnet_diagnostic.Moq1410.severity = warning
@@ -462,7 +476,10 @@ dotnet_diagnostic.RCS1266.severity = warning
 dotnet_diagnostic.SCS0005.severity = none
 
 # SonarAnalyzer.CSharp
+dotnet_diagnostic.S107.severity = warning
 dotnet_diagnostic.S1135.severity = none
+dotnet_diagnostic.S2342.severity = warning
+dotnet_diagnostic.S3776.severity = warning
 
 # StyleCop.Analyzers
 dotnet_diagnostic.SA1101.severity = none

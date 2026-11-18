@@ -50,7 +50,10 @@ public sealed class SafeLibraryHandle : SafeHandleZeroOrMinusOneIsInvalid
     /// <param name="existingHandle">Native handle to take ownership of.</param>
     /// <param name="ownsHandle">Whether the handle should be released when disposed.</param>
     /// <param name="moduleName">Optional module name or path used in diagnostic messages.</param>
-    internal SafeLibraryHandle(IntPtr existingHandle, bool ownsHandle, string? moduleName = null)
+    internal SafeLibraryHandle(
+        IntPtr existingHandle,
+        bool ownsHandle,
+        string? moduleName = null)
         : base(ownsHandle)
     {
         SetHandle(existingHandle);

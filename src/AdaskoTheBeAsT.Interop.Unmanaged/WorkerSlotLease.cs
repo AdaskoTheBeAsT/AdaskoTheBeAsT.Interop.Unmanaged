@@ -11,7 +11,9 @@ public sealed class WorkerSlotLease : IDisposable
     private readonly WorkerSlotAllocator _owner;
     private int _disposed;
 
-    internal WorkerSlotLease(WorkerSlotAllocator owner, int slotIndex)
+    internal WorkerSlotLease(
+        WorkerSlotAllocator owner,
+        int slotIndex)
     {
         _owner = owner;
         SlotIndex = slotIndex;

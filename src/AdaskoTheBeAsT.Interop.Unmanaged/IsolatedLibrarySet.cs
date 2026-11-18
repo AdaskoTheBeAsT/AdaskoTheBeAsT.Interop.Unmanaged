@@ -142,7 +142,11 @@ public sealed class IsolatedLibrarySet : IDisposable
     /// </summary>
     /// <param name="isolationRootDirectory">Dedicated isolation root directory to sweep.</param>
     /// <returns>A <see cref="StaleDirectorySweepResult"/> categorizing deleted, active, unknown, and locked directories.</returns>
-    [SuppressMessage("Security", "SCS0018", Justification = "Strictly validates root path, rejects reparse points, and deletes only marker-verified subdirectories.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification =
+            "Strictly validates root path, rejects reparse points, and deletes only marker-verified subdirectories.")]
     public static StaleDirectorySweepResult SweepStaleWorkerDirectories(string isolationRootDirectory)
     {
         var fullRoot = ValidateAndNormalizeIsolationRoot(isolationRootDirectory, fullSourceDirectory: null);
@@ -271,7 +275,9 @@ public sealed class IsolatedLibrarySet : IDisposable
 
         if (_pinModulesForProcessLifetime)
         {
+#pragma warning disable IDISP001 // Dispose created
             var pinnedLease = Interlocked.Exchange(ref _leaseStream, value: null);
+#pragma warning restore IDISP001 // Dispose created
             _pinnedProcessSets.Add(new PinnedSetRetention(_orderedLibraries, pinnedLease));
             return;
         }
@@ -342,7 +348,12 @@ public sealed class IsolatedLibrarySet : IDisposable
             leaseStream = InitializeOwnedWorkerDirectoryAndAcquireLease(fullIsolationRoot, workerDirectory, options);
             StagePreparedCompanions(preparedCompanions, workerDirectory);
             var stagedPaths = StagePreparedModules(preparedModules, workerDirectory, stagingFaultHook);
-            var librariesByName = LoadStagedModules(preparedModules, stagedPaths, options.LoadFlags, loadedLibraries, out var loadOrder);
+            var librariesByName = LoadStagedModules(
+                preparedModules,
+                stagedPaths,
+                options.LoadFlags,
+                loadedLibraries,
+                out var loadOrder);
 #pragma warning disable IDE0305 // Simplify collection initialization
             return new IsolatedLibrarySet(
                 workerDirectory,
@@ -398,7 +409,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         List<UnmanagedLibrary> loadedLibraries,
         out string[] loadOrder)
     {
-        var librariesByName = new Dictionary<string, UnmanagedLibrary>(preparedModules.Length, StringComparer.OrdinalIgnoreCase);
+        var librariesByName = new Dictionary<string, UnmanagedLibrary>(
+            preparedModules.Length,
+            StringComparer.OrdinalIgnoreCase);
         loadOrder = new string[preparedModules.Length];
         for (var i = 0; i < preparedModules.Length; i++)
         {
@@ -443,7 +456,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         EnsureDirectChildDirectoryPath(fullIsolationRoot, workerDirectory);
     }
 
+#pragma warning disable MA0051 // Method is too long
     private static void ValidateOptionFields(IsolatedLibrarySetOptions options)
+#pragma warning restore MA0051 // Method is too long
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(options);
@@ -456,7 +471,8 @@ public sealed class IsolatedLibrarySet : IDisposable
 #endif
 
 #pragma warning disable CA2249,MA0001
-        if (string.IsNullOrWhiteSpace(options.SourceDirectory) || options.SourceDirectory.IndexOf('\0') >= 0)
+        if (string.IsNullOrWhiteSpace(options.SourceDirectory)
+            || options.SourceDirectory.IndexOf('\0') >= 0)
         {
             throw new ArgumentException("SourceDirectory cannot be null, whitespace, or contain NUL.", nameof(options));
         }
@@ -464,19 +480,28 @@ public sealed class IsolatedLibrarySet : IDisposable
 
         if (options.WorkerIndex is < 0 or > 99)
         {
-            throw new ArgumentOutOfRangeException(nameof(options), options.WorkerIndex, "WorkerIndex must be between 0 and 99 inclusive.");
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                options.WorkerIndex,
+                "WorkerIndex must be between 0 and 99 inclusive.");
         }
 
         if (options.Generation is < 0 or > 1295)
         {
-            throw new ArgumentOutOfRangeException(nameof(options), options.Generation, "Generation must be between 0 and 1295 inclusive.");
+            throw new ArgumentOutOfRangeException(
+                nameof(options),
+                options.Generation,
+                "Generation must be between 0 and 1295 inclusive.");
         }
 
         WorkerModuleNaming.ValidateNamespaceId(options.NamespaceId, nameof(options));
 
-        if (options.Modules is null || options.Modules.Count == 0)
+        if (options.Modules is null
+            || options.Modules.Count == 0)
         {
-            throw new ArgumentException("IsolatedLibrarySetOptions.Modules must contain at least one module.", nameof(options));
+            throw new ArgumentException(
+                "IsolatedLibrarySetOptions.Modules must contain at least one module.",
+                nameof(options));
         }
 
         if (options.CompanionFiles is null)
@@ -486,7 +511,9 @@ public sealed class IsolatedLibrarySet : IDisposable
 
         if (options.CompanionDirectories is null)
         {
-            throw new ArgumentException("IsolatedLibrarySetOptions.CompanionDirectories cannot be null.", nameof(options));
+            throw new ArgumentException(
+                "IsolatedLibrarySetOptions.CompanionDirectories cannot be null.",
+                nameof(options));
         }
 
         if (options.MaxWorkerFilePathLength <= 0)
@@ -498,14 +525,18 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    private static string ValidateAndNormalizeIsolationRoot(string? isolationRootDirectory, string? fullSourceDirectory)
+    private static string ValidateAndNormalizeIsolationRoot(
+        string? isolationRootDirectory,
+        string? fullSourceDirectory)
     {
 #pragma warning disable CA2249,MA0001
         if (isolationRootDirectory is null
             || string.IsNullOrWhiteSpace(isolationRootDirectory)
             || isolationRootDirectory.IndexOf('\0') >= 0)
         {
-            throw new ArgumentException("IsolationRootDirectory cannot be null, whitespace, or contain NUL.", nameof(isolationRootDirectory));
+            throw new ArgumentException(
+                "IsolationRootDirectory cannot be null, whitespace, or contain NUL.",
+                nameof(isolationRootDirectory));
         }
 #pragma warning restore CA2249,MA0001
 
@@ -514,11 +545,16 @@ public sealed class IsolatedLibrarySet : IDisposable
         if (pathRoot?.Length > 0
             && string.Equals(TrimTrailingSeparatorsExceptRoot(pathRoot), fullRoot, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentException($"IsolationRootDirectory '{fullRoot}' cannot be a filesystem root.", nameof(isolationRootDirectory));
+            throw new ArgumentException(
+                $"IsolationRootDirectory '{fullRoot}' cannot be a filesystem root.",
+                nameof(isolationRootDirectory));
         }
 
         RejectProtectedDirectory(fullRoot, Environment.SystemDirectory, nameof(isolationRootDirectory));
-        RejectProtectedDirectory(fullRoot, Environment.GetFolderPath(Environment.SpecialFolder.Windows), nameof(isolationRootDirectory));
+        RejectProtectedDirectory(
+            fullRoot,
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+            nameof(isolationRootDirectory));
         RejectProtectedDirectory(fullRoot, AppContext.BaseDirectory, nameof(isolationRootDirectory));
 
         if (fullSourceDirectory is not null)
@@ -535,9 +571,13 @@ public sealed class IsolatedLibrarySet : IDisposable
         return fullRoot;
     }
 
-    private static void RejectProtectedDirectory(string candidateRoot, string? protectedDir, string paramName)
+    private static void RejectProtectedDirectory(
+        string candidateRoot,
+        string? protectedDir,
+        string paramName)
     {
-        if (protectedDir is null || string.IsNullOrWhiteSpace(protectedDir))
+        if (protectedDir is null
+            || string.IsNullOrWhiteSpace(protectedDir))
         {
             return;
         }
@@ -551,7 +591,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    private static bool PathsOverlap(string first, string second)
+    private static bool PathsOverlap(
+        string first,
+        string second)
     {
         if (string.Equals(first, second, StringComparison.OrdinalIgnoreCase))
         {
@@ -561,7 +603,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         var firstPrefix = first + Path.DirectorySeparatorChar;
         var secondPrefix = second + Path.DirectorySeparatorChar;
         return second.StartsWith(firstPrefix, StringComparison.OrdinalIgnoreCase)
-            || first.StartsWith(secondPrefix, StringComparison.OrdinalIgnoreCase);
+               || first.StartsWith(secondPrefix, StringComparison.OrdinalIgnoreCase);
     }
 
     private static string TrimTrailingSeparatorsExceptRoot(string fullPath)
@@ -571,20 +613,26 @@ public sealed class IsolatedLibrarySet : IDisposable
         return trimmed.Length < root.Length ? root : trimmed;
     }
 
-    private static void EnsureDirectChildDirectoryPath(string fullRoot, string candidateChild)
+    private static void EnsureDirectChildDirectoryPath(
+        string fullRoot,
+        string candidateChild)
     {
         var parent = Path.GetDirectoryName(TrimTrailingSeparatorsExceptRoot(candidateChild));
-        if (parent is null || !string.Equals(TrimTrailingSeparatorsExceptRoot(parent), fullRoot, StringComparison.OrdinalIgnoreCase))
+        if (parent is null
+            || !string.Equals(TrimTrailingSeparatorsExceptRoot(parent), fullRoot, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"Resolved worker directory '{candidateChild}' is not a direct child of '{fullRoot}'.");
+            throw new InvalidOperationException(
+                $"Resolved worker directory '{candidateChild}' is not a direct child of '{fullRoot}'.");
         }
     }
 
     [SuppressMessage("Security", "SCS0018", Justification = "Reads validated bare filenames from SourceDirectory.")]
+#pragma warning disable MA0051 // Method is too long
     private static PreparedModule[] PreflightPrepareModules(
         IsolatedLibrarySetOptions options,
         string fullSourceDir,
         out string[] reservedCompanionNames)
+#pragma warning restore MA0051 // Method is too long
     {
         var count = options.Modules.Count;
         var nodes = new ModuleNode[count];
@@ -594,7 +642,8 @@ public sealed class IsolatedLibrarySet : IDisposable
 
         for (var i = 0; i < count; i++)
         {
-            var spec = options.Modules[i] ?? throw new ArgumentException("Module specification entry cannot be null.", nameof(options));
+            var spec = options.Modules[i]
+                       ?? throw new ArgumentException("Module specification entry cannot be null.", nameof(options));
             if (byLogical.ContainsKey(spec.LogicalName))
             {
                 throw new ArgumentException($"Duplicate logical module name '{spec.LogicalName}'.", nameof(options));
@@ -603,7 +652,9 @@ public sealed class IsolatedLibrarySet : IDisposable
             byLogical.Add(spec.LogicalName, i);
             if (bySourceFile.ContainsKey(spec.SourceFileName))
             {
-                throw new ArgumentException($"Duplicate source module filename '{spec.SourceFileName}'.", nameof(options));
+                throw new ArgumentException(
+                    $"Duplicate source module filename '{spec.SourceFileName}'.",
+                    nameof(options));
             }
 
             bySourceFile.Add(spec.SourceFileName, i);
@@ -618,7 +669,10 @@ public sealed class IsolatedLibrarySet : IDisposable
             var hasInitialMod = false;
             foreach (var removalItem in spec.ImportModuleRemovals)
             {
-                var removal = removalItem ?? throw new ArgumentException($"Null ImportModuleRemovals entry on '{spec.LogicalName}'.", nameof(options));
+                var removal = removalItem
+                              ?? throw new ArgumentException(
+                                  $"Null ImportModuleRemovals entry on '{spec.LogicalName}'.",
+                                  nameof(options));
                 editor.RemoveImportModule(removal);
                 hasInitialMod = true;
             }
@@ -689,7 +743,8 @@ public sealed class IsolatedLibrarySet : IDisposable
 
                 if (depIndex == i)
                 {
-                    throw new InvalidOperationException($"Module '{node.Spec.SourceFileName}' cannot delay-import itself.");
+                    throw new InvalidOperationException(
+                        $"Module '{node.Spec.SourceFileName}' cannot delay-import itself.");
                 }
 
                 node.AddDependency(depIndex, delayName, isDelayImport: true);
@@ -717,7 +772,8 @@ public sealed class IsolatedLibrarySet : IDisposable
 
             seenTargets[targetName] = node.Spec.SourceFileName;
             node.TargetFileName = targetName;
-            if (node.IsImportedByPeer || !string.Equals(targetName, node.Spec.SourceFileName, StringComparison.OrdinalIgnoreCase))
+            if (node.IsImportedByPeer
+                || !string.Equals(targetName, node.Spec.SourceFileName, StringComparison.OrdinalIgnoreCase))
             {
                 companions.Add(targetName);
             }
@@ -728,7 +784,9 @@ public sealed class IsolatedLibrarySet : IDisposable
 #pragma warning restore IDE0305 // Simplify collection initialization
     }
 
-    private static string ResolveSingleTargetFileName(ModuleNode node, IsolatedLibrarySetOptions options)
+    private static string ResolveSingleTargetFileName(
+        ModuleNode node,
+        IsolatedLibrarySetOptions options)
     {
         if (node.Spec.ExplicitTargetFileName is not null)
         {
@@ -758,7 +816,8 @@ public sealed class IsolatedLibrarySet : IDisposable
             return explicitName;
         }
 
-        if (node.IsImportedByPeer || node.Spec.AlwaysRenameWithWorkerSuffix)
+        if (node.IsImportedByPeer
+            || node.Spec.AlwaysRenameWithWorkerSuffix)
         {
             return WorkerModuleNaming.FormatScopedFixedLengthName(
                 node.Spec.SourceFileName,
@@ -796,7 +855,8 @@ public sealed class IsolatedLibrarySet : IDisposable
             var next = -1;
             for (var candidate = 0; candidate < count; candidate++)
             {
-                if (!visited[candidate] && inDegree[candidate] == 0)
+                if (!visited[candidate]
+                    && inDegree[candidate] == 0)
                 {
                     next = candidate;
                     break;
@@ -820,12 +880,17 @@ public sealed class IsolatedLibrarySet : IDisposable
         return result;
     }
 
-    private static void ApplyPreflightPatches(ModuleNode node, ModuleNode[] allNodes)
+    private static void ApplyPreflightPatches(
+        ModuleNode node,
+        ModuleNode[] allNodes)
     {
         var modified = node.HasInitialModification;
         foreach (var symItem in node.Spec.ImportSymbolRewrites)
         {
-            var sym = symItem ?? throw new ArgumentException($"Null ImportSymbolRewrites entry on '{node.Spec.LogicalName}'.", nameof(node));
+            var sym = symItem
+                      ?? throw new ArgumentException(
+                          $"Null ImportSymbolRewrites entry on '{node.Spec.LogicalName}'.",
+                          nameof(node));
             node.Editor.RewriteImportSymbol(sym.ModuleName, sym.OriginalSymbolName, sym.ReplacementSymbolName);
             modified = true;
         }
@@ -850,7 +915,10 @@ public sealed class IsolatedLibrarySet : IDisposable
 
         foreach (var patchItem in node.Spec.VerifiedBytePatches)
         {
-            var patch = patchItem ?? throw new ArgumentException($"Null VerifiedBytePatches entry on '{node.Spec.LogicalName}'.", nameof(node));
+            var patch = patchItem
+                        ?? throw new ArgumentException(
+                            $"Null VerifiedBytePatches entry on '{node.Spec.LogicalName}'.",
+                            nameof(node));
             node.Editor.ReplaceVerifiedBytesAtRva(patch.Rva, patch.ExpectedOriginalBuffer, patch.ReplacementBuffer);
             modified = true;
         }
@@ -861,14 +929,18 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Strictly validates relative companion paths against traversal and reparse points.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Strictly validates relative companion paths against traversal and reparse points.")]
     private static PreparedCompanionFile[] PreflightPrepareCompanions(
         IsolatedLibrarySetOptions options,
         string fullSourceDir,
         string workerDirectory,
         PreparedModule[] preparedModules)
     {
-        if (options.CompanionFiles.Count == 0 && options.CompanionDirectories.Count == 0)
+        if (options.CompanionFiles.Count == 0
+            && options.CompanionDirectories.Count == 0)
         {
             return [];
         }
@@ -887,7 +959,8 @@ public sealed class IsolatedLibrarySet : IDisposable
         var list = new List<PreparedCompanionFile>(options.CompanionFiles.Count);
         foreach (var dirSpecItem in options.CompanionDirectories)
         {
-            var dirSpec = dirSpecItem ?? throw new ArgumentException("Null CompanionDirectories entry.", nameof(options));
+            var dirSpec = dirSpecItem
+                          ?? throw new ArgumentException("Null CompanionDirectories entry.", nameof(options));
             ExpandCompanionDirectorySpec(dirSpec, fullSourceDir, workerDirectory, reservedTargetPaths, list);
         }
 
@@ -902,7 +975,11 @@ public sealed class IsolatedLibrarySet : IDisposable
 #pragma warning restore IDE0305 // Simplify collection initialization
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Enumerates validated source companion subdirectory while rejecting traversal and reparse points.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification =
+            "Enumerates validated source companion subdirectory while rejecting traversal and reparse points.")]
     private static void ExpandCompanionDirectorySpec(
         IsolatedCompanionDirectorySpecification dirSpec,
         string fullSourceDir,
@@ -930,7 +1007,8 @@ public sealed class IsolatedLibrarySet : IDisposable
                 var subDirAttributes = new DirectoryInfo(subDir).Attributes;
                 if (IsReparsePoint(subDirAttributes))
                 {
-                    throw new InvalidOperationException($"Companion source subdirectory '{subDir}' cannot be a reparse point.");
+                    throw new InvalidOperationException(
+                        $"Companion source subdirectory '{subDir}' cannot be a reparse point.");
                 }
             }
         }
@@ -951,7 +1029,8 @@ public sealed class IsolatedLibrarySet : IDisposable
             var fullSourceFile = Path.GetFullPath(sourceFile);
             if (!fullSourceFile.StartsWith(sourcePrefix, StringComparison.OrdinalIgnoreCase))
             {
-                throw new InvalidOperationException($"Companion source file '{fullSourceFile}' escaped '{sourceSubDir}'.");
+                throw new InvalidOperationException(
+                    $"Companion source file '{fullSourceFile}' escaped '{sourceSubDir}'.");
             }
 
             var relativeInsideTree = fullSourceFile.Substring(sourcePrefix.Length);
@@ -962,7 +1041,10 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Validates relative companion file path inside SourceDirectory and WorkerDirectory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Validates relative companion file path inside SourceDirectory and WorkerDirectory.")]
     private static void AddCompanionFileSpec(
         IsolatedCompanionFileSpecification fileSpec,
         string fullSourceDir,
@@ -978,7 +1060,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         var sourceFilePath = ResolveBoundedChildPath(fullSourceDir, sourceRel, nameof(fileSpec));
         if (!File.Exists(sourceFilePath))
         {
-            throw new FileNotFoundException($"Source companion file '{sourceFilePath}' does not exist.", sourceFilePath);
+            throw new FileNotFoundException(
+                $"Source companion file '{sourceFilePath}' does not exist.",
+                sourceFilePath);
         }
 
         EnsureNoReparsePointChain(fullSourceDir, Path.GetDirectoryName(sourceFilePath)!);
@@ -992,7 +1076,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         list.Add(new PreparedCompanionFile(sourceFilePath, targetFilePath, fileSpec.CopyMode, fileSpec.TransformBytes));
     }
 
-    private static void RegisterUniqueCompanionTarget(HashSet<string> reservedTargetPaths, string targetFilePath)
+    private static void RegisterUniqueCompanionTarget(
+        HashSet<string> reservedTargetPaths,
+        string targetFilePath)
     {
         if (!reservedTargetPaths.Add(targetFilePath))
         {
@@ -1001,12 +1087,18 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    private static string ValidateRelativeSubPath(string? relativePath, string paramName)
+    private static string ValidateRelativeSubPath(
+        string? relativePath,
+        string paramName)
     {
 #pragma warning disable CA2249,MA0001
-        if (relativePath is null || string.IsNullOrWhiteSpace(relativePath) || relativePath.IndexOf('\0') >= 0)
+        if (relativePath is null
+            || string.IsNullOrWhiteSpace(relativePath)
+            || relativePath.IndexOf('\0') >= 0)
         {
-            throw new ArgumentException("Companion relative path cannot be null, whitespace, or contain NUL.", paramName);
+            throw new ArgumentException(
+                "Companion relative path cannot be null, whitespace, or contain NUL.",
+                paramName);
         }
 #pragma warning restore CA2249,MA0001
 
@@ -1016,7 +1108,9 @@ public sealed class IsolatedLibrarySet : IDisposable
             || relativePath[0] == '/'
             || relativePath[0] == '\\')
         {
-            throw new ArgumentException($"Companion path '{relativePath}' must be a relative subpath without root or drive specifiers.", paramName);
+            throw new ArgumentException(
+                $"Companion path '{relativePath}' must be a relative subpath without root or drive specifiers.",
+                paramName);
         }
 #pragma warning restore CA2249,MA0001
 
@@ -1027,14 +1121,18 @@ public sealed class IsolatedLibrarySet : IDisposable
                 || string.Equals(segment, ".", StringComparison.Ordinal)
                 || string.Equals(segment, "..", StringComparison.Ordinal))
             {
-                throw new ArgumentException($"Companion relative path '{relativePath}' cannot contain empty, '.', or '..' traversal segments.", paramName);
+                throw new ArgumentException(
+                    $"Companion relative path '{relativePath}' cannot contain empty, '.', or '..' traversal segments.",
+                    paramName);
             }
         }
 
         return string.Join(Path.DirectorySeparatorChar.ToString(), segments);
     }
 
-    private static void ValidateSearchPattern(string? searchPattern, string paramName)
+    private static void ValidateSearchPattern(
+        string? searchPattern,
+        string paramName)
     {
 #pragma warning disable CA2249,MA0001
         if (searchPattern is null
@@ -1044,32 +1142,42 @@ public sealed class IsolatedLibrarySet : IDisposable
             || searchPattern.IndexOf('\\') >= 0
             || string.Equals(searchPattern, "..", StringComparison.Ordinal))
         {
-            throw new ArgumentException("Companion directory SearchPattern must be a non-empty bare file pattern.", paramName);
+            throw new ArgumentException(
+                "Companion directory SearchPattern must be a non-empty bare file pattern.",
+                paramName);
         }
 #pragma warning restore CA2249,MA0001
     }
 
-    private static string ResolveBoundedChildPath(string baseDirectory, string validatedRelativePath, string paramName)
+    private static string ResolveBoundedChildPath(
+        string baseDirectory,
+        string validatedRelativePath,
+        string paramName)
     {
         var normalizedBase = TrimTrailingSeparatorsExceptRoot(Path.GetFullPath(baseDirectory));
         var candidate = Path.GetFullPath(Path.Combine(normalizedBase, validatedRelativePath));
         var prefix = normalizedBase + Path.DirectorySeparatorChar;
         if (!candidate.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
         {
-            throw new ArgumentException($"Resolved companion path '{candidate}' escaped base directory '{normalizedBase}'.", paramName);
+            throw new ArgumentException(
+                $"Resolved companion path '{candidate}' escaped base directory '{normalizedBase}'.",
+                paramName);
         }
 
         return candidate;
     }
 
-    private static void EnsureNoReparsePointChain(string rootDirectory, string descendantDirectory)
+    private static void EnsureNoReparsePointChain(
+        string rootDirectory,
+        string descendantDirectory)
     {
         var normalizedRoot = TrimTrailingSeparatorsExceptRoot(Path.GetFullPath(rootDirectory));
         var cursor = TrimTrailingSeparatorsExceptRoot(Path.GetFullPath(descendantDirectory));
         while (cursor.Length >= normalizedRoot.Length
                && cursor.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
         {
-            if (Directory.Exists(cursor) && IsReparsePoint(new DirectoryInfo(cursor).Attributes))
+            if (Directory.Exists(cursor)
+                && IsReparsePoint(new DirectoryInfo(cursor).Attributes))
             {
                 throw new InvalidOperationException($"Directory '{cursor}' cannot be a reparse point.");
             }
@@ -1095,7 +1203,8 @@ public sealed class IsolatedLibrarySet : IDisposable
         PreparedModule[] preparedModules,
         PreparedCompanionFile[] preparedCompanions)
     {
-        if (!options.RequireAsciiWorkerPaths && !options.MaxWorkerFilePathLength.HasValue)
+        if (!options.RequireAsciiWorkerPaths
+            && !options.MaxWorkerFilePathLength.HasValue)
         {
             return;
         }
@@ -1112,7 +1221,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    private static void CheckSingleWorkerPathConstraint(string candidatePath, IsolatedLibrarySetOptions options)
+    private static void CheckSingleWorkerPathConstraint(
+        string candidatePath,
+        IsolatedLibrarySetOptions options)
     {
         if (options.RequireAsciiWorkerPaths)
         {
@@ -1127,16 +1238,25 @@ public sealed class IsolatedLibrarySet : IDisposable
             }
         }
 
-        if (options.MaxWorkerFilePathLength.HasValue && candidatePath.Length > options.MaxWorkerFilePathLength.Value)
+        if (options.MaxWorkerFilePathLength.HasValue
+            && candidatePath.Length > options.MaxWorkerFilePathLength.Value)
         {
             throw new PathTooLongException(
                 $"Worker path '{candidatePath}' has length {candidatePath.Length}, exceeding MaxWorkerFilePathLength ({options.MaxWorkerFilePathLength.Value.ToString(CultureInfo.InvariantCulture)}).");
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Stages validated companion files into owned worker directory.")]
-    [SuppressMessage("Security", "SEC0116", Justification = "Reads validated companion source files from SourceDirectory.")]
-    private static void StagePreparedCompanions(PreparedCompanionFile[] preparedCompanions, string workerDirectory)
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Stages validated companion files into owned worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0116",
+        Justification = "Reads validated companion source files from SourceDirectory.")]
+    private static void StagePreparedCompanions(
+        PreparedCompanionFile[] preparedCompanions,
+        string workerDirectory)
     {
         foreach (var companion in preparedCompanions)
         {
@@ -1148,7 +1268,8 @@ public sealed class IsolatedLibrarySet : IDisposable
             {
                 var rawBytes = File.ReadAllBytes(companion.SourceFilePath);
                 var transformed = companion.TransformBytes(rawBytes, workerDirectory)
-                    ?? throw new InvalidOperationException("IsolatedCompanionFileSpecification.TransformBytes returned null.");
+                                  ?? throw new InvalidOperationException(
+                                      "IsolatedCompanionFileSpecification.TransformBytes returned null.");
 
                 if (companion.CopyMode == CompanionCopyMode.CopyIfDifferentSizeOrTimestamp
                     && PeImageEditor.FileMatchesBuffer(companion.TargetFilePath, transformed))
@@ -1160,12 +1281,22 @@ public sealed class IsolatedLibrarySet : IDisposable
                 continue;
             }
 
-            CopyUntransformedCompanionAtomically(companion.SourceFilePath, companion.TargetFilePath, targetParent, companion.CopyMode);
+            CopyUntransformedCompanionAtomically(
+                companion.SourceFilePath,
+                companion.TargetFilePath,
+                targetParent,
+                companion.CopyMode);
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Atomically copies validated companion file inside owned worker directory.")]
-    [SuppressMessage("Security", "SEC0112", Justification = "Uses sibling temporary file inside owned worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Atomically copies validated companion file inside owned worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0112",
+        Justification = "Uses sibling temporary file inside owned worker directory.")]
     [SuppressMessage("Security", "SEC0116", Justification = "Cleans up temporary file on failure.")]
     private static void CopyUntransformedCompanionAtomically(
         string sourceFilePath,
@@ -1174,7 +1305,8 @@ public sealed class IsolatedLibrarySet : IDisposable
         CompanionCopyMode copyMode)
     {
         var sourceInfo = new FileInfo(sourceFilePath);
-        if (copyMode == CompanionCopyMode.CopyIfDifferentSizeOrTimestamp && File.Exists(targetFilePath))
+        if (copyMode == CompanionCopyMode.CopyIfDifferentSizeOrTimestamp
+            && File.Exists(targetFilePath))
         {
             var targetInfo = new FileInfo(targetFilePath);
             if (!IsReparsePoint(targetInfo.Attributes)
@@ -1224,7 +1356,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    private static void ReserveProcessIdentities(string[] companionNames, string workerDirectory)
+    private static void ReserveProcessIdentities(
+        string[] companionNames,
+        string workerDirectory)
     {
         if (!_activeWorkerDirectories.TryAdd(workerDirectory, 0))
         {
@@ -1260,7 +1394,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    private static void ReleaseReservations(string[] companionNames, string workerDirectory)
+    private static void ReleaseReservations(
+        string[] companionNames,
+        string workerDirectory)
     {
         foreach (var name in companionNames)
         {
@@ -1270,8 +1406,14 @@ public sealed class IsolatedLibrarySet : IDisposable
         _activeWorkerDirectories.TryRemove(workerDirectory, out _);
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Creates validated child worker directory with ownership marker and exclusive lease.")]
-    [SuppressMessage("Security", "SEC0112", Justification = "Acquires exclusive lease file inside validated direct child worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Creates validated child worker directory with ownership marker and exclusive lease.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0112",
+        Justification = "Acquires exclusive lease file inside validated direct child worker directory.")]
     private static FileStream InitializeOwnedWorkerDirectoryAndAcquireLease(
         string fullIsolationRoot,
         string workerDirectory,
@@ -1280,7 +1422,8 @@ public sealed class IsolatedLibrarySet : IDisposable
         Directory.CreateDirectory(fullIsolationRoot);
         if (IsReparsePoint(new DirectoryInfo(fullIsolationRoot).Attributes))
         {
-            throw new InvalidOperationException($"Isolation root directory '{fullIsolationRoot}' cannot be a reparse point.");
+            throw new InvalidOperationException(
+                $"Isolation root directory '{fullIsolationRoot}' cannot be a reparse point.");
         }
 
         var existedBefore = Directory.Exists(workerDirectory);
@@ -1291,7 +1434,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
 
         var markerPath = Path.Combine(workerDirectory, OwnershipMarkerFileName);
-        if (existedBefore && !HasValidOwnershipMarker(markerPath) && DirectoryHasAnyEntries(workerDirectory))
+        if (existedBefore
+            && !HasValidOwnershipMarker(markerPath)
+            && DirectoryHasAnyEntries(workerDirectory))
         {
             throw new InvalidOperationException(
                 $"Existing directory '{workerDirectory}' does not carry a valid IsolatedLibrarySet ownership marker; refusing to stage into an unowned directory.");
@@ -1328,12 +1473,21 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Writes fixed ownership marker file inside validated worker directory.")]
-    [SuppressMessage("Security", "SEC0112", Justification = "Writes fixed marker filename inside validated worker directory.")]
-    private static void WriteOwnershipMarker(string markerPath, IsolatedLibrarySetOptions options)
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Writes fixed ownership marker file inside validated worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0112",
+        Justification = "Writes fixed marker filename inside validated worker directory.")]
+    private static void WriteOwnershipMarker(
+        string markerPath,
+        IsolatedLibrarySetOptions options)
     {
         var markerFile = new FileInfo(markerPath);
-        if (markerFile.Exists && IsReparsePoint(markerFile.Attributes))
+        if (markerFile.Exists
+            && IsReparsePoint(markerFile.Attributes))
         {
             throw new InvalidOperationException($"Ownership marker '{markerPath}' cannot be a reparse point.");
         }
@@ -1352,19 +1506,32 @@ public sealed class IsolatedLibrarySet : IDisposable
             options.Generation,
             options.NamespaceId ?? string.Empty);
         var bytes = Encoding.UTF8.GetBytes(content);
-        using var stream = new FileStream(markerPath, FileMode.Create, FileAccess.Write, FileShare.Read, bufferSize: 256);
+        using var stream = new FileStream(
+            markerPath,
+            FileMode.Create,
+            FileAccess.Write,
+            FileShare.Read,
+            bufferSize: 256);
         stream.Write(bytes, 0, bytes.Length);
         stream.Flush(flushToDisk: true);
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Reads fixed ownership marker inside candidate worker directory.")]
-    [SuppressMessage("Security", "SEC0112", Justification = "Reads fixed marker filename inside validated candidate worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Reads fixed ownership marker inside candidate worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0112",
+        Justification = "Reads fixed marker filename inside validated candidate worker directory.")]
     private static bool HasValidOwnershipMarker(string markerPath)
     {
         try
         {
             var info = new FileInfo(markerPath);
-            if (!info.Exists || IsReparsePoint(info.Attributes) || info.Length > 4096)
+            if (!info.Exists
+                || IsReparsePoint(info.Attributes)
+                || info.Length > 4096)
             {
                 return false;
             }
@@ -1407,7 +1574,8 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
 
         var markerPath = Path.Combine(fullCandidate, OwnershipMarkerFileName);
-        if (IsReparsePoint(dirInfo.Attributes) || !HasValidOwnershipMarker(markerPath))
+        if (IsReparsePoint(dirInfo.Attributes)
+            || !HasValidOwnershipMarker(markerPath))
         {
             skippedUnknown.Add(fullCandidate);
             return;
@@ -1422,8 +1590,15 @@ public sealed class IsolatedLibrarySet : IDisposable
         SweepVerifiedStaleCandidate(fullCandidate, markerPath, deleted, skippedActive, failed);
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Acquires exclusive lease on marker-verified direct child directory before deleting stale entries.")]
-    [SuppressMessage("Security", "SEC0112", Justification = "Opens fixed lease filename inside marker-verified direct child directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification =
+            "Acquires exclusive lease on marker-verified direct child directory before deleting stale entries.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0112",
+        Justification = "Opens fixed lease filename inside marker-verified direct child directory.")]
     private static void SweepVerifiedStaleCandidate(
         string fullCandidate,
         string markerPath,
@@ -1461,8 +1636,14 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Deletes only non-marker files inside lease-locked owned worker directory.")]
-    [SuppressMessage("Security", "SEC0116", Justification = "Deletes only staged files inside marker-verified owned worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Deletes only non-marker files inside lease-locked owned worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0116",
+        Justification = "Deletes only staged files inside marker-verified owned worker directory.")]
     private static bool TryDeletePayloadEntriesWhileLeased(string workerDirectory)
     {
         try
@@ -1499,9 +1680,18 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Removes lease, ownership marker, and now-empty owned worker directory.")]
-    [SuppressMessage("Security", "SEC0116", Justification = "Deletes fixed lease and marker files inside marker-verified owned worker directory.")]
-    private static bool TryFinalizeEmptyOwnedDirectory(string workerDirectory, string leasePath, string markerPath)
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Removes lease, ownership marker, and now-empty owned worker directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0116",
+        Justification = "Deletes fixed lease and marker files inside marker-verified owned worker directory.")]
+    private static bool TryFinalizeEmptyOwnedDirectory(
+        string workerDirectory,
+        string leasePath,
+        string markerPath)
     {
         try
         {
@@ -1527,7 +1717,11 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Deletes only marker-verified owned worker directory with short retry for Windows image-section teardown.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification =
+            "Deletes only marker-verified owned worker directory with short retry for Windows image-section teardown.")]
     private static void TryDeleteOwnedWorkerDirectoryWithRetry(string workerDirectory)
     {
         if (!Directory.Exists(workerDirectory)
@@ -1621,7 +1815,10 @@ public sealed class IsolatedLibrarySet : IDisposable
 
         public Dictionary<int, string> DelayDependencyNames { get; } = [];
 
-        public void AddDependency(int dependencyIndex, string exactNameInPe, bool isDelayImport)
+        public void AddDependency(
+            int dependencyIndex,
+            string exactNameInPe,
+            bool isDelayImport)
         {
             _ = AllDependencyIndices.Add(dependencyIndex);
             var targetDict = isDelayImport ? DelayDependencyNames : OrdinaryDependencyNames;
@@ -1656,8 +1853,16 @@ public sealed class IsolatedLibrarySet : IDisposable
         public Func<byte[], string, byte[]>? TransformBytes { get; } = transformBytes;
     }
 
-    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP006", Justification = "Intentionally roots process-pinned module handles and lease stream for process lifetime without disposing.")]
-    [SuppressMessage("Design", "CA1001", Justification = "Intentionally roots process-pinned module handles and lease stream for process lifetime without disposing.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers.Correctness",
+        "IDISP006",
+        Justification =
+            "Intentionally roots process-pinned module handles and lease stream for process lifetime without disposing.")]
+    [SuppressMessage(
+        "Design",
+        "CA1001",
+        Justification =
+            "Intentionally roots process-pinned module handles and lease stream for process lifetime without disposing.")]
     private sealed class PinnedSetRetention(
         UnmanagedLibrary[] libraries,
         FileStream? leaseStream)

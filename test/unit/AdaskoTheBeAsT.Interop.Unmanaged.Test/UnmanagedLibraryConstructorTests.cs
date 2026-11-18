@@ -20,7 +20,8 @@ public class UnmanagedLibraryConstructorTests
         };
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("fileName");
     }
@@ -36,7 +37,8 @@ public class UnmanagedLibraryConstructorTests
         };
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("fileName");
     }
@@ -52,7 +54,8 @@ public class UnmanagedLibraryConstructorTests
         };
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("fileName");
     }
@@ -71,7 +74,8 @@ public class UnmanagedLibraryConstructorTests
         };
 
         // Assert
-        act.Should().Throw<Win32Exception>()
+        act.Should()
+            .Throw<Win32Exception>()
             .WithMessage($"*Failed to load library*{nonExistentDll}*");
     }
 
@@ -136,7 +140,7 @@ public class UnmanagedLibraryConstructorTests
 
         // Arrange
         const LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
-                    | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
+                                       | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32;
 
         // Act
         using var library = new UnmanagedLibrary("kernel32.dll", flags);

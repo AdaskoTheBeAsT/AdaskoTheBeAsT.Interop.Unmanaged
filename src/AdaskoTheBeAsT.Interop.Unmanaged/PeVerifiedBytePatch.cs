@@ -26,7 +26,10 @@ public sealed class PeVerifiedBytePatch
     /// <exception cref="ArgumentException">
     /// Thrown when <paramref name="expectedOriginal"/> is empty.
     /// </exception>
-    public PeVerifiedBytePatch(uint rva, byte[] expectedOriginal, byte[] replacement)
+    public PeVerifiedBytePatch(
+        uint rva,
+        byte[] expectedOriginal,
+        byte[] replacement)
     {
         if (rva == 0)
         {

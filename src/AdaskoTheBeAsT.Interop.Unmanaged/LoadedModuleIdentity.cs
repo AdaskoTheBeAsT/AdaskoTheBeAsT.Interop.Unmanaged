@@ -11,44 +11,42 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// Captures the PE identity header fields (<see cref="Machine"/>, <see cref="TimeDateStamp"/>, and <see cref="SizeOfImage"/>)
 /// of a mapped Windows native module for provenance verification before in-memory patching or writable-section clearing.
 /// </summary>
+/// <remarks>
+/// Initializes a new instance of the <see cref="LoadedModuleIdentity"/> struct.
+/// </remarks>
+/// <param name="machine">COFF machine constant (see <see cref="PeMachine"/>).</param>
+/// <param name="timeDateStamp">COFF <c>TimeDateStamp</c> value.</param>
+/// <param name="sizeOfImage">PE optional header <c>SizeOfImage</c> value.</param>
 #if NET10_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
 [StructLayout(LayoutKind.Auto)]
-public readonly struct LoadedModuleIdentity : IEquatable<LoadedModuleIdentity>
+public readonly struct LoadedModuleIdentity(
+    ushort machine,
+    uint timeDateStamp,
+    uint sizeOfImage) : IEquatable<LoadedModuleIdentity>
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="LoadedModuleIdentity"/> struct.
-    /// </summary>
-    /// <param name="machine">COFF machine constant (see <see cref="PeMachine"/>).</param>
-    /// <param name="timeDateStamp">COFF <c>TimeDateStamp</c> value.</param>
-    /// <param name="sizeOfImage">PE optional header <c>SizeOfImage</c> value.</param>
-    public LoadedModuleIdentity(ushort machine, uint timeDateStamp, uint sizeOfImage)
-    {
-        Machine = machine;
-        TimeDateStamp = timeDateStamp;
-        SizeOfImage = sizeOfImage;
-    }
-
     /// <summary>
     /// Gets the COFF machine constant (see <see cref="PeMachine"/>).
     /// </summary>
-    public ushort Machine { get; init; }
+    public ushort Machine { get; init; } = machine;
 
     /// <summary>
     /// Gets the 32-bit COFF <c>TimeDateStamp</c> of the mapped PE image.
     /// </summary>
-    public uint TimeDateStamp { get; init; }
+    public uint TimeDateStamp { get; init; } = timeDateStamp;
 
     /// <summary>
     /// Gets the 32-bit <c>SizeOfImage</c> of the mapped PE image.
     /// </summary>
-    public uint SizeOfImage { get; init; }
+    public uint SizeOfImage { get; init; } = sizeOfImage;
 
     /// <summary>
     /// Determines whether two <see cref="LoadedModuleIdentity"/> values are equal.
     /// </summary>
-    public static bool operator ==(LoadedModuleIdentity left, LoadedModuleIdentity right)
+    public static bool operator ==(
+        LoadedModuleIdentity left,
+        LoadedModuleIdentity right)
     {
         return left.Equals(right);
     }
@@ -56,7 +54,9 @@ public readonly struct LoadedModuleIdentity : IEquatable<LoadedModuleIdentity>
     /// <summary>
     /// Determines whether two <see cref="LoadedModuleIdentity"/> values are not equal.
     /// </summary>
-    public static bool operator !=(LoadedModuleIdentity left, LoadedModuleIdentity right)
+    public static bool operator !=(
+        LoadedModuleIdentity left,
+        LoadedModuleIdentity right)
     {
         return !left.Equals(right);
     }
@@ -65,8 +65,8 @@ public readonly struct LoadedModuleIdentity : IEquatable<LoadedModuleIdentity>
     public bool Equals(LoadedModuleIdentity other)
     {
         return Machine == other.Machine
-            && TimeDateStamp == other.TimeDateStamp
-            && SizeOfImage == other.SizeOfImage;
+               && TimeDateStamp == other.TimeDateStamp
+               && SizeOfImage == other.SizeOfImage;
     }
 
     /// <inheritdoc />

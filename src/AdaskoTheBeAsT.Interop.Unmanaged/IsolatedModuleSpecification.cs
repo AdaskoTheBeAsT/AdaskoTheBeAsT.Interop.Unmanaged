@@ -23,12 +23,17 @@ public sealed class IsolatedModuleSpecification
     /// </summary>
     /// <param name="logicalName">Unique logical lookup key within the <see cref="IsolatedLibrarySet"/>.</param>
     /// <param name="sourceFileName">Bare ASCII DLL filename inside <see cref="IsolatedLibrarySetOptions.SourceDirectory"/>.</param>
-    public IsolatedModuleSpecification(string logicalName, string sourceFileName)
+    public IsolatedModuleSpecification(
+        string logicalName,
+        string sourceFileName)
     {
 #pragma warning disable CA2249,MA0001
-        if (string.IsNullOrWhiteSpace(logicalName) || logicalName.IndexOf('\0') >= 0)
+        if (string.IsNullOrWhiteSpace(logicalName)
+            || logicalName.IndexOf('\0') >= 0)
         {
-            throw new ArgumentException("Logical module name cannot be null, whitespace, or contain NUL.", nameof(logicalName));
+            throw new ArgumentException(
+                "Logical module name cannot be null, whitespace, or contain NUL.",
+                nameof(logicalName));
         }
 #pragma warning restore CA2249,MA0001
 

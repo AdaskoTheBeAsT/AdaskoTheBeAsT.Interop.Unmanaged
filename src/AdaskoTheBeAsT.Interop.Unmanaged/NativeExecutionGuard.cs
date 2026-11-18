@@ -126,7 +126,8 @@ public static class NativeExecutionGuard
 
         var currentThreadMode = WindowsExecutionNativeMethods.GetThreadErrorMode();
         var targetThreadMode = currentThreadMode | (uint)threadErrorMode;
-        var hasSavedErrorMode = WindowsExecutionNativeMethods.SetThreadErrorMode(targetThreadMode, out var previousThreadMode);
+        var hasSavedErrorMode =
+            WindowsExecutionNativeMethods.SetThreadErrorMode(targetThreadMode, out var previousThreadMode);
         if (!hasSavedErrorMode)
         {
             previousThreadMode = currentThreadMode;

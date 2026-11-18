@@ -12,22 +12,18 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// </summary>
 /// <typeparam name="TKey">Non-null lookup key type (for example a normalized source or worker directory path).</typeparam>
 /// <typeparam name="THandles">Reference type holding the loaded library handles and bound export delegates.</typeparam>
-public sealed class PinnedLibraryCache<TKey, THandles>
+/// <remarks>
+/// Initializes a new instance of the <see cref="PinnedLibraryCache{TKey, THandles}"/> class.
+/// </remarks>
+/// <param name="comparer">Optional key equality comparer.</param>
+public sealed class PinnedLibraryCache<TKey, THandles>(
+    IEqualityComparer<TKey>? comparer = null)
     where TKey : notnull
     where THandles : class
 {
-    private readonly ConcurrentDictionary<TKey, Lazy<Entry>> _entries;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="PinnedLibraryCache{TKey, THandles}"/> class.
-    /// </summary>
-    /// <param name="comparer">Optional key equality comparer.</param>
-    public PinnedLibraryCache(IEqualityComparer<TKey>? comparer = null)
-    {
-        _entries = comparer is null
-            ? new ConcurrentDictionary<TKey, Lazy<Entry>>()
-            : new ConcurrentDictionary<TKey, Lazy<Entry>>(comparer);
-    }
+    private readonly ConcurrentDictionary<TKey, Lazy<Entry>> _entries = comparer is null
+        ? new ConcurrentDictionary<TKey, Lazy<Entry>>()
+        : new ConcurrentDictionary<TKey, Lazy<Entry>>(comparer);
 
     /// <summary>
     /// Gets the number of materialized handle entries currently retained in this cache.
@@ -91,7 +87,10 @@ public sealed class PinnedLibraryCache<TKey, THandles>
                 }
 #pragma warning restore IDE0270
 
-                return new Entry { Value = loaded };
+                return new Entry
+                {
+                    Value = loaded,
+                };
             },
             LazyThreadSafetyMode.ExecutionAndPublication);
 
@@ -122,7 +121,8 @@ public sealed class PinnedLibraryCache<TKey, THandles>
             throw new ArgumentNullException(nameof(key));
         }
 
-        if (_entries.TryGetValue(key, out var lazy) && lazy.IsValueCreated)
+        if (_entries.TryGetValue(key, out var lazy)
+            && lazy.IsValueCreated)
         {
             handles = lazy.Value.Value;
             return true;
@@ -132,7 +132,9 @@ public sealed class PinnedLibraryCache<TKey, THandles>
         return false;
     }
 
-    private void EvictFaultedEntry(TKey key, Lazy<Entry> faultedEntry)
+    private void EvictFaultedEntry(
+        TKey key,
+        Lazy<Entry> faultedEntry)
     {
         var pair = new KeyValuePair<TKey, Lazy<Entry>>(key, faultedEntry);
 #if NET10_0_OR_GREATER

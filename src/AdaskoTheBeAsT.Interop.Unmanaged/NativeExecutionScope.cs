@@ -120,7 +120,8 @@ public sealed class NativeExecutionScope : IDisposable
         if (WindowsExecutionNativeMethods.ControlFpSafe(
                 out _,
                 _savedPrimaryFpControl,
-                WindowsExecutionNativeMethods.Sse2ControlPreserveMask) != 0)
+                WindowsExecutionNativeMethods.Sse2ControlPreserveMask)
+            != 0)
         {
             _ = WindowsExecutionNativeMethods.ControlFpSafe(
                 out _,

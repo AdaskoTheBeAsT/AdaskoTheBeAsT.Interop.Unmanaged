@@ -48,8 +48,12 @@ public class PeImageEditorTests
             editor.Machine.Should().Be(expectedMachine);
             editor.IsPe32Plus.Should().Be(expectedPe32Plus);
             editor.SizeOfImage.Should().BeGreaterThan(0u);
-            editor.GetImportedModuleNames().Should().Contain(m => string.Equals(m, "isochild.dll", StringComparison.OrdinalIgnoreCase));
-            editor.GetDelayImportedModuleNames().Should().Contain(m => string.Equals(m, "isodelay.dll", StringComparison.OrdinalIgnoreCase));
+            editor.GetImportedModuleNames()
+                .Should()
+                .Contain(m => string.Equals(m, "isochild.dll", StringComparison.OrdinalIgnoreCase));
+            editor.GetDelayImportedModuleNames()
+                .Should()
+                .Contain(m => string.Equals(m, "isodelay.dll", StringComparison.OrdinalIgnoreCase));
         }
     }
 
@@ -84,7 +88,10 @@ public class PeImageEditorTests
     }
 
     [Fact]
-    [SuppressMessage("Security", "SCS0018", Justification = "Stages patched test DLL into fixture-owned temp directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Stages patched test DLL into fixture-owned temp directory.")]
     public void RewriteImportSymbol_RedirectsShorterAndSameLengthSymbolsAndExecutesPatchedExport()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -125,7 +132,10 @@ public class PeImageEditorTests
     }
 
     [Fact]
-    [SuppressMessage("Security", "SCS0018", Justification = "Stages patched test DLL into fixture-owned temp directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Stages patched test DLL into fixture-owned temp directory.")]
     public void ReplaceVerifiedBytesAtRva_PatchesAsciiAndUtf16LiteralsIdempotentlyAndRejectsMismatch()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -154,7 +164,10 @@ public class PeImageEditorTests
         editor.ApplyVerifiedBytePatch(asciiPatch).ApplyVerifiedBytePatch(asciiPatch);
         editor.ApplyVerifiedBytePatch(utf16Patch).ApplyVerifiedBytePatch(utf16Patch);
 
-        Action mismatch = () => editor.ReplaceVerifiedBytesAtRva(asciiRva, Encoding.ASCII.GetBytes("WRONG_EXPECTED!"), Encoding.ASCII.GetBytes("OTHER_VALUE_123"));
+        Action mismatch = () => editor.ReplaceVerifiedBytesAtRva(
+            asciiRva,
+            Encoding.ASCII.GetBytes("WRONG_EXPECTED!"),
+            Encoding.ASCII.GetBytes("OTHER_VALUE_123"));
         mismatch.Should().Throw<BadImageFormatException>().WithMessage("*RVA 0x*");
 
         var stagedPath = Path.Combine(fixture.DirectoryPath, "isoparent_patched.dll");
@@ -279,7 +292,11 @@ public class PeImageEditorTests
 
         var allowManaged = PeImageEditor.FromFile(
             managedAssemblyPath,
-            new PeImageValidationOptions { RequireUnmanagedImage = false, RequireDll = false });
+            new PeImageValidationOptions
+            {
+                RequireUnmanagedImage = false,
+                RequireDll = false,
+            });
         allowManaged.SizeOfImage.Should().BeGreaterThan(0u);
 
         Action tooShort = () => PeImageEditor.FromBytes([0x4D, 0x5A, 0x00], "tiny.dll");
@@ -291,13 +308,19 @@ public class PeImageEditorTests
         Action wrongLen = () => PeImageEditor.FromBytes(
             validBytes,
             "len.dll",
-            new PeImageValidationOptions { ExpectedFileLength = validBytes.Length + 1 });
+            new PeImageValidationOptions
+            {
+                ExpectedFileLength = validBytes.Length + 1,
+            });
         wrongLen.Should().Throw<BadImageFormatException>();
 
         Action wrongMachine = () => PeImageEditor.FromBytes(
             validBytes,
             "mach.dll",
-            new PeImageValidationOptions { ExpectedMachine = PeMachine.Arm64 });
+            new PeImageValidationOptions
+            {
+                ExpectedMachine = PeMachine.Arm64,
+            });
         wrongMachine.Should().Throw<BadImageFormatException>();
 
         var nonDll = (byte[])validBytes.Clone();
@@ -402,7 +425,9 @@ public class PeImageEditorTests
 
     [Fact]
     [SuppressMessage("Security", "SCS0018", Justification = "Stages compacted PE into fixture-owned subfolder.")]
+#pragma warning disable MA0051 // Method is too long
     public void RemoveImportModule_CompactsDescriptorIdempotently_AndLoadsWhenRemovedDllIsAbsent()
+#pragma warning restore MA0051 // Method is too long
     {
         if (TestHelpers.SkipIfNotWindows())
         {
@@ -413,19 +438,35 @@ public class PeImageEditorTests
         foreach (var (archPath, _, _) in EnumerateArchitectures(fixture, "isocompact"))
         {
             var editor = PeImageEditor.FromFile(archPath);
-            editor.GetImportedModuleNames().Should().Contain(m => string.Equals(m, "isounused.dll", StringComparison.OrdinalIgnoreCase));
+            editor.GetImportedModuleNames()
+                .Should()
+                .Contain(m => string.Equals(m, "isounused.dll", StringComparison.OrdinalIgnoreCase));
 
-            Action typoNoWitness = () => editor.RemoveImportModule(new PeImportModuleRemoval { ModuleName = "not_imported.dll" });
+            Action typoNoWitness = () => editor.RemoveImportModule(
+                new PeImportModuleRemoval
+                {
+                    ModuleName = "not_imported.dll",
+                });
             typoNoWitness.Should().Throw<BadImageFormatException>();
 
             Action sameWitness = () => editor.RemoveImportModule(
-                new PeImportModuleRemoval { ModuleName = "isounused.dll", WitnessRemainingModuleName = "isounused.dll" });
+                new PeImportModuleRemoval
+                {
+                    ModuleName = "isounused.dll",
+                    WitnessRemainingModuleName = "isounused.dll",
+                });
             sameWitness.Should().Throw<ArgumentException>();
 
-            var removal = new PeImportModuleRemoval { ModuleName = "isounused.dll", WitnessRemainingModuleName = "isoleaf0.dll" };
+            var removal = new PeImportModuleRemoval
+            {
+                ModuleName = "isounused.dll",
+                WitnessRemainingModuleName = "isoleaf0.dll",
+            };
             editor.RemoveImportModule(removal);
             editor.RemoveImportModule(removal);
-            editor.GetImportedModuleNames().Should().NotContain(m => string.Equals(m, "isounused.dll", StringComparison.OrdinalIgnoreCase));
+            editor.GetImportedModuleNames()
+                .Should()
+                .NotContain(m => string.Equals(m, "isounused.dll", StringComparison.OrdinalIgnoreCase));
         }
 
         var isolatedDir = Path.Combine(fixture.DirectoryPath, "no_unused_dll");
@@ -442,7 +483,12 @@ public class PeImageEditorTests
 
         var compactedPath = Path.Combine(isolatedDir, "isocompact_clean.dll");
         PeImageEditor.FromFile(fixture.GetPath("isocompact"))
-            .RemoveImportModule(new PeImportModuleRemoval { ModuleName = "isounused.dll", WitnessRemainingModuleName = "isoleaf0.dll" })
+            .RemoveImportModule(
+                new PeImportModuleRemoval
+                {
+                    ModuleName = "isounused.dll",
+                    WitnessRemainingModuleName = "isoleaf0.dll",
+                })
             .ClearAuthenticodeAndRecalculateChecksum()
             .SaveIfChanged(compactedPath);
 
@@ -488,8 +534,12 @@ public class PeImageEditorTests
         editor.ClearAuthenticodeAndRecalculateChecksum().SaveIfChanged(stagedPath);
 
         using var patched = new UnmanagedLibrary(stagedPath);
-        Marshal.PtrToStringAnsi(patched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_ascii_tag_ptr")!()).Should().Be("ASC_42");
-        Marshal.PtrToStringUni(patched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_utf16_tag_ptr")!()).Should().Be("UTF_99");
+        Marshal.PtrToStringAnsi(patched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_ascii_tag_ptr")!())
+            .Should()
+            .Be("ASC_42");
+        Marshal.PtrToStringUni(patched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_utf16_tag_ptr")!())
+            .Should()
+            .Be("UTF_99");
         var shortPtr = patched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_short_string_ptr")!();
         var rawShort = new byte[13];
         Marshal.Copy(shortPtr, rawShort, 0, rawShort.Length);
@@ -510,7 +560,9 @@ public class PeImageEditorTests
         foreach (var (exePath, expectedMachine) in EnumerateExecutables(fixture, "isohelper"))
         {
             var info = new FileInfo(exePath);
-            var editor = PeImageEditor.FromFile(exePath, PeImageValidationOptions.ForExecutable(expectedMachine, info.Length));
+            var editor = PeImageEditor.FromFile(
+                exePath,
+                PeImageValidationOptions.ForExecutable(expectedMachine, info.Length));
             editor.SetLargeAddressAware(enabled: true);
             (editor.Characteristics & 0x0020).Should().Be(0x0020);
             editor.SetLargeAddressAware(enabled: false);
@@ -539,9 +591,15 @@ public class PeImageEditorTests
     {
         using var unpatched = new UnmanagedLibrary(parentPath);
         var baseAddr = unpatched.BaseAddress.ToInt64();
-        var asciiRva = checked((uint)(unpatched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_ascii_tag_ptr")!().ToInt64() - baseAddr));
-        var utf16Rva = checked((uint)(unpatched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_utf16_tag_ptr")!().ToInt64() - baseAddr));
-        var shortRva = checked((uint)(unpatched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_short_string_ptr")!().ToInt64() - baseAddr));
+        var asciiRva =
+            checked((uint)(unpatched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_ascii_tag_ptr")!().ToInt64()
+                           - baseAddr));
+        var utf16Rva =
+            checked((uint)(unpatched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_utf16_tag_ptr")!().ToInt64()
+                           - baseAddr));
+        var shortRva =
+            checked((uint)(unpatched.GetUnmanagedFunction<GetPtrFn>("iso_parent_get_short_string_ptr")!().ToInt64()
+                           - baseAddr));
         return (asciiRva, utf16Rva, shortRva);
     }
 

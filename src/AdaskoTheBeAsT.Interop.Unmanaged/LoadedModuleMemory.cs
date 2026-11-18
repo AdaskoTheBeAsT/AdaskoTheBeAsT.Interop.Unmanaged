@@ -36,7 +36,7 @@ public static class LoadedModuleMemory
     private const uint ImageScnMemExecute = 0x20000000;
     private const uint ImageScnMemWrite = 0x80000000;
 
-    private static readonly byte[] ZeroChunk = new byte[4096];
+    private static readonly byte[] _zeroChunk = new byte[4096];
 
     /// <summary>
     /// Inspects the mapped PE headers of <paramref name="libraryHandle"/> and returns its <see cref="LoadedModuleIdentity"/>.
@@ -95,7 +95,9 @@ public static class LoadedModuleMemory
     /// </summary>
     /// <param name="libraryHandle">Handle for the loaded Windows native module.</param>
     /// <param name="expected">Expected PE header identity.</param>
-    public static void VerifyIdentity(SafeLibraryHandle libraryHandle, LoadedModuleIdentity expected)
+    public static void VerifyIdentity(
+        SafeLibraryHandle libraryHandle,
+        LoadedModuleIdentity expected)
     {
         var actual = Inspect(libraryHandle);
         EnsureIdentityMatches(actual, expected, ResolveModuleLabel(libraryHandle));
@@ -106,7 +108,9 @@ public static class LoadedModuleMemory
     /// </summary>
     /// <param name="library">Loaded Windows native module.</param>
     /// <param name="expected">Expected PE header identity.</param>
-    public static void VerifyIdentity(UnmanagedLibrary library, LoadedModuleIdentity expected)
+    public static void VerifyIdentity(
+        UnmanagedLibrary library,
+        LoadedModuleIdentity expected)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(library);
@@ -136,7 +140,12 @@ public static class LoadedModuleMemory
         string exportName,
         IntPtr replacementFunction)
     {
-        if (TryRedirectImportFunction(libraryHandle, importedModuleName, exportName, replacementFunction, out var original))
+        if (TryRedirectImportFunction(
+                libraryHandle,
+                importedModuleName,
+                exportName,
+                replacementFunction,
+                out var original))
         {
             return original;
         }
@@ -239,7 +248,12 @@ public static class LoadedModuleMemory
         }
 #endif
 
-        return TryRedirectImportFunction(library.SafeHandle, importedModuleName, exportName, replacementFunction, out originalFunction);
+        return TryRedirectImportFunction(
+            library.SafeHandle,
+            importedModuleName,
+            exportName,
+            replacementFunction,
+            out originalFunction);
     }
 
     /// <summary>
@@ -311,7 +325,12 @@ public static class LoadedModuleMemory
         }
 #endif
 
-        return TryRedirectImportOrdinal(library.SafeHandle, importedModuleName, ordinal, replacementFunction, out originalFunction);
+        return TryRedirectImportOrdinal(
+            library.SafeHandle,
+            importedModuleName,
+            ordinal,
+            replacementFunction,
+            out originalFunction);
     }
 
     /// <summary>
@@ -364,7 +383,13 @@ public static class LoadedModuleMemory
 #endif
 
         ValidateWriteBytesArguments(rva, expectedCurrentBytes.Length, replacementBytes.Length);
-        WriteVerifiedBytesCore(libraryHandle, expectedIdentity, rva, expectedCurrentBytes, replacementBytes, flushInstructionCache);
+        WriteVerifiedBytesCore(
+            libraryHandle,
+            expectedIdentity,
+            rva,
+            expectedCurrentBytes,
+            replacementBytes,
+            flushInstructionCache);
     }
 
     /// <summary>
@@ -394,7 +419,13 @@ public static class LoadedModuleMemory
         }
 #endif
 
-        WriteVerifiedBytesAtRva(library.SafeHandle, expectedIdentity, rva, expectedCurrentBytes, replacementBytes, flushInstructionCache);
+        WriteVerifiedBytesAtRva(
+            library.SafeHandle,
+            expectedIdentity,
+            rva,
+            expectedCurrentBytes,
+            replacementBytes,
+            flushInstructionCache);
     }
 
 #if NET10_0_OR_GREATER
@@ -464,7 +495,13 @@ public static class LoadedModuleMemory
         }
 #endif
 
-        WriteVerifiedBytesAtRva(library.SafeHandle, expectedIdentity, rva, expectedCurrentBytes, replacementBytes, flushInstructionCache);
+        WriteVerifiedBytesAtRva(
+            library.SafeHandle,
+            expectedIdentity,
+            rva,
+            expectedCurrentBytes,
+            replacementBytes,
+            flushInstructionCache);
     }
 #endif
 
@@ -499,7 +536,10 @@ public static class LoadedModuleMemory
 
         if (byteCount <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(byteCount), byteCount, "Byte count must be greater than zero.");
+            throw new ArgumentOutOfRangeException(
+                nameof(byteCount),
+                byteCount,
+                "Byte count must be greater than zero.");
         }
 
         var addedRef = false;
@@ -597,7 +637,9 @@ public static class LoadedModuleMemory
         }
     }
 
-    private static IntPtr AcquireMappedModuleBase(SafeLibraryHandle libraryHandle, ref bool addedRef)
+    private static IntPtr AcquireMappedModuleBase(
+        SafeLibraryHandle libraryHandle,
+        ref bool addedRef)
     {
         libraryHandle.DangerousAddRef(ref addedRef);
 
@@ -637,7 +679,10 @@ public static class LoadedModuleMemory
             : moduleName;
     }
 
-    private static void EnsureIdentityMatches(LoadedModuleIdentity actual, LoadedModuleIdentity expected, string label)
+    private static void EnsureIdentityMatches(
+        LoadedModuleIdentity actual,
+        LoadedModuleIdentity expected,
+        string label)
     {
         if (!actual.Equals(expected))
         {
@@ -662,7 +707,14 @@ public static class LoadedModuleMemory
             var baseAddress = AcquireMappedModuleBase(libraryHandle, ref addedRef);
             var label = ResolveModuleLabel(libraryHandle);
             var pe = InspectMappedPe(baseAddress, label);
-            var matches = FindMatchingIatSlots(baseAddress, pe, importedModuleName, exportName, ordinal, matchByOrdinal, label);
+            var matches = FindMatchingIatSlots(
+                baseAddress,
+                pe,
+                importedModuleName,
+                exportName,
+                ordinal,
+                matchByOrdinal,
+                label);
             if (matches.Count == 0)
             {
                 originalFunction = IntPtr.Zero;
@@ -698,7 +750,8 @@ public static class LoadedModuleMemory
         string label)
     {
         var matches = new List<IntPtr>(1);
-        if (pe.ImportTableRva == 0 || pe.ImportTableSize < ImportDescriptorSize)
+        if (pe.ImportTableRva == 0
+            || pe.ImportTableSize < ImportDescriptorSize)
         {
             return matches;
         }
@@ -715,7 +768,8 @@ public static class LoadedModuleMemory
             var originalFirstThunk = ReadUInt32(baseAddress, cursorRva);
             var nameRva = ReadUInt32(baseAddress, cursorRva + 12);
             var firstThunk = ReadUInt32(baseAddress, cursorRva + 16);
-            if (nameRva == 0 || (originalFirstThunk == 0 && firstThunk == 0))
+            if (nameRva == 0
+                || (originalFirstThunk == 0 && firstThunk == 0))
             {
                 throw PeHeaderParser.CreateBadImage(label, "Malformed IMAGE_IMPORT_DESCRIPTOR in mapped module.");
             }
@@ -723,7 +777,8 @@ public static class LoadedModuleMemory
             var currentModuleName = ReadMappedAsciiString(baseAddress, pe, nameRva, allowSpaces: true, label);
             if (string.Equals(currentModuleName, importedModuleName, StringComparison.OrdinalIgnoreCase))
             {
-                if (originalFirstThunk == 0 || firstThunk == 0)
+                if (originalFirstThunk == 0
+                    || firstThunk == 0)
                 {
                     throw PeHeaderParser.CreateBadImage(
                         label,
@@ -774,7 +829,13 @@ public static class LoadedModuleMemory
                 throw PeHeaderParser.CreateBadImage(label, "Unaligned IAT pointer slot in mapped module.");
             }
 
-            if (!TryReadIltEntry(baseAddress, iltSlotRva, out var isOrdinal, out var thunkOrdinal, out var byNameRva, label))
+            if (!TryReadIltEntry(
+                    baseAddress,
+                    iltSlotRva,
+                    out var isOrdinal,
+                    out var thunkOrdinal,
+                    out var byNameRva,
+                    label))
             {
                 return;
             }
@@ -789,7 +850,12 @@ public static class LoadedModuleMemory
             else if (!isOrdinal)
             {
                 EnsureMappedRvaRange(pe, byNameRva, 3, label);
-                var symbolName = ReadMappedAsciiString(baseAddress, pe, checked(byNameRva + 2u), allowSpaces: false, label);
+                var symbolName = ReadMappedAsciiString(
+                    baseAddress,
+                    pe,
+                    checked(byNameRva + 2u),
+                    allowSpaces: false,
+                    label);
                 if (string.Equals(symbolName, exportName, StringComparison.Ordinal))
                 {
                     matches.Add(iatAddress);
@@ -861,7 +927,9 @@ public static class LoadedModuleMemory
         return true;
     }
 
-    private static IntPtr PatchIatPointerSlot(IntPtr slotAddress, IntPtr replacementFunction)
+    private static IntPtr PatchIatPointerSlot(
+        IntPtr slotAddress,
+        IntPtr replacementFunction)
     {
         if (!WindowsMemoryNativeMethods.VirtualProtect(
                 slotAddress,
@@ -869,7 +937,9 @@ public static class LoadedModuleMemory
                 WindowsMemoryNativeMethods.PageReadWrite,
                 out var oldProtect))
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "VirtualProtect failed while unlocking mapped IAT slot.");
+            throw new Win32Exception(
+                Marshal.GetLastWin32Error(),
+                "VirtualProtect failed while unlocking mapped IAT slot.");
         }
 
         try
@@ -915,7 +985,11 @@ public static class LoadedModuleMemory
             {
                 if (!BytesEqual(expectedCurrentBytes, replacementBytes))
                 {
-                    WriteProtectedBytes(targetAddress, replacementBytes, section.Characteristics, flushInstructionCache);
+                    WriteProtectedBytes(
+                        targetAddress,
+                        replacementBytes,
+                        section.Characteristics,
+                        flushInstructionCache);
                 }
                 else if (flushInstructionCache)
                 {
@@ -968,7 +1042,9 @@ public static class LoadedModuleMemory
                 tempProtect,
                 out var oldProtect))
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "VirtualProtect failed while unlocking mapped RVA range.");
+            throw new Win32Exception(
+                Marshal.GetLastWin32Error(),
+                "VirtualProtect failed while unlocking mapped RVA range.");
         }
 
         try
@@ -991,7 +1067,9 @@ public static class LoadedModuleMemory
         }
     }
 
-    private static void FlushCpuCache(IntPtr targetAddress, int length)
+    private static void FlushCpuCache(
+        IntPtr targetAddress,
+        int length)
     {
         _ = WindowsMemoryNativeMethods.FlushInstructionCache(
             WindowsMemoryNativeMethods.GetCurrentProcess(),
@@ -999,7 +1077,11 @@ public static class LoadedModuleMemory
             (UIntPtr)length);
     }
 
-    private static MappedPeInfo InspectMappedPe(IntPtr baseAddress, string label)
+#pragma warning disable MA0051 // Method is too long
+    private static MappedPeInfo InspectMappedPe(
+        IntPtr baseAddress,
+        string label)
+#pragma warning restore MA0051 // Method is too long
     {
         var committedHeaderBytes = QueryCommittedRegionLengthFrom(baseAddress, label);
         ReadAndValidateMappedCoffHeader(
@@ -1014,7 +1096,8 @@ public static class LoadedModuleMemory
 
         var optOffset = coffOffset + (uint)CoffHeaderSize;
         var minOptSize = IntPtr.Size == 8 ? 112u : 96u;
-        if (optionalHeaderSize < minOptSize || (ulong)optOffset + optionalHeaderSize > committedHeaderBytes)
+        if (optionalHeaderSize < minOptSize
+            || (ulong)optOffset + optionalHeaderSize > committedHeaderBytes)
         {
             throw PeHeaderParser.CreateBadImage(label, "Mapped PE optional header is truncated.");
         }
@@ -1025,7 +1108,10 @@ public static class LoadedModuleMemory
         {
             throw PeHeaderParser.CreateBadImage(
                 label,
-                string.Format(CultureInfo.InvariantCulture, "Mapped PE optional header magic 0x{0:X4} does not match process bitness.", magic));
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "Mapped PE optional header magic 0x{0:X4} does not match process bitness.",
+                    magic));
         }
 
         var sizeOfImage = ReadUInt32(baseAddress, optOffset + 56u);
@@ -1036,19 +1122,29 @@ public static class LoadedModuleMemory
         if (numDataDirs > MaxDataDirectories
             || (ulong)dataDirOffset + ((ulong)numDataDirs * 8UL) > (ulong)optOffset + optionalHeaderSize)
         {
-            throw PeHeaderParser.CreateBadImage(label, "Mapped PE data directory count exceeds optional header bounds.");
+            throw PeHeaderParser.CreateBadImage(
+                label,
+                "Mapped PE data directory count exceeds optional header bounds.");
         }
 
         var sectionTableOffset = optOffset + optionalHeaderSize;
         var sectionTableEnd = (ulong)sectionTableOffset + ((ulong)sectionCount * SectionHeaderSize);
-        if (sectionTableEnd > committedHeaderBytes || sectionTableEnd > sizeOfHeaders || sizeOfImage <= sizeOfHeaders)
+        if (sectionTableEnd > committedHeaderBytes
+            || sectionTableEnd > sizeOfHeaders
+            || sizeOfImage <= sizeOfHeaders)
         {
             throw PeHeaderParser.CreateBadImage(label, "Mapped PE section table exceeds header or image bounds.");
         }
 
         var importRva = numDataDirs > 1 ? ReadUInt32(baseAddress, dataDirOffset + 8u) : 0u;
         var importSize = numDataDirs > 1 ? ReadUInt32(baseAddress, dataDirOffset + 12u) : 0u;
-        var sections = ParseMappedSections(baseAddress, sectionTableOffset, sectionCount, sizeOfHeaders, sizeOfImage, label);
+        var sections = ParseMappedSections(
+            baseAddress,
+            sectionTableOffset,
+            sectionCount,
+            sizeOfHeaders,
+            sizeOfImage,
+            label);
         return new MappedPeInfo(
             new LoadedModuleIdentity(machine, timeDateStamp, sizeOfImage),
             sizeOfHeaders,
@@ -1070,13 +1166,15 @@ public static class LoadedModuleMemory
         out ushort optionalHeaderSize)
 #pragma warning restore S107
     {
-        if (committedHeaderBytes < DosHeaderSize || ReadUInt16(baseAddress, 0) != DosSignature)
+        if (committedHeaderBytes < DosHeaderSize
+            || ReadUInt16(baseAddress, 0) != DosSignature)
         {
             throw PeHeaderParser.CreateBadImage(label, "Mapped module is missing DOS 'MZ' signature.");
         }
 
         var peOffsetSigned = Marshal.ReadInt32(baseAddress, 0x3C);
-        if (peOffsetSigned < DosHeaderSize || (ulong)peOffsetSigned + 4UL + CoffHeaderSize > committedHeaderBytes)
+        if (peOffsetSigned < DosHeaderSize
+            || (ulong)peOffsetSigned + 4UL + CoffHeaderSize > committedHeaderBytes)
         {
             throw PeHeaderParser.CreateBadImage(label, "Mapped module has an out-of-range e_lfanew PE header offset.");
         }
@@ -1132,7 +1230,9 @@ public static class LoadedModuleMemory
                 || virtualAddress >= sizeOfImage
                 || (ulong)virtualAddress + mappedLength > sizeOfImage)
             {
-                throw PeHeaderParser.CreateBadImage(label, $"Mapped section #{i.ToString(CultureInfo.InvariantCulture)} exceeds SizeOfImage bounds.");
+                throw PeHeaderParser.CreateBadImage(
+                    label,
+                    $"Mapped section #{i.ToString(CultureInfo.InvariantCulture)} exceeds SizeOfImage bounds.");
             }
 
             sections[i] = new MappedSection(virtualAddress, mappedLength, characteristics);
@@ -1151,13 +1251,15 @@ public static class LoadedModuleMemory
         for (var i = 0; i < pe.Sections.Length; i++)
         {
             var sec = pe.Sections[i];
-            if (sec.MappedLength == 0 || rva < sec.VirtualAddress)
+            if (sec.MappedLength == 0
+                || rva < sec.VirtualAddress)
             {
                 continue;
             }
 
             var offsetInSection = (ulong)rva - sec.VirtualAddress;
-            if (offsetInSection < sec.MappedLength && offsetInSection + (ulong)length <= sec.MappedLength)
+            if (offsetInSection < sec.MappedLength
+                && offsetInSection + (ulong)length <= sec.MappedLength)
             {
                 return sec;
             }
@@ -1165,10 +1267,18 @@ public static class LoadedModuleMemory
 
         throw PeHeaderParser.CreateBadImage(
             label,
-            string.Format(CultureInfo.InvariantCulture, "RVA range 0x{0:X}+0x{1:X} does not lie completely within a mapped PE section.", rva, length));
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "RVA range 0x{0:X}+0x{1:X} does not lie completely within a mapped PE section.",
+                rva,
+                length));
     }
 
-    private static void EnsureMappedRvaRange(MappedPeInfo pe, uint rva, int length, string label)
+    private static void EnsureMappedRvaRange(
+        MappedPeInfo pe,
+        uint rva,
+        int length,
+        string label)
     {
         if (rva < pe.SizeOfHeaders
             || length <= 0
@@ -1176,17 +1286,26 @@ public static class LoadedModuleMemory
         {
             throw PeHeaderParser.CreateBadImage(
                 label,
-                string.Format(CultureInfo.InvariantCulture, "RVA range 0x{0:X}+0x{1:X} falls outside mapped image bounds.", rva, length));
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "RVA range 0x{0:X}+0x{1:X} falls outside mapped image bounds.",
+                    rva,
+                    length));
         }
     }
 
-    private static ulong QueryCommittedRegionLengthFrom(IntPtr address, string label)
+    private static ulong QueryCommittedRegionLengthFrom(
+        IntPtr address,
+        string label)
     {
         var infoSize = (UIntPtr)Marshal.SizeOf<WindowsMemoryNativeMethods.MemoryBasicInformation>();
         var queried = WindowsMemoryNativeMethods.VirtualQuery(address, out var mbi, infoSize);
-        if (queried == UIntPtr.Zero || mbi.State != WindowsMemoryNativeMethods.MemCommit)
+        if (queried == UIntPtr.Zero
+            || mbi.State != WindowsMemoryNativeMethods.MemCommit)
         {
-            throw PeHeaderParser.CreateBadImage(label, "Module base address does not point to committed virtual memory.");
+            throw PeHeaderParser.CreateBadImage(
+                label,
+                "Module base address does not point to committed virtual memory.");
         }
 
         var offsetIntoRegion = (ulong)(address.ToInt64() - mbi.BaseAddress.ToInt64());
@@ -1218,17 +1337,25 @@ public static class LoadedModuleMemory
                 {
                     throw PeHeaderParser.CreateBadImage(
                         label,
-                        string.Format(CultureInfo.InvariantCulture, "Empty ASCII string in mapped PE table at RVA 0x{0:X}.", stringRva));
+                        string.Format(
+                            CultureInfo.InvariantCulture,
+                            "Empty ASCII string in mapped PE table at RVA 0x{0:X}.",
+                            stringRva));
                 }
 
                 return Encoding.ASCII.GetString(bytes, 0, length);
             }
 
-            if (b < minChar || b > 0x7E)
+            if (b < minChar
+                || b > 0x7E)
             {
                 throw PeHeaderParser.CreateBadImage(
                     label,
-                    string.Format(CultureInfo.InvariantCulture, "Invalid byte 0x{0:X2} in mapped PE string at RVA 0x{1:X}.", b, stringRva));
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Invalid byte 0x{0:X2} in mapped PE string at RVA 0x{1:X}.",
+                        b,
+                        stringRva));
             }
 
             bytes[length] = b;
@@ -1238,10 +1365,15 @@ public static class LoadedModuleMemory
 
         throw PeHeaderParser.CreateBadImage(
             label,
-            string.Format(CultureInfo.InvariantCulture, "Unterminated ASCII string in mapped PE table at RVA 0x{0:X}.", stringRva));
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Unterminated ASCII string in mapped PE table at RVA 0x{0:X}.",
+                stringRva));
     }
 
-    private static bool IsMappedDescriptorZero(IntPtr baseAddress, uint descriptorRva)
+    private static bool IsMappedDescriptorZero(
+        IntPtr baseAddress,
+        uint descriptorRva)
     {
         var ptr = AddRva(baseAddress, descriptorRva);
         for (var i = 0; i < ImportDescriptorSize; i += 4)
@@ -1255,18 +1387,22 @@ public static class LoadedModuleMemory
         return true;
     }
 
-    private static void ZeroMappedBytes(IntPtr targetAddress, int byteCount)
+    private static void ZeroMappedBytes(
+        IntPtr targetAddress,
+        int byteCount)
     {
         var offset = 0;
         while (offset < byteCount)
         {
-            var chunk = Math.Min(ZeroChunk.Length, byteCount - offset);
-            Marshal.Copy(ZeroChunk, 0, AddOffset(targetAddress, offset), chunk);
+            var chunk = Math.Min(_zeroChunk.Length, byteCount - offset);
+            Marshal.Copy(_zeroChunk, 0, AddOffset(targetAddress, offset), chunk);
             offset += chunk;
         }
     }
 
-    private static bool BytesEqual(byte[] first, byte[] second)
+    private static bool BytesEqual(
+        byte[] first,
+        byte[] second)
     {
         for (var i = 0; i < first.Length; i++)
         {
@@ -1279,24 +1415,32 @@ public static class LoadedModuleMemory
         return true;
     }
 
-    private static ushort ReadUInt16(IntPtr baseAddress, uint rva)
+    private static ushort ReadUInt16(
+        IntPtr baseAddress,
+        uint rva)
     {
         return unchecked((ushort)Marshal.ReadInt16(AddRva(baseAddress, rva)));
     }
 
-    private static uint ReadUInt32(IntPtr baseAddress, uint rva)
+    private static uint ReadUInt32(
+        IntPtr baseAddress,
+        uint rva)
     {
         return unchecked((uint)Marshal.ReadInt32(AddRva(baseAddress, rva)));
     }
 
-    private static IntPtr AddRva(IntPtr baseAddress, uint rva)
+    private static IntPtr AddRva(
+        IntPtr baseAddress,
+        uint rva)
     {
         return IntPtr.Size == 8
             ? new IntPtr(checked(baseAddress.ToInt64() + rva))
             : new IntPtr(checked((int)(unchecked((uint)baseAddress.ToInt32()) + rva)));
     }
 
-    private static IntPtr AddOffset(IntPtr address, int byteOffset)
+    private static IntPtr AddOffset(
+        IntPtr address,
+        int byteOffset)
     {
         return IntPtr.Size == 8
             ? new IntPtr(checked(address.ToInt64() + byteOffset))

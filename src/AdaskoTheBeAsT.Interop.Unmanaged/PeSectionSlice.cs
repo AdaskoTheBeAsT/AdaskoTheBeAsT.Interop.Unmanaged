@@ -22,7 +22,8 @@ internal readonly struct PeSectionSlice(
     {
         get
         {
-            if (SizeOfRawData == 0 || PointerToRawData == 0)
+            if (SizeOfRawData == 0
+                || PointerToRawData == 0)
             {
                 return 0;
             }

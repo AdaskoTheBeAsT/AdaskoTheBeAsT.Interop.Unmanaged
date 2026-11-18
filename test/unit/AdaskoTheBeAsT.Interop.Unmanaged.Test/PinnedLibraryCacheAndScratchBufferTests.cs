@@ -34,15 +34,17 @@ public class PinnedLibraryCacheAndScratchBufferTests
             tasks[idx] = Task.Run(
                 () =>
                 {
-                    results[idx] = cache.GetOrLoad(keyVariant, k =>
-                    {
-                        Interlocked.Increment(ref invocationCount);
-                        entered.TrySetResult(true);
+                    results[idx] = cache.GetOrLoad(
+                        keyVariant,
+                        k =>
+                        {
+                            Interlocked.Increment(ref invocationCount);
+                            entered.TrySetResult(true);
 #pragma warning disable VSTHRD002
-                        release.Task.GetAwaiter().GetResult();
+                            release.Task.GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
-                        return new DummyHandles(k);
-                    });
+                            return new DummyHandles(k);
+                        });
                 },
                 ct);
         }
@@ -71,20 +73,24 @@ public class PinnedLibraryCacheAndScratchBufferTests
         var cache = new PinnedLibraryCache<string, DummyHandles>(StringComparer.Ordinal);
         var attempts = 0;
 
-        Action firstFail = () => cache.GetOrLoad("flaky", _ =>
-        {
-            attempts++;
-            throw new IOException("Transient staging error.");
-        });
+        Action firstFail = () => cache.GetOrLoad(
+            "flaky",
+            _ =>
+            {
+                attempts++;
+                throw new IOException("Transient staging error.");
+            });
         firstFail.Should().Throw<IOException>();
         cache.Count.Should().Be(0);
         cache.TryGet("flaky", out _).Should().BeFalse();
 
-        var recovered = cache.GetOrLoad("flaky", key =>
-        {
-            attempts++;
-            return new DummyHandles(key);
-        });
+        var recovered = cache.GetOrLoad(
+            "flaky",
+            key =>
+            {
+                attempts++;
+                return new DummyHandles(key);
+            });
         attempts.Should().Be(2);
         recovered.Tag.Should().Be("flaky");
         cache.Count.Should().Be(1);
@@ -100,9 +106,18 @@ public class PinnedLibraryCacheAndScratchBufferTests
     }
 
     [Fact]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP001", Justification = "PointerLease is explicitly disposed twice in finally to verify idempotence.")]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP004", Justification = "Post-dispose AcquirePointerLease throws before returning a lease.")]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Verifies ObjectDisposedException after Dispose.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP001",
+        Justification = "PointerLease is explicitly disposed twice in finally to verify idempotence.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP004",
+        Justification = "Post-dispose AcquirePointerLease throws before returning a lease.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP016",
+        Justification = "Verifies ObjectDisposedException after Dispose.")]
     [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit Dispose tests post-dispose guard.")]
     public void UnmanagedScratchBuffer_ZeroInitializesClearsSlicesAndRetainsPointerLeaseIdempotently()
     {
@@ -157,7 +172,8 @@ public class PinnedLibraryCacheAndScratchBufferTests
         leaseAfterDispose.Should().Throw<ObjectDisposedException>();
     }
 
-    private sealed class DummyHandles(string tag)
+    private sealed class DummyHandles(
+        string tag)
     {
         public string Tag { get; } = tag;
     }

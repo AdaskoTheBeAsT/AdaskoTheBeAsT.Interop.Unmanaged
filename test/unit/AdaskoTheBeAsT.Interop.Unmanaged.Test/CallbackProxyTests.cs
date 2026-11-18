@@ -27,8 +27,10 @@ public class CallbackProxyTests
         var firstPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(first, out var firstBinder);
         var secondPointer = UnmanagedLibrary.GetFunctionPointerForDelegate(second, out var secondBinder);
 
-        var firstCallback = UnmanagedLibrary.GetDelegateForFunctionPointer<Func<int>>(firstPointer, CallingConvention.Winapi);
-        var secondCallback = UnmanagedLibrary.GetDelegateForFunctionPointer<Func<long>>(secondPointer, CallingConvention.Winapi);
+        var firstCallback =
+            UnmanagedLibrary.GetDelegateForFunctionPointer<Func<int>>(firstPointer, CallingConvention.Winapi);
+        var secondCallback =
+            UnmanagedLibrary.GetDelegateForFunctionPointer<Func<long>>(secondPointer, CallingConvention.Winapi);
         firstCallback!().Should().Be(42);
         secondCallback!().Should().Be(long.MaxValue);
         GetProxy(firstBinder).GetType().Should().NotBe(GetProxy(secondBinder).GetType());
@@ -109,7 +111,8 @@ public class CallbackProxyTests
         var text = Marshal.StringToHGlobalUni("AB");
         try
         {
-            var invoke = UnmanagedLibrary.GetDelegateForFunctionPointer<Func<IntPtr, byte>>(pointer, CallingConvention.Cdecl);
+            var invoke =
+                UnmanagedLibrary.GetDelegateForFunctionPointer<Func<IntPtr, byte>>(pointer, CallingConvention.Cdecl);
 
             invoke!(text).Should().Be(1);
         }
@@ -138,7 +141,10 @@ public class CallbackProxyTests
     }
 
     [Fact]
-    [SuppressMessage("Sonar", "S1215", Justification = "Forced collection is required to verify raw call thunk stability across GC cycles.")]
+    [SuppressMessage(
+        "Sonar",
+        "S1215",
+        Justification = "Forced collection is required to verify raw call thunk stability across GC cycles.")]
     public void RawDelegates_RemainAccurateAcrossGarbageCollectionCycles()
     {
         for (var iteration = 0; iteration < 10; iteration++)

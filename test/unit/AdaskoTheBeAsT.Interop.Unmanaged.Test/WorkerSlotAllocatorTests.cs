@@ -14,7 +14,10 @@ public class WorkerSlotAllocatorTests
 {
     [Fact]
     [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Verifies idempotent double-Dispose.")]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit Dispose tests slot recycling and double-dispose safety.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP017",
+        Justification = "Explicit Dispose tests slot recycling and double-dispose safety.")]
     public void AcquireAndTryAcquire_ScanLowestSlotHonorPreferredHintSkipExcludedAndHandleDoubleDispose()
     {
         var allocator = new WorkerSlotAllocator(maxExclusive: 5, excludedSlots: [0, 3, 3]);
@@ -54,7 +57,10 @@ public class WorkerSlotAllocatorTests
     }
 
     [Fact]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit Dispose tests thread-sticky slot recycling.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP017",
+        Justification = "Explicit Dispose tests thread-sticky slot recycling.")]
     public void PreferThreadStickySlot_ReusesLastReleasedSlotPerAllocatorWithoutCrossContamination()
     {
         var allocatorA = new WorkerSlotAllocator(maxExclusive: 10, preferThreadStickySlot: true);
@@ -125,7 +131,10 @@ public class WorkerSlotAllocatorTests
         Parallel.For(
             0,
             32,
-            new ParallelOptions { MaxDegreeOfParallelism = 32 },
+            new ParallelOptions
+            {
+                MaxDegreeOfParallelism = 32,
+            },
             worker =>
             {
                 for (var iter = 0; iter < 250; iter++)

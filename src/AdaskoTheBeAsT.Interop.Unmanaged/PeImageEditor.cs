@@ -86,8 +86,7 @@ public sealed class PeImageEditor
     /// <summary>
     /// Gets a value indicating whether the image currently carries an Authenticode certificate table entry.
     /// </summary>
-    public bool HasAuthenticodeSignature =>
-        _headers.SecurityTableFileOffset != 0 || _headers.SecurityTableSize != 0;
+    public bool HasAuthenticodeSignature => _headers.SecurityTableFileOffset != 0 || _headers.SecurityTableSize != 0;
 
     /// <summary>
     /// Loads a PE32/PE32+ image from disk into a private in-memory copy and validates its headers and import tables.
@@ -101,8 +100,15 @@ public sealed class PeImageEditor
     /// <exception cref="BadImageFormatException">
     /// Thrown when headers, sections, or import/delay-import tables fail structural or provenance validation.
     /// </exception>
-    [SuppressMessage("Security", "SCS0018", Justification = "Reads caller-specified PE binary path into an isolated memory buffer after path normalization.")]
-    [SuppressMessage("Security", "SEC0116", Justification = "Intentional library API for reading caller-specified native PE image files.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification =
+            "Reads caller-specified PE binary path into an isolated memory buffer after path normalization.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0116",
+        Justification = "Intentional library API for reading caller-specified native PE image files.")]
     public static PeImageEditor FromFile(
         string sourcePath,
         PeImageValidationOptions? validation = null)
@@ -165,7 +171,8 @@ public sealed class PeImageEditor
     /// </exception>
     public uint FileOffsetToRva(int fileOffset)
     {
-        if (fileOffset < 0 || fileOffset >= _buffer.Length)
+        if (fileOffset < 0
+            || fileOffset >= _buffer.Length)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(fileOffset),
@@ -179,7 +186,8 @@ public sealed class PeImageEditor
         {
             var section = _headers.Sections[i];
             var backedLength = section.FileBackedSpanLength;
-            if (backedLength == 0 || (ulong)fileOffset < section.PointerToRawData)
+            if (backedLength == 0
+                || (ulong)fileOffset < section.PointerToRawData)
             {
                 continue;
             }
@@ -194,7 +202,10 @@ public sealed class PeImageEditor
             {
                 throw PeHeaderParser.CreateBadImage(
                     _imageLabel,
-                    string.Format(CultureInfo.InvariantCulture, "Ambiguous overlapping PE raw sections cover file offset 0x{0:X}.", fileOffset));
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Ambiguous overlapping PE raw sections cover file offset 0x{0:X}.",
+                        fileOffset));
             }
 
             foundIndex = i;
@@ -205,7 +216,10 @@ public sealed class PeImageEditor
         {
             throw PeHeaderParser.CreateBadImage(
                 _imageLabel,
-                string.Format(CultureInfo.InvariantCulture, "File offset 0x{0:X} does not reside inside any file-backed PE section.", fileOffset));
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "File offset 0x{0:X} does not reside inside any file-backed PE section.",
+                    fileOffset));
         }
 
         return resolvedRva;
@@ -217,7 +231,8 @@ public sealed class PeImageEditor
     /// <returns>The validated ASCII export module name, or <see langword="null"/> when <c>DataDirectory[0]</c> is empty.</returns>
     public string? GetExportModuleName()
     {
-        if (_headers.ExportTableRva == 0 && _headers.ExportTableSize == 0)
+        if (_headers.ExportTableRva == 0
+            && _headers.ExportTableSize == 0)
         {
             return null;
         }
@@ -625,11 +640,13 @@ public sealed class PeImageEditor
     /// <returns>This <see cref="PeImageEditor"/> instance for fluent chaining.</returns>
     public PeImageEditor ClearAuthenticodeAndRecalculateChecksum()
     {
-        if (_headers.SecurityTableFileOffset != 0 || _headers.SecurityTableSize != 0)
+        if (_headers.SecurityTableFileOffset != 0
+            || _headers.SecurityTableSize != 0)
         {
             var secStart = checked((int)_headers.SecurityTableFileOffset);
             var secEnd = checked((int)(_headers.SecurityTableFileOffset + _headers.SecurityTableSize));
-            if (secEnd == _buffer.Length && !AnySectionOverlapsTail(secStart))
+            if (secEnd == _buffer.Length
+                && !AnySectionOverlapsTail(secStart))
             {
                 Array.Resize(ref _buffer, secStart);
             }
@@ -674,7 +691,11 @@ public sealed class PeImageEditor
     /// Atomically writes the current PE image to <paramref name="destinationPath"/> only when the destination file is missing or differs in content.
     /// </summary>
     /// <param name="destinationPath">Destination path for the private worker copy (must not equal the original source file path).</param>
-    [SuppressMessage("Security", "SCS0018", Justification = "Writes verified PE image to caller-chosen private staging path while refusing in-place source modification.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification =
+            "Writes verified PE image to caller-chosen private staging path while refusing in-place source modification.")]
     public void SaveIfChanged(string destinationPath)
     {
         ValidatePathArgument(destinationPath, nameof(destinationPath));
@@ -686,7 +707,8 @@ public sealed class PeImageEditor
 
         var fullDestination = Path.GetFullPath(destinationPath);
         var comparison = NativeLoader.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
-        if (_sourceFullPath is not null && string.Equals(fullDestination, _sourceFullPath, comparison))
+        if (_sourceFullPath is not null
+            && string.Equals(fullDestination, _sourceFullPath, comparison))
         {
             throw new InvalidOperationException(
                 $"Refusing to overwrite source binary '{_sourceFullPath}' in place; save to a private copy path instead.");
@@ -706,14 +728,17 @@ public sealed class PeImageEditor
         WriteAtomically(fullDestination, directory, _buffer);
     }
 
-    internal static uint ComputePeCheckSum(byte[] buffer, int checkSumOffset)
+    internal static uint ComputePeCheckSum(
+        byte[] buffer,
+        int checkSumOffset)
     {
         ulong sum = 0;
         var length = buffer.Length;
         var evenLength = length & ~1;
         for (var i = 0; i < evenLength; i += 2)
         {
-            if (i == checkSumOffset || i == checkSumOffset + 2)
+            if (i == checkSumOffset
+                || i == checkSumOffset + 2)
             {
                 continue;
             }
@@ -734,8 +759,13 @@ public sealed class PeImageEditor
     }
 
     [SuppressMessage("Security", "SCS0018", Justification = "Compares private destination copy with in-memory buffer.")]
-    [SuppressMessage("Security", "SEC0112", Justification = "Compares caller-chosen destination file against verified PE image buffer.")]
-    internal static bool FileMatchesBuffer(string fullPath, byte[] expected)
+    [SuppressMessage(
+        "Security",
+        "SEC0112",
+        Justification = "Compares caller-chosen destination file against verified PE image buffer.")]
+    internal static bool FileMatchesBuffer(
+        string fullPath,
+        byte[] expected)
     {
         if (!File.Exists(fullPath))
         {
@@ -774,9 +804,18 @@ public sealed class PeImageEditor
         return stream.ReadByte() == -1;
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Writes verified PE image via temporary file in the same private directory.")]
-    [SuppressMessage("Security", "SEC0112", Justification = "Creates random temporary file adjacent to caller-chosen private staging destination.")]
-    internal static void WriteAtomically(string fullDestination, string? directory, byte[] content)
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Writes verified PE image via temporary file in the same private directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0112",
+        Justification = "Creates random temporary file adjacent to caller-chosen private staging destination.")]
+    internal static void WriteAtomically(
+        string fullDestination,
+        string? directory,
+        byte[] content)
     {
         var tempDirectory = string.IsNullOrEmpty(directory) ? "." : directory;
         var tempPath = Path.Combine(
@@ -784,7 +823,12 @@ public sealed class PeImageEditor
             Path.GetFileName(fullDestination) + "." + Guid.NewGuid().ToString("N") + ".tmp");
         try
         {
-            using (var stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write, FileShare.None, bufferSize: 8192))
+            using (var stream = new FileStream(
+                       tempPath,
+                       FileMode.CreateNew,
+                       FileAccess.Write,
+                       FileShare.None,
+                       bufferSize: 8192))
             {
                 stream.Write(content, 0, content.Length);
                 stream.Flush(flushToDisk: true);
@@ -823,9 +867,12 @@ public sealed class PeImageEditor
         return editor;
     }
 
-    private static void ValidatePathArgument(string? path, string paramName)
+    private static void ValidatePathArgument(
+        string? path,
+        string paramName)
     {
-        if (path is null || string.IsNullOrWhiteSpace(path))
+        if (path is null
+            || string.IsNullOrWhiteSpace(path))
         {
             throw new ArgumentException("Path cannot be null or whitespace.", paramName);
         }
@@ -838,7 +885,9 @@ public sealed class PeImageEditor
 #pragma warning restore CA2249,MA0001
     }
 
-    private static void ValidateModuleRewriteArguments(string originalModuleName, string replacementModuleName)
+    private static void ValidateModuleRewriteArguments(
+        string originalModuleName,
+        string replacementModuleName)
     {
         PeNameValidator.ValidateModuleNameArgument(originalModuleName, nameof(originalModuleName));
         PeNameValidator.ValidateModuleNameArgument(replacementModuleName, nameof(replacementModuleName));
@@ -867,7 +916,10 @@ public sealed class PeImageEditor
         if (removal.WitnessRemainingModuleName is not null)
         {
             PeNameValidator.ValidateModuleNameArgument(removal.WitnessRemainingModuleName, nameof(removal));
-            if (string.Equals(removal.ModuleName, removal.WitnessRemainingModuleName, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(
+                    removal.ModuleName,
+                    removal.WitnessRemainingModuleName,
+                    StringComparison.OrdinalIgnoreCase))
             {
                 throw new ArgumentException(
                     "WitnessRemainingModuleName cannot be the same module as ModuleName.",
@@ -876,12 +928,20 @@ public sealed class PeImageEditor
         }
     }
 
-    private static bool ContainsImportModule(List<ImportModuleEntry> descriptors, string moduleName)
+    private static bool ContainsImportModule(
+        List<ImportModuleEntry> descriptors,
+        string moduleName)
     {
-        return descriptors.Exists(entry => string.Equals(entry.ModuleName, moduleName, StringComparison.OrdinalIgnoreCase));
+        return descriptors.Exists(entry => string.Equals(
+            entry.ModuleName,
+            moduleName,
+            StringComparison.OrdinalIgnoreCase));
     }
 
-    private static void ValidateShortStringPatchArguments(uint rva, string expectedOriginal, string replacement)
+    private static void ValidateShortStringPatchArguments(
+        uint rva,
+        string expectedOriginal,
+        string replacement)
     {
         if (rva == 0)
         {
@@ -907,7 +967,9 @@ public sealed class PeImageEditor
         }
     }
 
-    private static byte[] EncodeShortStringSlot(string value, int slotByteLength)
+    private static byte[] EncodeShortStringSlot(
+        string value,
+        int slotByteLength)
     {
         var result = new byte[slotByteLength];
         result[0] = checked((byte)value.Length);
@@ -915,7 +977,10 @@ public sealed class PeImageEditor
         return result;
     }
 
-    private static bool IsPrintableAsciiShortStringOfLength(byte[] buffer, int offset, int expectedLength)
+    private static bool IsPrintableAsciiShortStringOfLength(
+        byte[] buffer,
+        int offset,
+        int expectedLength)
     {
         if (buffer[offset] != expectedLength)
         {
@@ -934,14 +999,19 @@ public sealed class PeImageEditor
         return true;
     }
 
-    private static byte[] EncodeZeroPaddedAscii(string value, int totalByteLength)
+    private static byte[] EncodeZeroPaddedAscii(
+        string value,
+        int totalByteLength)
     {
         var result = new byte[totalByteLength];
         Encoding.ASCII.GetBytes(value, 0, value.Length, result, 0);
         return result;
     }
 
-    private static bool SliceEquals(byte[] buffer, int offset, byte[] expected)
+    private static bool SliceEquals(
+        byte[] buffer,
+        int offset,
+        byte[] expected)
     {
         for (var i = 0; i < expected.Length; i++)
         {
@@ -954,7 +1024,10 @@ public sealed class PeImageEditor
         return true;
     }
 
-    private static bool IsAllZero(byte[] buffer, int offset, int count)
+    private static bool IsAllZero(
+        byte[] buffer,
+        int offset,
+        int count)
     {
         for (var i = 0; i < count; i++)
         {
@@ -967,8 +1040,14 @@ public sealed class PeImageEditor
         return true;
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Cleans up temporary staging file created by WriteAtomically.")]
-    [SuppressMessage("Security", "SEC0116", Justification = "Deletes only the temporary file created by WriteAtomically.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Cleans up temporary staging file created by WriteAtomically.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0116",
+        Justification = "Deletes only the temporary file created by WriteAtomically.")]
     private static void TryDeleteTempFile(string tempPath)
     {
         try
@@ -1000,14 +1079,17 @@ public sealed class PeImageEditor
             {
                 originalMatches.Add(entry);
             }
-            else if (!isSameName && string.Equals(entry.ModuleName, replacementModuleName, StringComparison.Ordinal))
+            else if (!isSameName
+                     && string.Equals(entry.ModuleName, replacementModuleName, StringComparison.Ordinal))
             {
                 alreadyPatchedMatches.Add(entry);
             }
         }
     }
 
-    private void ApplySymbolRewriteToThunks(PeImportSymbolRewrite spec, List<NamedImportThunk> thunks)
+    private void ApplySymbolRewriteToThunks(
+        PeImportSymbolRewrite spec,
+        List<NamedImportThunk> thunks)
     {
         var slotLength = spec.OriginalSymbolName.Length + 1;
         var expectedBytes = EncodeZeroPaddedAscii(spec.OriginalSymbolName, slotLength);
@@ -1022,7 +1104,8 @@ public sealed class PeImageEditor
             {
                 originalMatches.Add(thunk);
             }
-            else if (!isSameSymbol && string.Equals(thunk.SymbolName, spec.ReplacementSymbolName, StringComparison.Ordinal))
+            else if (!isSameSymbol
+                     && string.Equals(thunk.SymbolName, spec.ReplacementSymbolName, StringComparison.Ordinal))
             {
                 alreadyPatchedMatches.Add(thunk);
             }
@@ -1037,7 +1120,8 @@ public sealed class PeImageEditor
 
         if (originalMatches.Count == 1)
         {
-            if (!isSameSymbol && alreadyPatchedMatches.Count > 0)
+            if (!isSameSymbol
+                && alreadyPatchedMatches.Count > 0)
             {
                 throw PeHeaderParser.CreateBadImage(
                     _imageLabel,
@@ -1073,14 +1157,18 @@ public sealed class PeImageEditor
     private List<ImportModuleEntry> ParseOrdinaryImportDescriptors()
     {
         var result = new List<ImportModuleEntry>();
-        if (_headers.ImportTableRva == 0 && _headers.ImportTableSize == 0)
+        if (_headers.ImportTableRva == 0
+            && _headers.ImportTableSize == 0)
         {
             return result;
         }
 
-        if (_headers.ImportTableRva == 0 || _headers.ImportTableSize < ImportDescriptorSize)
+        if (_headers.ImportTableRva == 0
+            || _headers.ImportTableSize < ImportDescriptorSize)
         {
-            throw PeHeaderParser.CreateBadImage(_imageLabel, "Ordinary import directory entry is truncated or invalid.");
+            throw PeHeaderParser.CreateBadImage(
+                _imageLabel,
+                "Ordinary import directory entry is truncated or invalid.");
         }
 
         var cursorRva = _headers.ImportTableRva;
@@ -1100,20 +1188,22 @@ public sealed class PeImageEditor
             var timeDateStamp = PeHeaderParser.ReadUInt32(_buffer, descOffset + 4);
             var nameRva = PeHeaderParser.ReadUInt32(_buffer, descOffset + 12);
             var firstThunk = PeHeaderParser.ReadUInt32(_buffer, descOffset + 16);
-            if (nameRva == 0 || (originalFirstThunk == 0 && firstThunk == 0))
+            if (nameRva == 0
+                || (originalFirstThunk == 0 && firstThunk == 0))
             {
                 throw PeHeaderParser.CreateBadImage(_imageLabel, "Malformed IMAGE_IMPORT_DESCRIPTOR entry.");
             }
 
             var moduleName = ReadValidatedModuleCString(nameRva, out var nameFileOffset);
-            result.Add(new ImportModuleEntry(
-                descOffset,
-                nameRva,
-                nameFileOffset,
-                moduleName,
-                originalFirstThunk,
-                firstThunk,
-                timeDateStamp));
+            result.Add(
+                new ImportModuleEntry(
+                    descOffset,
+                    nameRva,
+                    nameFileOffset,
+                    moduleName,
+                    originalFirstThunk,
+                    firstThunk,
+                    timeDateStamp));
             cursorRva = checked(cursorRva + (uint)ImportDescriptorSize);
         }
     }
@@ -1121,12 +1211,14 @@ public sealed class PeImageEditor
     private List<ImportModuleEntry> ParseDelayImportDescriptors()
     {
         var result = new List<ImportModuleEntry>();
-        if (_headers.DelayImportTableRva == 0 && _headers.DelayImportTableSize == 0)
+        if (_headers.DelayImportTableRva == 0
+            && _headers.DelayImportTableSize == 0)
         {
             return result;
         }
 
-        if (_headers.DelayImportTableRva == 0 || _headers.DelayImportTableSize < DelayImportDescriptorSize)
+        if (_headers.DelayImportTableRva == 0
+            || _headers.DelayImportTableSize < DelayImportDescriptorSize)
         {
             throw PeHeaderParser.CreateBadImage(_imageLabel, "Delay-import directory entry is truncated or invalid.");
         }
@@ -1144,7 +1236,9 @@ public sealed class PeImageEditor
             var dllNameRva = PeHeaderParser.ReadUInt32(_buffer, descOffset + 4);
             var iatRva = PeHeaderParser.ReadUInt32(_buffer, descOffset + 12);
             var intRva = PeHeaderParser.ReadUInt32(_buffer, descOffset + 16);
-            if ((attributes & DelayLoadRvaAttributeFlag) == 0 || dllNameRva == 0 || intRva == 0)
+            if ((attributes & DelayLoadRvaAttributeFlag) == 0
+                || dllNameRva == 0
+                || intRva == 0)
             {
                 throw PeHeaderParser.CreateBadImage(
                     _imageLabel,
@@ -1153,14 +1247,15 @@ public sealed class PeImageEditor
 
             var moduleName = ReadValidatedModuleCString(dllNameRva, out var nameFileOffset);
             ValidateThunkArray(intRva);
-            result.Add(new ImportModuleEntry(
-                descOffset,
-                dllNameRva,
-                nameFileOffset,
-                moduleName,
-                intRva,
-                iatRva,
-                timeDateStamp: 0));
+            result.Add(
+                new ImportModuleEntry(
+                    descOffset,
+                    dllNameRva,
+                    nameFileOffset,
+                    moduleName,
+                    intRva,
+                    iatRva,
+                    timeDateStamp: 0));
             cursorRva = checked(cursorRva + (uint)DelayImportDescriptorSize);
         }
     }
@@ -1193,7 +1288,8 @@ public sealed class PeImageEditor
 
         if (originalMatches.Count == 1)
         {
-            if (!isSameName && alreadyPatchedMatches.Count > 0)
+            if (!isSameName
+                && alreadyPatchedMatches.Count > 0)
             {
                 throw PeHeaderParser.CreateBadImage(
                     _imageLabel,
@@ -1211,7 +1307,10 @@ public sealed class PeImageEditor
         }
 
         if (alreadyPatchedMatches.Count == 1
-            && SliceEquals(_buffer, MapRvaRangeToFileOffset(alreadyPatchedMatches[0].NameRva, slotLength, out _), replacementBytes))
+            && SliceEquals(
+                _buffer,
+                MapRvaRangeToFileOffset(alreadyPatchedMatches[0].NameRva, slotLength, out _),
+                replacementBytes))
         {
             return;
         }
@@ -1253,11 +1352,12 @@ public sealed class PeImageEditor
         return found.Value;
     }
 
-#pragma warning disable S3776
+#pragma warning disable MA0051,S3776
     private List<NamedImportThunk> CollectModuleNamedThunks(ImportModuleEntry module)
-#pragma warning restore S3776
+#pragma warning restore MA0051,S3776
     {
-        if (module.OriginalFirstThunk == 0 && module.TimeDateStamp != 0)
+        if (module.OriginalFirstThunk == 0
+            && module.TimeDateStamp != 0)
         {
             throw PeHeaderParser.CreateBadImage(
                 _imageLabel,
@@ -1268,7 +1368,9 @@ public sealed class PeImageEditor
         var primaryNameRvas = ParseThunkNameRvas(primaryRva);
 
         uint[]? secondaryNameRvas = null;
-        if (module.OriginalFirstThunk != 0 && module.FirstThunk != 0 && module.TimeDateStamp == 0)
+        if (module.OriginalFirstThunk != 0
+            && module.FirstThunk != 0
+            && module.TimeDateStamp == 0)
         {
             secondaryNameRvas = ParseThunkNameRvas(module.FirstThunk);
             if (secondaryNameRvas.Length != primaryNameRvas.Length)
@@ -1290,7 +1392,9 @@ public sealed class PeImageEditor
 
             var primarySymbol = ReadValidatedImportByName(primaryByNameRva, out var primaryHint, out _);
             var secondaryByNameRva = 0u;
-            if (secondaryNameRvas is not null && secondaryNameRvas[i] != 0 && secondaryNameRvas[i] != primaryByNameRva)
+            if (secondaryNameRvas is not null
+                && secondaryNameRvas[i] != 0
+                && secondaryNameRvas[i] != primaryByNameRva)
             {
                 var secondarySymbol = ReadValidatedImportByName(secondaryNameRvas[i], out _, out _);
                 if (!string.Equals(primarySymbol, secondarySymbol, StringComparison.Ordinal))
@@ -1303,7 +1407,13 @@ public sealed class PeImageEditor
                 secondaryByNameRva = secondaryNameRvas[i];
             }
 
-            result.Add(new NamedImportThunk(module.DescriptorFileOffset, primaryByNameRva, secondaryByNameRva, primaryHint, primarySymbol));
+            result.Add(
+                new NamedImportThunk(
+                    module.DescriptorFileOffset,
+                    primaryByNameRva,
+                    secondaryByNameRva,
+                    primaryHint,
+                    primarySymbol));
         }
 
         return result;
@@ -1350,7 +1460,9 @@ public sealed class PeImageEditor
                 {
                     if (value64 > uint.MaxValue)
                     {
-                        throw PeHeaderParser.CreateBadImage(_imageLabel, "PE32+ import-by-name RVA overflows 32-bit RVA range.");
+                        throw PeHeaderParser.CreateBadImage(
+                            _imageLabel,
+                            "PE32+ import-by-name RVA overflows 32-bit RVA range.");
                     }
 
                     rvas.Add((uint)value64);
@@ -1472,7 +1584,9 @@ public sealed class PeImageEditor
         throw CreateRvaMismatchException(rva, fileOffset);
     }
 
-    private void WriteBufferIfDifferent(int fileOffset, byte[] replacement)
+    private void WriteBufferIfDifferent(
+        int fileOffset,
+        byte[] replacement)
     {
         if (SliceEquals(_buffer, fileOffset, replacement))
         {
@@ -1485,7 +1599,8 @@ public sealed class PeImageEditor
 
     private uint ReadValidatedExportNameRva()
     {
-        if (_headers.ExportTableRva == 0 || _headers.ExportTableSize < ExportDirectorySize)
+        if (_headers.ExportTableRva == 0
+            || _headers.ExportTableSize < ExportDirectorySize)
         {
             throw PeHeaderParser.CreateBadImage(
                 _imageLabel,
@@ -1553,7 +1668,9 @@ public sealed class PeImageEditor
         _hasUnreconciledModification = true;
     }
 
-    private string ReadValidatedModuleCString(uint stringRva, out int fileOffset)
+    private string ReadValidatedModuleCString(
+        uint stringRva,
+        out int fileOffset)
     {
         var text = ReadBoundedAsciiCString(stringRva, allowSpaces: true, out fileOffset);
 #pragma warning disable CA2249,MA0001
@@ -1572,14 +1689,20 @@ public sealed class PeImageEditor
         return text;
     }
 
-    private string ReadValidatedImportByName(uint byNameRva, out ushort hint, out int nameFileOffset)
+    private string ReadValidatedImportByName(
+        uint byNameRva,
+        out ushort hint,
+        out int nameFileOffset)
     {
         var hintOffset = MapRvaRangeToFileOffset(byNameRva, length: 3, out _);
         hint = PeHeaderParser.ReadUInt16(_buffer, hintOffset);
         return ReadBoundedAsciiCString(checked(byNameRva + 2u), allowSpaces: false, out nameFileOffset);
     }
 
-    private string ReadBoundedAsciiCString(uint stringRva, bool allowSpaces, out int fileOffset)
+    private string ReadBoundedAsciiCString(
+        uint stringRva,
+        bool allowSpaces,
+        out int fileOffset)
     {
         fileOffset = MapRvaRangeToFileOffset(stringRva, length: 1, out var remainingInSection);
         var minChar = allowSpaces ? 0x20 : 0x21;
@@ -1594,17 +1717,25 @@ public sealed class PeImageEditor
                 {
                     throw PeHeaderParser.CreateBadImage(
                         _imageLabel,
-                        string.Format(CultureInfo.InvariantCulture, "Empty string in PE import table at RVA 0x{0:X}.", stringRva));
+                        string.Format(
+                            CultureInfo.InvariantCulture,
+                            "Empty string in PE import table at RVA 0x{0:X}.",
+                            stringRva));
                 }
 
                 return Encoding.ASCII.GetString(_buffer, fileOffset, length);
             }
 
-            if (b < minChar || b > 0x7E)
+            if (b < minChar
+                || b > 0x7E)
             {
                 throw PeHeaderParser.CreateBadImage(
                     _imageLabel,
-                    string.Format(CultureInfo.InvariantCulture, "Non-ASCII or invalid character 0x{0:X2} in PE import string at RVA 0x{1:X}.", b, stringRva));
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Non-ASCII or invalid character 0x{0:X2} in PE import string at RVA 0x{1:X}.",
+                        b,
+                        stringRva));
             }
 
             length++;
@@ -1613,16 +1744,26 @@ public sealed class PeImageEditor
 
         throw PeHeaderParser.CreateBadImage(
             _imageLabel,
-            string.Format(CultureInfo.InvariantCulture, "Unterminated string in PE import table starting at RVA 0x{0:X}.", stringRva));
+            string.Format(
+                CultureInfo.InvariantCulture,
+                "Unterminated string in PE import table starting at RVA 0x{0:X}.",
+                stringRva));
     }
 
-    private int MapRvaRangeToFileOffset(uint rva, int length, out int remainingBytesInSection)
+    private int MapRvaRangeToFileOffset(
+        uint rva,
+        int length,
+        out int remainingBytesInSection)
     {
-        if (rva == 0 || length <= 0)
+        if (rva == 0
+            || length <= 0)
         {
             throw PeHeaderParser.CreateBadImage(
                 _imageLabel,
-                string.Format(CultureInfo.InvariantCulture, "RVA 0x{0:X} is not mapped to any file-backed section.", rva));
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "RVA 0x{0:X} is not mapped to any file-backed section.",
+                    rva));
         }
 
         var foundIndex = -1;
@@ -1632,13 +1773,15 @@ public sealed class PeImageEditor
         {
             var section = _headers.Sections[i];
             var backedLength = section.FileBackedSpanLength;
-            if (backedLength == 0 || rva < section.VirtualAddress)
+            if (backedLength == 0
+                || rva < section.VirtualAddress)
             {
                 continue;
             }
 
             var offsetInSection = (ulong)rva - section.VirtualAddress;
-            if (offsetInSection >= backedLength || offsetInSection + (ulong)length > backedLength)
+            if (offsetInSection >= backedLength
+                || offsetInSection + (ulong)length > backedLength)
             {
                 continue;
             }
@@ -1647,7 +1790,10 @@ public sealed class PeImageEditor
             {
                 throw PeHeaderParser.CreateBadImage(
                     _imageLabel,
-                    string.Format(CultureInfo.InvariantCulture, "Ambiguous overlapping PE sections cover RVA 0x{0:X}.", rva));
+                    string.Format(
+                        CultureInfo.InvariantCulture,
+                        "Ambiguous overlapping PE sections cover RVA 0x{0:X}.",
+                        rva));
             }
 
             foundIndex = i;
@@ -1659,7 +1805,11 @@ public sealed class PeImageEditor
         {
             throw PeHeaderParser.CreateBadImage(
                 _imageLabel,
-                string.Format(CultureInfo.InvariantCulture, "RVA range 0x{0:X}+0x{1:X} is not backed by raw section data.", rva, length));
+                string.Format(
+                    CultureInfo.InvariantCulture,
+                    "RVA range 0x{0:X}+0x{1:X} is not backed by raw section data.",
+                    rva,
+                    length));
         }
 
         remainingBytesInSection = resolvedRemaining;
@@ -1680,7 +1830,9 @@ public sealed class PeImageEditor
         return false;
     }
 
-    private BadImageFormatException CreateRvaMismatchException(uint rva, int fileOffset)
+    private BadImageFormatException CreateRvaMismatchException(
+        uint rva,
+        int fileOffset)
     {
         return PeHeaderParser.CreateBadImage(
             _imageLabel,

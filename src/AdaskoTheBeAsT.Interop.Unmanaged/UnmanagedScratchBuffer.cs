@@ -18,7 +18,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 #endif
 public sealed class UnmanagedScratchBuffer : SafeBuffer
 {
-    private static readonly byte[] ZeroChunk = new byte[4096];
+    private static readonly byte[] _zeroChunk = new byte[4096];
 
     private readonly int _byteLength;
 
@@ -27,12 +27,17 @@ public sealed class UnmanagedScratchBuffer : SafeBuffer
     /// </summary>
     /// <param name="byteLength">Positive unmanaged buffer byte length to allocate.</param>
     /// <param name="zeroMemory">When <see langword="true"/> (default), zero-fills the allocated unmanaged buffer before returning.</param>
-    public UnmanagedScratchBuffer(int byteLength, bool zeroMemory = true)
+    public UnmanagedScratchBuffer(
+        int byteLength,
+        bool zeroMemory = true)
         : base(ownsHandle: true)
     {
         if (byteLength <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(byteLength), byteLength, "Scratch buffer byte length must be greater than zero.");
+            throw new ArgumentOutOfRangeException(
+                nameof(byteLength),
+                byteLength,
+                "Scratch buffer byte length must be greater than zero.");
         }
 
         _byteLength = byteLength;
@@ -75,14 +80,21 @@ public sealed class UnmanagedScratchBuffer : SafeBuffer
     /// </summary>
     /// <param name="byteOffset">Zero-based byte offset inside the buffer.</param>
     /// <param name="byteCount">Non-negative number of bytes to clear.</param>
-    public void Clear(int byteOffset, int byteCount)
+    public void Clear(
+        int byteOffset,
+        int byteCount)
     {
-        if (byteOffset < 0 || byteOffset > _byteLength)
+        if (byteOffset < 0
+            || byteOffset > _byteLength)
         {
-            throw new ArgumentOutOfRangeException(nameof(byteOffset), byteOffset, "Byte offset is out of buffer bounds.");
+            throw new ArgumentOutOfRangeException(
+                nameof(byteOffset),
+                byteOffset,
+                "Byte offset is out of buffer bounds.");
         }
 
-        if (byteCount < 0 || byteOffset > _byteLength - byteCount)
+        if (byteCount < 0
+            || byteOffset > _byteLength - byteCount)
         {
             throw new ArgumentOutOfRangeException(nameof(byteCount), byteCount, "Byte count exceeds buffer bounds.");
         }
@@ -129,17 +141,20 @@ public sealed class UnmanagedScratchBuffer : SafeBuffer
         return true;
     }
 
-    private static void ZeroRange(IntPtr basePointer, int byteOffset, int byteCount)
+    private static void ZeroRange(
+        IntPtr basePointer,
+        int byteOffset,
+        int byteCount)
     {
         var cursor = byteOffset;
         var end = byteOffset + byteCount;
         while (cursor < end)
         {
-            var chunk = Math.Min(ZeroChunk.Length, end - cursor);
+            var chunk = Math.Min(_zeroChunk.Length, end - cursor);
             var target = IntPtr.Size == 8
                 ? new IntPtr(checked(basePointer.ToInt64() + cursor))
                 : new IntPtr(checked(basePointer.ToInt32() + cursor));
-            Marshal.Copy(ZeroChunk, 0, target, chunk);
+            Marshal.Copy(_zeroChunk, 0, target, chunk);
             cursor += chunk;
         }
     }
@@ -153,7 +168,10 @@ public sealed class UnmanagedScratchBuffer : SafeBuffer
         private UnmanagedScratchBuffer? _owner;
         private IntPtr _pointer;
 
-        internal PointerLease(UnmanagedScratchBuffer owner, IntPtr pointer, int byteLength)
+        internal PointerLease(
+            UnmanagedScratchBuffer owner,
+            IntPtr pointer,
+            int byteLength)
         {
             _owner = owner;
             _pointer = pointer;

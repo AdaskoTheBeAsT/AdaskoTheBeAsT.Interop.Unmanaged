@@ -30,7 +30,9 @@ public class IsolatedLibrarySetTests
     private delegate IntPtr GetPtrFn();
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate void SetDetachRecorderFn(IntPtr cursor, IntPtr slots);
+    private delegate void SetDetachRecorderFn(
+        IntPtr cursor,
+        IntPtr slots);
 
     [Fact]
     [SuppressMessage("Security", "SCS0018", Justification = "Creates test-owned temporary isolation root.")]
@@ -45,8 +47,10 @@ public class IsolatedLibrarySetTests
         var isolationRoot = CreateIsolationRoot(fixture);
         var cwdBefore = Environment.CurrentDirectory;
 
-        using var worker0 = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0));
-        using var worker1 = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 1));
+        using var worker0 =
+            IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0));
+        using var worker1 =
+            IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 1));
 
         Environment.CurrentDirectory.Should().Be(cwdBefore);
         worker0.VerifyDistinctFrom(worker1);
@@ -75,9 +79,11 @@ public class IsolatedLibrarySetTests
             dynLiteralRva = checked((uint)(ptr.ToInt64() - probe.BaseAddress.ToInt64()));
         }
 
-        using (var unpatchedSet = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 2)))
+        using (var unpatchedSet =
+               IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 2)))
         {
-            var queryUnpatched = unpatchedSet.GetLibrary("isoparent").GetUnmanagedFunction<GetPtrFn>("iso_parent_query_loaded_dyn_target")!;
+            var queryUnpatched = unpatchedSet.GetLibrary("isoparent")
+                .GetUnmanagedFunction<GetPtrFn>("iso_parent_query_loaded_dyn_target")!;
             queryUnpatched().Should().Be(IntPtr.Zero);
         }
 
@@ -92,24 +98,33 @@ public class IsolatedLibrarySetTests
                 new IsolatedModuleSpecification("isoleaf0.dll"),
                 new IsolatedModuleSpecification("isochild.dll")
                 {
-                    ImportSymbolRewrites = [new PeImportSymbolRewrite("isoleaf0.dll", "iso_sym_primary", "iso_sym_alt")],
+                    ImportSymbolRewrites =
+                        [new PeImportSymbolRewrite("isoleaf0.dll", "iso_sym_primary", "iso_sym_alt")],
                 },
                 new IsolatedModuleSpecification("isoparent.dll")
                 {
-                    VerifiedBytePatches = [PeVerifiedBytePatch.FromAsciiLiteral(dynLiteralRva, "isoleaf0.dll", targetLeafName)],
+                    VerifiedBytePatches =
+                        [PeVerifiedBytePatch.FromAsciiLiteral(dynLiteralRva, "isoleaf0.dll", targetLeafName)],
                 },
             ],
         };
 
         using var patchedSet = IsolatedLibrarySet.Create(patchedOptions);
-        var queryPatched = patchedSet.GetLibrary("isoparent").GetUnmanagedFunction<GetPtrFn>("iso_parent_query_loaded_dyn_target")!;
+        var queryPatched = patchedSet.GetLibrary("isoparent")
+            .GetUnmanagedFunction<GetPtrFn>("iso_parent_query_loaded_dyn_target")!;
         queryPatched().Should().Be(patchedSet.GetLibrary("isoleaf0").BaseAddress);
         patchedSet.GetLibrary("isochild").GetUnmanagedFunction<GetIntFn>("iso_child_call_symbol")!().Should().Be(222);
     }
 
     [Fact]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Intentional duplicate Dispose verifies idempotence.")]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit Dispose verifies reverse unload order and directory cleanup.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP016",
+        Justification = "Intentional duplicate Dispose verifies idempotence.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP017",
+        Justification = "Explicit Dispose verifies reverse unload order and directory cleanup.")]
     [SuppressMessage("Security", "SCS0018", Justification = "Checks worker directory removal inside test-owned root.")]
     public void Dispose_UnloadsModulesInReverseTopologicalOrder_AndDeletesWorkerDirectory()
     {
@@ -144,7 +159,10 @@ public class IsolatedLibrarySetTests
                 ],
             };
 
-            using var set = IsolatedLibrarySet.CreateCore(options, stagingFaultHook: null, onModuleUnloaded: callbackOrder.Add);
+            using var set = IsolatedLibrarySet.CreateCore(
+                options,
+                stagingFaultHook: null,
+                onModuleUnloaded: callbackOrder.Add);
             var workerDir = set.WorkerDirectory;
             RegisterDetachRecorders(set, cursorPtr, slotsPtr);
 
@@ -180,9 +198,12 @@ public class IsolatedLibrarySetTests
         using var fixture = new NativeFixture();
         var isolationRoot = CreateIsolationRoot(fixture);
 
-        using var poolA0 = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "A", generation: 1));
-        using var poolB0 = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "B", generation: 1));
-        using var poolAGen2 = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "A", generation: 2));
+        using var poolA0 = IsolatedLibrarySet.Create(
+            BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "A", generation: 1));
+        using var poolB0 = IsolatedLibrarySet.Create(
+            BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "B", generation: 1));
+        using var poolAGen2 = IsolatedLibrarySet.Create(
+            BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "A", generation: 2));
 
         poolA0.VerifyDistinctFrom(poolB0);
         poolA0.VerifyDistinctFrom(poolAGen2);
@@ -190,13 +211,25 @@ public class IsolatedLibrarySetTests
 
         Action duplicateSlot = () =>
         {
-            using var dup = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "A", generation: 1));
+            using var dup = IsolatedLibrarySet.Create(
+                BuildGraphOptions(
+                    fixture.DirectoryPath,
+                    isolationRoot,
+                    workerIndex: 0,
+                    namespaceId: "A",
+                    generation: 1));
         };
         duplicateSlot.Should().Throw<InvalidOperationException>();
 
         Action prefixCollision = () =>
         {
-            using var colliding = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 0, namespaceId: "plAA", generation: 36));
+            using var colliding = IsolatedLibrarySet.Create(
+                BuildGraphOptions(
+                    fixture.DirectoryPath,
+                    isolationRoot,
+                    workerIndex: 0,
+                    namespaceId: "plAA",
+                    generation: 36));
         };
         prefixCollision.Should().Throw<InvalidOperationException>().WithMessage("*collision*");
 
@@ -219,7 +252,13 @@ public class IsolatedLibrarySetTests
             IsolationRootDirectory = isolationRoot,
             WorkerIndex = 7,
             EnforceOwningThreadAffinity = true,
-            Modules = [new IsolatedModuleSpecification("isoleaf0.dll") { AlwaysRenameWithWorkerSuffix = true }],
+            Modules =
+            [
+                new IsolatedModuleSpecification("isoleaf0.dll")
+                {
+                    AlwaysRenameWithWorkerSuffix = true,
+                },
+            ],
         };
 
         using var set = IsolatedLibrarySet.Create(options);
@@ -291,7 +330,9 @@ public class IsolatedLibrarySetTests
         {
             using var faulted = IsolatedLibrarySet.CreateCore(
                 validOptions,
-                stagingFaultHook: (index, _) =>
+                stagingFaultHook: (
+                    index,
+                    _) =>
                 {
                     if (index == 2)
                     {
@@ -308,8 +349,14 @@ public class IsolatedLibrarySetTests
     }
 
     [Fact]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit Dispose simulates stale worker directory left on disk.")]
-    [SuppressMessage("Security", "SCS0018", Justification = "Exercises stale worker directory sweeper in test-owned root.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP017",
+        Justification = "Explicit Dispose simulates stale worker directory left on disk.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Exercises stale worker directory sweeper in test-owned root.")]
     [SuppressMessage("Security", "SEC0112", Justification = "Opens test lock file inside test-owned directory.")]
     [SuppressMessage("Security", "SEC0116", Justification = "Writes test file inside test-owned directory.")]
     public void SweepStaleWorkerDirectories_DeletesUnlockedOwnedDirs_SkipsActiveAndUnknown_AndReportsLocked()
@@ -326,22 +373,29 @@ public class IsolatedLibrarySetTests
         Directory.CreateDirectory(unknownDir);
         File.WriteAllText(Path.Combine(unknownDir, "keep.txt"), "user data");
 
-        using var activeSet = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 10));
+        using var activeSet =
+            IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 10));
 
         string staleUnlockedDir;
-        using (var tempSet = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 11, deleteOnDispose: false)))
+        using (var tempSet = IsolatedLibrarySet.Create(
+                   BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 11, deleteOnDispose: false)))
         {
             staleUnlockedDir = tempSet.WorkerDirectory;
         }
 
         string staleLockedDir;
-        using (var tempLockedSet = IsolatedLibrarySet.Create(BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 12, deleteOnDispose: false)))
+        using (var tempLockedSet = IsolatedLibrarySet.Create(
+                   BuildGraphOptions(fixture.DirectoryPath, isolationRoot, workerIndex: 12, deleteOnDispose: false)))
         {
             staleLockedDir = tempLockedSet.WorkerDirectory;
         }
 
         var lockedFilePath = Path.Combine(staleLockedDir, "locked.bin");
-        using (var lockStream = new FileStream(lockedFilePath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+        using (var lockStream = new FileStream(
+                   lockedFilePath,
+                   FileMode.CreateNew,
+                   FileAccess.ReadWrite,
+                   FileShare.None))
         {
             var firstSweep = IsolatedLibrarySet.SweepStaleWorkerDirectories(isolationRoot);
             firstSweep.DeletedDirectories.Should().ContainSingle().Which.Should().Be(staleUnlockedDir);
@@ -372,13 +426,14 @@ public class IsolatedLibrarySetTests
 
         Action overlap = () =>
         {
-            using var s = IsolatedLibrarySet.Create(new IsolatedLibrarySetOptions
-            {
-                SourceDirectory = fixture.DirectoryPath,
-                IsolationRootDirectory = Path.Combine(fixture.DirectoryPath, "nested"),
-                WorkerIndex = 0,
-                Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
-            });
+            using var s = IsolatedLibrarySet.Create(
+                new IsolatedLibrarySetOptions
+                {
+                    SourceDirectory = fixture.DirectoryPath,
+                    IsolationRootDirectory = Path.Combine(fixture.DirectoryPath, "nested"),
+                    WorkerIndex = 0,
+                    Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
+                });
         };
         overlap.Should().Throw<ArgumentException>();
     }
@@ -437,12 +492,20 @@ public class IsolatedLibrarySetTests
         var stagedCompactPath = compactLib.GetLoadedFilePath();
         var stagedEditor = PeImageEditor.FromFile(stagedCompactPath);
         stagedEditor.GetExportModuleName().Should().Be(Path.GetFileName(stagedCompactPath));
-        stagedEditor.GetImportedModuleNames().Should().NotContain(m => string.Equals(m, "isounused.dll", StringComparison.OrdinalIgnoreCase));
+        stagedEditor.GetImportedModuleNames()
+            .Should()
+            .NotContain(m => string.Equals(m, "isounused.dll", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    [SuppressMessage("Security", "SCS0018", Justification = "Creates companion files and directories in test-owned fixture directory.")]
-    [SuppressMessage("Security", "SEC0116", Justification = "Writes companion test assets inside test-owned fixture directory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Creates companion files and directories in test-owned fixture directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0116",
+        Justification = "Writes companion test assets inside test-owned fixture directory.")]
     public void CompanionFilesAndDirectories_StageBeforeDllMain_AndSupportTransformBytes()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -474,7 +537,9 @@ public class IsolatedLibrarySetTests
                 {
                     SourceRelativePath = "source_boot.cfg",
                     TargetRelativePath = "iso_boot.cfg",
-                    TransformBytes = (_, workerDir) => System.Text.Encoding.ASCII.GetBytes("BOOT:" + Path.GetFileName(workerDir)),
+                    TransformBytes = (
+                        _,
+                        workerDir) => System.Text.Encoding.ASCII.GetBytes("BOOT:" + Path.GetFileName(workerDir)),
                 },
             ],
             CompanionDirectories =
@@ -518,28 +583,30 @@ public class IsolatedLibrarySetTests
 
             Action nonAsciiFail = () =>
             {
-                using var s = IsolatedLibrarySet.Create(new IsolatedLibrarySetOptions
-                {
-                    SourceDirectory = fixture.DirectoryPath,
-                    IsolationRootDirectory = unicodeIsoRoot,
-                    WorkerIndex = 17,
-                    RequireAsciiWorkerPaths = true,
-                    Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
-                });
+                using var s = IsolatedLibrarySet.Create(
+                    new IsolatedLibrarySetOptions
+                    {
+                        SourceDirectory = fixture.DirectoryPath,
+                        IsolationRootDirectory = unicodeIsoRoot,
+                        WorkerIndex = 17,
+                        RequireAsciiWorkerPaths = true,
+                        Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
+                    });
             };
             nonAsciiFail.Should().Throw<ArgumentException>();
             Directory.Exists(unicodeIsoRoot).Should().BeFalse();
 
             Action tooLongFail = () =>
             {
-                using var s = IsolatedLibrarySet.Create(new IsolatedLibrarySetOptions
-                {
-                    SourceDirectory = fixture.DirectoryPath,
-                    IsolationRootDirectory = asciiIsoRoot,
-                    WorkerIndex = 18,
-                    MaxWorkerFilePathLength = 24,
-                    Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
-                });
+                using var s = IsolatedLibrarySet.Create(
+                    new IsolatedLibrarySetOptions
+                    {
+                        SourceDirectory = fixture.DirectoryPath,
+                        IsolationRootDirectory = asciiIsoRoot,
+                        WorkerIndex = 18,
+                        MaxWorkerFilePathLength = 24,
+                        Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
+                    });
             };
             tooLongFail.Should().Throw<PathTooLongException>();
             Directory.Exists(asciiIsoRoot).Should().BeFalse();
@@ -557,9 +624,18 @@ public class IsolatedLibrarySetTests
 #if NET10_0_OR_GREATER
     [SupportedOSPlatform("windows")]
 #endif
-    [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Verifies post-dispose ObjectDisposedException.")]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit Dispose tests PinModulesForProcessLifetime.")]
-    [SuppressMessage("Security", "SCS0018", Justification = "Uses isolated process-lifetime directory under temp root.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP016",
+        Justification = "Verifies post-dispose ObjectDisposedException.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP017",
+        Justification = "Explicit Dispose tests PinModulesForProcessLifetime.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Uses isolated process-lifetime directory under temp root.")]
     public void PinModulesForProcessLifetime_KeepsModuleMappedAndLeaseProtectedAcrossDisposeAndSweep()
     {
         if (TestHelpers.SkipIfNotWindows())
@@ -576,7 +652,13 @@ public class IsolatedLibrarySetTests
             NamespaceId = "pn99",
             WorkerIndex = 99,
             PinModulesForProcessLifetime = true,
-            Modules = [new IsolatedModuleSpecification("isoleaf0.dll") { AlwaysRenameWithWorkerSuffix = true }],
+            Modules =
+            [
+                new IsolatedModuleSpecification("isoleaf0.dll")
+                {
+                    AlwaysRenameWithWorkerSuffix = true,
+                },
+            ],
         };
 
         var pinnedSet = IsolatedLibrarySet.Create(options);
@@ -602,32 +684,55 @@ public class IsolatedLibrarySetTests
         Directory.Exists(workerDir).Should().BeTrue();
     }
 
-    private static void AssertTraversalAndCollisionRejected(string sourceDirectory, string isolationRoot)
+    private static void AssertTraversalAndCollisionRejected(
+        string sourceDirectory,
+        string isolationRoot)
     {
         Action traversal = () =>
         {
-            using var s = IsolatedLibrarySet.Create(new IsolatedLibrarySetOptions
-            {
-                SourceDirectory = sourceDirectory,
-                IsolationRootDirectory = isolationRoot,
-                WorkerIndex = 19,
-                Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
-                CompanionFiles = [new IsolatedCompanionFileSpecification { SourceRelativePath = "../secret.ini" }],
-            });
+            using var s = IsolatedLibrarySet.Create(
+                new IsolatedLibrarySetOptions
+                {
+                    SourceDirectory = sourceDirectory,
+                    IsolationRootDirectory = isolationRoot,
+                    WorkerIndex = 19,
+                    Modules = [new IsolatedModuleSpecification("isoleaf0.dll")],
+                    CompanionFiles =
+                    [
+                        new IsolatedCompanionFileSpecification
+                        {
+                            SourceRelativePath = "../secret.ini",
+                        },
+                    ],
+                });
         };
         traversal.Should().Throw<ArgumentException>();
 
         var targetLeaf = WorkerModuleNaming.FormatFixedLengthName("isoleaf0.dll", 20);
         Action collision = () =>
         {
-            using var s = IsolatedLibrarySet.Create(new IsolatedLibrarySetOptions
-            {
-                SourceDirectory = sourceDirectory,
-                IsolationRootDirectory = isolationRoot,
-                WorkerIndex = 20,
-                Modules = [new IsolatedModuleSpecification("isoleaf0.dll") { AlwaysRenameWithWorkerSuffix = true }],
-                CompanionFiles = [new IsolatedCompanionFileSpecification { SourceRelativePath = "cfg.ini", TargetRelativePath = targetLeaf }],
-            });
+            using var s = IsolatedLibrarySet.Create(
+                new IsolatedLibrarySetOptions
+                {
+                    SourceDirectory = sourceDirectory,
+                    IsolationRootDirectory = isolationRoot,
+                    WorkerIndex = 20,
+                    Modules =
+                    [
+                        new IsolatedModuleSpecification("isoleaf0.dll")
+                        {
+                            AlwaysRenameWithWorkerSuffix = true,
+                        },
+                    ],
+                    CompanionFiles =
+                    [
+                        new IsolatedCompanionFileSpecification
+                        {
+                            SourceRelativePath = "cfg.ini",
+                            TargetRelativePath = targetLeaf,
+                        },
+                    ],
+                });
         };
         collision.Should().Throw<InvalidOperationException>();
     }
@@ -655,7 +760,10 @@ public class IsolatedLibrarySetTests
             DeleteDirectoryOnDispose = deleteOnDispose,
             Modules =
             [
-                new IsolatedModuleSpecification("isoparent.dll") { RewriteDelayImports = true },
+                new IsolatedModuleSpecification("isoparent.dll")
+                {
+                    RewriteDelayImports = true,
+                },
                 new IsolatedModuleSpecification("isochild.dll"),
                 new IsolatedModuleSpecification("isoleaf0.dll"),
                 new IsolatedModuleSpecification("isodelay.dll"),
@@ -663,7 +771,10 @@ public class IsolatedLibrarySetTests
         };
     }
 
-    private static void RunConcurrentMutations(IsolatedLibrarySet worker0, IsolatedLibrarySet worker1, int iterations)
+    private static void RunConcurrentMutations(
+        IsolatedLibrarySet worker0,
+        IsolatedLibrarySet worker1,
+        int iterations)
     {
         var step0 = worker0.GetLibrary("isoparent").GetUnmanagedFunction<StepFn>("iso_parent_step")!;
         var delay0 = worker0.GetLibrary("isoparent").GetUnmanagedFunction<StepFn>("iso_parent_call_delay")!;
@@ -689,7 +800,10 @@ public class IsolatedLibrarySetTests
             });
     }
 
-    private static void VerifyIndependentCounters(IsolatedLibrarySet worker0, IsolatedLibrarySet worker1, int iterations)
+    private static void VerifyIndependentCounters(
+        IsolatedLibrarySet worker0,
+        IsolatedLibrarySet worker1,
+        int iterations)
     {
         var p0 = worker0.GetLibrary("isoparent");
         p0.GetUnmanagedFunction<GetIntFn>("iso_parent_get_state")!().Should().Be(10000 + (iterations * 100));
@@ -706,10 +820,19 @@ public class IsolatedLibrarySetTests
         worker1.GetLibrary("isoleaf0").GetUnmanagedFunction<GetIntFn>("iso_leaf_get_calls")!().Should().Be(iterations);
     }
 
-    private static void RegisterDetachRecorders(IsolatedLibrarySet set, IntPtr cursorPtr, IntPtr slotsPtr)
+    private static void RegisterDetachRecorders(
+        IsolatedLibrarySet set,
+        IntPtr cursorPtr,
+        IntPtr slotsPtr)
     {
-        set.GetLibrary("isoleaf0").GetUnmanagedFunction<SetDetachRecorderFn>("iso_leaf_set_detach_recorder")!(cursorPtr, slotsPtr);
-        set.GetLibrary("isochild").GetUnmanagedFunction<SetDetachRecorderFn>("iso_child_set_detach_recorder")!(cursorPtr, slotsPtr);
-        set.GetLibrary("isoparent").GetUnmanagedFunction<SetDetachRecorderFn>("iso_parent_set_detach_recorder")!(cursorPtr, slotsPtr);
+        set.GetLibrary("isoleaf0").GetUnmanagedFunction<SetDetachRecorderFn>("iso_leaf_set_detach_recorder")!(
+            cursorPtr,
+            slotsPtr);
+        set.GetLibrary("isochild").GetUnmanagedFunction<SetDetachRecorderFn>("iso_child_set_detach_recorder")!(
+            cursorPtr,
+            slotsPtr);
+        set.GetLibrary("isoparent").GetUnmanagedFunction<SetDetachRecorderFn>("iso_parent_set_detach_recorder")!(
+            cursorPtr,
+            slotsPtr);
     }
 }

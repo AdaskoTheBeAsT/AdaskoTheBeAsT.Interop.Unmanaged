@@ -40,7 +40,11 @@ public class WorkerModuleNamingTests
             WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pA", workerIndex: 0, generation: 1),
             WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pA", workerIndex: 0, generation: 36),
             WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: "pA", workerIndex: 1, generation: 36),
-            WorkerModuleNaming.FormatScopedFixedLengthName(original, namespaceId: null, workerIndex: 0, generation: 1295),
+            WorkerModuleNaming.FormatScopedFixedLengthName(
+                original,
+                namespaceId: null,
+                workerIndex: 0,
+                generation: 1295),
         };
 
         foreach (var name in candidates)

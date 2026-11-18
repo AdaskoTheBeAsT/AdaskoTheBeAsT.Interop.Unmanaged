@@ -10,7 +10,9 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
 public class UnmanagedLibraryAdvancedTests
 {
-    private delegate int SimpleDelegate(int x, int y);
+    private delegate int SimpleDelegate(
+        int x,
+        int y);
 
     private delegate void GenericDelegate<T>(T value);
 
@@ -35,7 +37,9 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithSimpleDelegate_ReturnsValidPointer()
     {
         // Arrange
-        SimpleDelegate callback = (x, y) => x + y;
+        SimpleDelegate callback = (
+            x,
+            y) => x + y;
 
         // Act
         var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
@@ -52,7 +56,8 @@ public class UnmanagedLibraryAdvancedTests
         Action act = () => _ = UnmanagedLibrary.GetFunctionPointerForDelegate<Action>(null!, out _);
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        act.Should()
+            .Throw<ArgumentNullException>()
             .WithParameterName("delegateCallback");
     }
 
@@ -60,7 +65,9 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_BinderKeepsDelegateAlive()
     {
         // Arrange
-        SimpleDelegate callback = (x, y) => x + y;
+        SimpleDelegate callback = (
+            x,
+            y) => x + y;
 
         // Act
         _ = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
@@ -156,10 +163,12 @@ public class UnmanagedLibraryAdvancedTests
     public void GetDelegateForFunctionPointer_WithZeroPointer_ThrowsArgumentException()
     {
         // Act
-        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<SimpleDelegate>(IntPtr.Zero, CallingConvention.StdCall);
+        Action act = () =>
+            _ = UnmanagedLibrary.GetDelegateForFunctionPointer<SimpleDelegate>(IntPtr.Zero, CallingConvention.StdCall);
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithParameterName("ptr");
     }
 
@@ -167,10 +176,12 @@ public class UnmanagedLibraryAdvancedTests
     public void GetDelegateForFunctionPointer_WithNonDelegateType_ThrowsInvalidOperationException()
     {
         // Act
-        Action act = () => _ = UnmanagedLibrary.GetDelegateForFunctionPointer<object>(new IntPtr(1), CallingConvention.StdCall);
+        Action act = () =>
+            _ = UnmanagedLibrary.GetDelegateForFunctionPointer<object>(new IntPtr(1), CallingConvention.StdCall);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Should()
+            .Throw<InvalidOperationException>()
             .WithMessage("*delegate type*");
     }
 
@@ -184,7 +195,8 @@ public class UnmanagedLibraryAdvancedTests
 
         // Arrange - obtain raw native function pointer for kernel32!GetCurrentProcessId
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
-        var original = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var original =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
         var ptr = Marshal.GetFunctionPointerForDelegate(original!);
 
         // Act - re-wrap via IL-emit path with unmanaged calling convention
@@ -276,7 +288,9 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithManagedCallback_ReturnsValidPointer()
     {
         // Arrange
-        SimpleDelegate originalCallback = (x, y) => x + y;
+        SimpleDelegate originalCallback = (
+            x,
+            y) => x + y;
 
         // Act
         var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(originalCallback, out var binder);
@@ -294,8 +308,12 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithMultipleCallbacks_ReturnsValidPointers()
     {
         // Arrange
-        SimpleDelegate callback1 = (x, y) => x + y;
-        SimpleDelegate callback2 = (x, y) => x * y;
+        SimpleDelegate callback1 = (
+            x,
+            y) => x + y;
+        SimpleDelegate callback2 = (
+            x,
+            y) => x * y;
 
         // Act
         var ptr1 = UnmanagedLibrary.GetFunctionPointerForDelegate(callback1, out _);
@@ -313,7 +331,10 @@ public class UnmanagedLibraryAdvancedTests
     public void GetFunctionPointerForDelegate_WithFuncDelegate_WorksCorrectly()
     {
         // Arrange
-        Func<int, int, int, int> callback = (a, b, c) => a + b + c;
+        Func<int, int, int, int> callback = (
+            a,
+            b,
+            c) => a + b + c;
 
         // Act
         var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
@@ -378,7 +399,8 @@ public class UnmanagedLibraryAdvancedTests
     }
 
     [Fact]
-    public void GetFunctionPointerForDelegate_GenericDelegate_WithoutUnmanagedFunctionPointerAttribute_DoesNotCopyAttribute()
+    public void
+        GetFunctionPointerForDelegate_GenericDelegate_WithoutUnmanagedFunctionPointerAttribute_DoesNotCopyAttribute()
     {
         // Arrange - a generic delegate type WITHOUT [UnmanagedFunctionPointer]
         GenericDelegate<double> callback = value => Console.WriteLine(value);

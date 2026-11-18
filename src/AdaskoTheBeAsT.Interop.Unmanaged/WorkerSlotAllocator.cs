@@ -44,7 +44,10 @@ public sealed class WorkerSlotAllocator
     {
         if (maxExclusive <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(maxExclusive), maxExclusive, "maxExclusive must be greater than zero.");
+            throw new ArgumentOutOfRangeException(
+                nameof(maxExclusive),
+                maxExclusive,
+                "maxExclusive must be greater than zero.");
         }
 
         _maxExclusive = maxExclusive;
@@ -57,7 +60,8 @@ public sealed class WorkerSlotAllocator
         {
             foreach (var slot in excludedSlots)
             {
-                if (slot < 0 || slot >= maxExclusive)
+                if (slot < 0
+                    || slot >= maxExclusive)
                 {
                     throw new ArgumentOutOfRangeException(
                         nameof(excludedSlots),
@@ -120,7 +124,9 @@ public sealed class WorkerSlotAllocator
     /// <param name="lease">Receives the acquired <see cref="WorkerSlotLease"/> when successful; otherwise <see langword="null"/>.</param>
     /// <param name="preferredSlot">Optional preferred slot index in <c>[0, maxExclusive)</c>.</param>
     /// <returns><see langword="true"/> when a slot was leased; <see langword="false"/> when all non-excluded slots are occupied.</returns>
-    public bool TryAcquire([NotNullWhen(true)] out WorkerSlotLease? lease, int? preferredSlot = null)
+    public bool TryAcquire(
+        [NotNullWhen(true)] out WorkerSlotLease? lease,
+        int? preferredSlot = null)
     {
         if (TryClaimSlotIndex(preferredSlot, out var slotIndex))
         {
@@ -151,10 +157,13 @@ public sealed class WorkerSlotAllocator
         }
     }
 
-    private static bool TryGetThreadStickySlot(WorkerSlotAllocator allocator, out int slotIndex)
+    private static bool TryGetThreadStickySlot(
+        WorkerSlotAllocator allocator,
+        out int slotIndex)
     {
         var table = _threadStickySlots;
-        if (table is not null && table.TryGetValue(allocator, out var box))
+        if (table is not null
+            && table.TryGetValue(allocator, out var box))
         {
             slotIndex = box.Value;
             return true;
@@ -164,7 +173,9 @@ public sealed class WorkerSlotAllocator
         return false;
     }
 
-    private static void RecordThreadStickySlot(WorkerSlotAllocator allocator, int slotIndex)
+    private static void RecordThreadStickySlot(
+        WorkerSlotAllocator allocator,
+        int slotIndex)
     {
         var table = _threadStickySlots;
         if (table is null)
@@ -187,9 +198,12 @@ public sealed class WorkerSlotAllocator
         }
     }
 
-    private bool TryClaimSlotIndex(int? preferredSlot, out int slotIndex)
+    private bool TryClaimSlotIndex(
+        int? preferredSlot,
+        out int slotIndex)
     {
-        if (preferredSlot.HasValue && (preferredSlot.Value < 0 || preferredSlot.Value >= _maxExclusive))
+        if (preferredSlot.HasValue
+            && (preferredSlot.Value < 0 || preferredSlot.Value >= _maxExclusive))
         {
             throw new ArgumentOutOfRangeException(
                 nameof(preferredSlot),
@@ -205,7 +219,8 @@ public sealed class WorkerSlotAllocator
                 return false;
             }
 
-            if (preferredSlot.HasValue && IsFreeUnsafe(preferredSlot.Value))
+            if (preferredSlot.HasValue
+                && IsFreeUnsafe(preferredSlot.Value))
             {
                 slotIndex = MarkOccupiedUnsafe(preferredSlot.Value);
                 return true;
@@ -236,9 +251,9 @@ public sealed class WorkerSlotAllocator
     private bool IsFreeUnsafe(int slotIndex)
     {
         return slotIndex >= 0
-            && slotIndex < _maxExclusive
-            && !_excluded[slotIndex]
-            && !_occupied[slotIndex];
+               && slotIndex < _maxExclusive
+               && !_excluded[slotIndex]
+               && !_occupied[slotIndex];
     }
 
     private int MarkOccupiedUnsafe(int slotIndex)

@@ -23,7 +23,9 @@ public class NativeExecutionGuardTests
     private delegate void VoidFn();
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate double DivideFn(double numerator, double denominator);
+    private delegate double DivideFn(
+        double numerator,
+        double denominator);
 
     [Fact]
     public void EnterScope_AppliesAndRestoresThreadErrorMode_WithoutMutatingProcessErrorMode()
@@ -46,7 +48,8 @@ public class NativeExecutionGuardTests
             uint activeThreadMode;
             uint processDuringScope;
 
-            using (var scope = NativeExecutionGuard.EnterScope(NativeErrorModes.FailCriticalErrors | NativeErrorModes.NoOpenFileErrorBox))
+            using (var scope = NativeExecutionGuard.EnterScope(
+                       NativeErrorModes.FailCriticalErrors | NativeErrorModes.NoOpenFileErrorBox))
             {
                 ownerThreadId = (uint)scope.OwnerThreadId;
                 activeThreadMode = WindowsExecutionNativeMethods.GetThreadErrorMode();
@@ -206,7 +209,8 @@ public class NativeExecutionGuardTests
         {
             _ = NativeExecutionGuard.SuppressProcessErrorDialogs();
             var updated = WindowsExecutionNativeMethods.GetErrorMode();
-            (updated & (uint)NativeErrorModes.SuppressErrorDialogs).Should().Be((uint)NativeErrorModes.SuppressErrorDialogs);
+            (updated & (uint)NativeErrorModes.SuppressErrorDialogs).Should()
+                .Be((uint)NativeErrorModes.SuppressErrorDialogs);
         }
         finally
         {

@@ -36,36 +36,55 @@ internal static class PeHeaderParser
         var characteristics = ReadUInt16(buffer, coffOffset + 18);
 
         ValidateCoffFields(machine, sectionCount, characteristics, imageLabel, validation);
-        return ParseOptionalHeaderAndSections(buffer, coffOffset, machine, sectionCount, optionalHeaderSize, imageLabel, validation);
+        return ParseOptionalHeaderAndSections(
+            buffer,
+            coffOffset,
+            machine,
+            sectionCount,
+            optionalHeaderSize,
+            imageLabel,
+            validation);
     }
 
-    internal static ushort ReadUInt16(byte[] buffer, int offset)
+    internal static ushort ReadUInt16(
+        byte[] buffer,
+        int offset)
     {
         return (ushort)(buffer[offset] | (buffer[offset + 1] << 8));
     }
 
-    internal static uint ReadUInt32(byte[] buffer, int offset)
+    internal static uint ReadUInt32(
+        byte[] buffer,
+        int offset)
     {
         return (uint)(buffer[offset]
-            | (buffer[offset + 1] << 8)
-            | (buffer[offset + 2] << 16)
-            | (buffer[offset + 3] << 24));
+                      | (buffer[offset + 1] << 8)
+                      | (buffer[offset + 2] << 16)
+                      | (buffer[offset + 3] << 24));
     }
 
-    internal static ulong ReadUInt64(byte[] buffer, int offset)
+    internal static ulong ReadUInt64(
+        byte[] buffer,
+        int offset)
     {
         var low = ReadUInt32(buffer, offset);
         var high = ReadUInt32(buffer, offset + 4);
         return low | ((ulong)high << 32);
     }
 
-    internal static void WriteUInt16(byte[] buffer, int offset, ushort value)
+    internal static void WriteUInt16(
+        byte[] buffer,
+        int offset,
+        ushort value)
     {
         buffer[offset] = (byte)(value & 0xFF);
         buffer[offset + 1] = (byte)((value >> 8) & 0xFF);
     }
 
-    internal static void WriteUInt32(byte[] buffer, int offset, uint value)
+    internal static void WriteUInt32(
+        byte[] buffer,
+        int offset,
+        uint value)
     {
         buffer[offset] = (byte)(value & 0xFF);
         buffer[offset + 1] = (byte)((value >> 8) & 0xFF);
@@ -73,7 +92,9 @@ internal static class PeHeaderParser
         buffer[offset + 3] = (byte)((value >> 24) & 0xFF);
     }
 
-    internal static BadImageFormatException CreateBadImage(string imageLabel, string detail)
+    internal static BadImageFormatException CreateBadImage(
+        string imageLabel,
+        string detail)
     {
         return new BadImageFormatException($"Invalid PE image '{imageLabel}': {detail}");
     }
@@ -88,7 +109,8 @@ internal static class PeHeaderParser
         PeImageValidationOptions validation)
     {
         var optOffset = coffOffset + CoffHeaderSize;
-        if ((long)optOffset + optionalHeaderSize > buffer.Length || optionalHeaderSize < 96)
+        if ((long)optOffset + optionalHeaderSize > buffer.Length
+            || optionalHeaderSize < 96)
         {
             throw CreateBadImage(imageLabel, "Optional header is truncated or exceeds file bounds.");
         }
@@ -107,12 +129,22 @@ internal static class PeHeaderParser
 
         var sectionTableOffset = optOffset + optionalHeaderSize;
         var sectionTableEnd = (long)sectionTableOffset + ((long)sectionCount * SectionHeaderSize);
-        if (sizeOfHeaders > buffer.Length || sectionTableEnd > buffer.Length || sectionTableEnd > sizeOfHeaders || sizeOfImage < sizeOfHeaders)
+        if (sizeOfHeaders > buffer.Length
+            || sectionTableEnd > buffer.Length
+            || sectionTableEnd > sizeOfHeaders
+            || sizeOfImage < sizeOfHeaders)
         {
             throw CreateBadImage(imageLabel, "Section table or header sizes exceed PE image bounds.");
         }
 
-        var sections = ParseSections(buffer, sectionTableOffset, sectionCount, sectionTableEnd, sizeOfHeaders, sizeOfImage, imageLabel);
+        var sections = ParseSections(
+            buffer,
+            sectionTableOffset,
+            sectionCount,
+            sectionTableEnd,
+            sizeOfHeaders,
+            sizeOfImage,
+            imageLabel);
 #if NET8_0_OR_GREATER
         CrossValidateWithPeReader(buffer, imageLabel, validation, machine, isPe32Plus, sectionCount);
 #endif
@@ -150,12 +182,21 @@ internal static class PeHeaderParser
         ReadDataDirectory(buffer, dataDirOffset, numDataDirs, index: 0, out var exportRva, out var exportSize);
         ReadDataDirectory(buffer, dataDirOffset, numDataDirs, index: 1, out var importRva, out var importSize);
         ReadDataDirectory(buffer, dataDirOffset, numDataDirs, index: 4, out var securityOffset, out var securitySize);
-        ReadDataDirectory(buffer, dataDirOffset, numDataDirs, index: 13, out var delayImportRva, out var delayImportSize);
+        ReadDataDirectory(
+            buffer,
+            dataDirOffset,
+            numDataDirs,
+            index: 13,
+            out var delayImportRva,
+            out var delayImportSize);
         ReadDataDirectory(buffer, dataDirOffset, numDataDirs, index: 14, out var corHeaderRva, out var corHeaderSize);
 
-        if (validation.RequireUnmanagedImage && (corHeaderRva != 0 || corHeaderSize != 0))
+        if (validation.RequireUnmanagedImage
+            && (corHeaderRva != 0 || corHeaderSize != 0))
         {
-            throw CreateBadImage(imageLabel, "Managed CLI/CLR assemblies are not supported; expected an unmanaged native PE image.");
+            throw CreateBadImage(
+                imageLabel,
+                "Managed CLI/CLR assemblies are not supported; expected an unmanaged native PE image.");
         }
 
         ValidateSecurityDirectory(buffer.Length, sizeOfHeaders, securityOffset, securitySize, imageLabel);
@@ -188,7 +229,8 @@ internal static class PeHeaderParser
         string imageLabel,
         PeImageValidationOptions validation)
     {
-        if (validation.ExpectedFileLength.HasValue && buffer.LongLength != validation.ExpectedFileLength.Value)
+        if (validation.ExpectedFileLength.HasValue
+            && buffer.LongLength != validation.ExpectedFileLength.Value)
         {
             throw CreateBadImage(
                 imageLabel,
@@ -200,15 +242,19 @@ internal static class PeHeaderParser
         }
     }
 
-    private static int ReadAndValidatePeSignatureOffset(byte[] buffer, string imageLabel)
+    private static int ReadAndValidatePeSignatureOffset(
+        byte[] buffer,
+        string imageLabel)
     {
-        if (buffer.Length < DosHeaderSize || ReadUInt16(buffer, 0) != DosSignature)
+        if (buffer.Length < DosHeaderSize
+            || ReadUInt16(buffer, 0) != DosSignature)
         {
             throw CreateBadImage(imageLabel, "Missing DOS 'MZ' header.");
         }
 
         var peOffset = unchecked((int)ReadUInt32(buffer, 0x3C));
-        if (peOffset < DosHeaderSize || (long)peOffset + 4L + CoffHeaderSize > buffer.Length)
+        if (peOffset < DosHeaderSize
+            || (long)peOffset + 4L + CoffHeaderSize > buffer.Length)
         {
             throw CreateBadImage(imageLabel, "Invalid or out-of-range e_lfanew PE header offset.");
         }
@@ -235,7 +281,8 @@ internal static class PeHeaderParser
                 string.Format(CultureInfo.InvariantCulture, "Unsupported COFF machine 0x{0:X4}.", machine));
         }
 
-        if (validation.ExpectedMachine.HasValue && machine != validation.ExpectedMachine.Value)
+        if (validation.ExpectedMachine.HasValue
+            && machine != validation.ExpectedMachine.Value)
         {
             throw CreateBadImage(
                 imageLabel,
@@ -246,14 +293,16 @@ internal static class PeHeaderParser
                     machine));
         }
 
-        if (sectionCount == 0 || sectionCount > MaxSections)
+        if (sectionCount == 0
+            || sectionCount > MaxSections)
         {
             throw CreateBadImage(
                 imageLabel,
                 string.Format(CultureInfo.InvariantCulture, "Unsupported section count {0}.", sectionCount));
         }
 
-        if (validation.RequireDll && (characteristics & ImageFileDllFlag) == 0)
+        if (validation.RequireDll
+            && (characteristics & ImageFileDllFlag) == 0)
         {
             throw CreateBadImage(imageLabel, "Image does not have the IMAGE_FILE_DLL characteristic set.");
         }
@@ -322,7 +371,8 @@ internal static class PeHeaderParser
         uint securitySize,
         string imageLabel)
     {
-        if (securityOffset == 0 && securitySize == 0)
+        if (securityOffset == 0
+            && securitySize == 0)
         {
             return;
         }
@@ -331,7 +381,9 @@ internal static class PeHeaderParser
             || securitySize == 0
             || (ulong)securityOffset + securitySize > (ulong)fileLength)
         {
-            throw CreateBadImage(imageLabel, "Certificate table (IMAGE_DIRECTORY_ENTRY_SECURITY) is out of file bounds.");
+            throw CreateBadImage(
+                imageLabel,
+                "Certificate table (IMAGE_DIRECTORY_ENTRY_SECURITY) is out of file bounds.");
         }
     }
 
@@ -403,12 +455,14 @@ internal static class PeHeaderParser
                 throw CreateBadImage(imageLabel, "PEHeaders metadata disagreed with raw COFF header layout.");
             }
 
-            if (validation.RequireDll && !headers.IsDll)
+            if (validation.RequireDll
+                && !headers.IsDll)
             {
                 throw CreateBadImage(imageLabel, "Image is not marked as a dynamic-link library.");
             }
 
-            if (validation.RequireUnmanagedImage && headers.CorHeader is not null)
+            if (validation.RequireUnmanagedImage
+                && headers.CorHeader is not null)
             {
                 throw CreateBadImage(imageLabel, "Managed CLI/CLR assemblies are not supported.");
             }

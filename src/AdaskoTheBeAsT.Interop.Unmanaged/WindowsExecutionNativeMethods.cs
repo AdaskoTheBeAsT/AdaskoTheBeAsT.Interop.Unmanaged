@@ -46,7 +46,9 @@ internal static class WindowsExecutionNativeMethods
     [SuppressUnmanagedCodeSecurity]
     [DllImport(KernelLib, ExactSpelling = true, SetLastError = true, EntryPoint = nameof(SetThreadErrorMode))]
     [return: MarshalAs(UnmanagedType.Bool)]
-    internal static extern bool SetThreadErrorMode(uint dwNewMode, out uint lpOldMode);
+    internal static extern bool SetThreadErrorMode(
+        uint dwNewMode,
+        out uint lpOldMode);
 
     internal static uint ClearFloatingPointStatus()
     {
@@ -64,7 +66,10 @@ internal static class WindowsExecutionNativeMethods
         }
     }
 
-    internal static int ControlFpSafe(out uint currentState, uint newControl, uint mask)
+    internal static int ControlFpSafe(
+        out uint currentState,
+        uint newControl,
+        uint mask)
     {
         try
         {
@@ -80,7 +85,9 @@ internal static class WindowsExecutionNativeMethods
         }
     }
 
-    internal static void ReadX86ControlWords(out uint x87Cw, out uint sse2Cw)
+    internal static void ReadX86ControlWords(
+        out uint x87Cw,
+        out uint sse2Cw)
     {
         try
         {
@@ -96,7 +103,11 @@ internal static class WindowsExecutionNativeMethods
         }
     }
 
-    internal static void WriteX86ControlWords(uint x87Value, uint x87Mask, uint sse2Value, uint sse2Mask)
+    internal static void WriteX86ControlWords(
+        uint x87Value,
+        uint x87Mask,
+        uint sse2Value,
+        uint sse2Mask)
     {
         try
         {
@@ -125,35 +136,93 @@ internal static class WindowsExecutionNativeMethods
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport(UcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "_controlfp_s")]
-    private static extern int UcrtControlFpS(out uint currentState, uint newControl, uint mask);
+    private static extern int UcrtControlFpS(
+        out uint currentState,
+        uint newControl,
+        uint mask);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(MsvcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "_controlfp_s")]
-    private static extern int MsvcrtControlFpS(out uint currentState, uint newControl, uint mask);
+    [DllImport(
+        MsvcrtLib,
+        CallingConvention = CallingConvention.Cdecl,
+        ExactSpelling = true,
+        EntryPoint = "_controlfp_s")]
+    private static extern int MsvcrtControlFpS(
+        out uint currentState,
+        uint newControl,
+        uint mask);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(UcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "__control87_2")]
-    private static extern int UcrtControl87TwoOut(uint newValue, uint mask, out uint x86Cw, out uint sse2Cw);
+    [DllImport(
+        UcrtLib,
+        CallingConvention = CallingConvention.Cdecl,
+        ExactSpelling = true,
+        EntryPoint = "__control87_2")]
+    private static extern int UcrtControl87TwoOut(
+        uint newValue,
+        uint mask,
+        out uint x86Cw,
+        out uint sse2Cw);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(MsvcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "__control87_2")]
-    private static extern int MsvcrtControl87TwoOut(uint newValue, uint mask, out uint x86Cw, out uint sse2Cw);
+    [DllImport(
+        MsvcrtLib,
+        CallingConvention = CallingConvention.Cdecl,
+        ExactSpelling = true,
+        EntryPoint = "__control87_2")]
+    private static extern int MsvcrtControl87TwoOut(
+        uint newValue,
+        uint mask,
+        out uint x86Cw,
+        out uint sse2Cw);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(UcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "__control87_2")]
-    private static extern int UcrtControl87X87Only(uint newValue, uint mask, out uint x86Cw, IntPtr sse2CwNull);
+    [DllImport(
+        UcrtLib,
+        CallingConvention = CallingConvention.Cdecl,
+        ExactSpelling = true,
+        EntryPoint = "__control87_2")]
+    private static extern int UcrtControl87X87Only(
+        uint newValue,
+        uint mask,
+        out uint x86Cw,
+        IntPtr sse2CwNull);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(MsvcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "__control87_2")]
-    private static extern int MsvcrtControl87X87Only(uint newValue, uint mask, out uint x86Cw, IntPtr sse2CwNull);
+    [DllImport(
+        MsvcrtLib,
+        CallingConvention = CallingConvention.Cdecl,
+        ExactSpelling = true,
+        EntryPoint = "__control87_2")]
+    private static extern int MsvcrtControl87X87Only(
+        uint newValue,
+        uint mask,
+        out uint x86Cw,
+        IntPtr sse2CwNull);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(UcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "__control87_2")]
-    private static extern int UcrtControl87Sse2Only(uint newValue, uint mask, IntPtr x86CwNull, out uint sse2Cw);
+    [DllImport(
+        UcrtLib,
+        CallingConvention = CallingConvention.Cdecl,
+        ExactSpelling = true,
+        EntryPoint = "__control87_2")]
+    private static extern int UcrtControl87Sse2Only(
+        uint newValue,
+        uint mask,
+        IntPtr x86CwNull,
+        out uint sse2Cw);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(MsvcrtLib, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true, EntryPoint = "__control87_2")]
-    private static extern int MsvcrtControl87Sse2Only(uint newValue, uint mask, IntPtr x86CwNull, out uint sse2Cw);
+    [DllImport(
+        MsvcrtLib,
+        CallingConvention = CallingConvention.Cdecl,
+        ExactSpelling = true,
+        EntryPoint = "__control87_2")]
+    private static extern int MsvcrtControl87Sse2Only(
+        uint newValue,
+        uint mask,
+        IntPtr x86CwNull,
+        out uint sse2Cw);
 }
 #pragma warning restore SYSLIB1054
 #pragma warning restore CA1060

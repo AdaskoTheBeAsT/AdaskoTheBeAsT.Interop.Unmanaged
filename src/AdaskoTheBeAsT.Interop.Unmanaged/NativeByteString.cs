@@ -23,7 +23,11 @@ public static class NativeByteString
     /// <param name="offset">Zero-based start offset in <paramref name="destination"/>.</param>
     /// <param name="count">Fixed buffer byte length (must be at least <c>value.Length + 1</c>).</param>
     /// <returns>The number of non-NUL ASCII character bytes written (<c>value.Length</c>).</returns>
-    public static int WriteNullTerminatedAscii(string value, byte[] destination, int offset, int count)
+    public static int WriteNullTerminatedAscii(
+        string value,
+        byte[] destination,
+        int offset,
+        int count)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(value);
@@ -38,7 +42,10 @@ public static class NativeByteString
         ValidateBufferSlice(destination, offset, count, nameof(destination), nameof(count));
         if (count < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(count), count, "Null-terminated buffer length must be at least 1 byte.");
+            throw new ArgumentOutOfRangeException(
+                nameof(count),
+                count,
+                "Null-terminated buffer length must be at least 1 byte.");
         }
 
         ValidateAsciiCharactersNoEmbeddedNull(value);
@@ -67,11 +74,16 @@ public static class NativeByteString
     /// <param name="value">7-bit ASCII character span without embedded NUL characters.</param>
     /// <param name="destination">Fixed destination byte span (must have length at least <c>value.Length + 1</c>).</param>
     /// <returns>The number of non-NUL ASCII character bytes written (<c>value.Length</c>).</returns>
-    public static int WriteNullTerminatedAscii(ReadOnlySpan<char> value, Span<byte> destination)
+    public static int WriteNullTerminatedAscii(
+        ReadOnlySpan<char> value,
+        Span<byte> destination)
     {
         if (destination.IsEmpty)
         {
-            throw new ArgumentOutOfRangeException(nameof(destination), 0, "Null-terminated destination span must have length >= 1.");
+            throw new ArgumentOutOfRangeException(
+                nameof(destination),
+                0,
+                "Null-terminated destination span must have length >= 1.");
         }
 
         ValidateAsciiCharactersNoEmbeddedNull(value);
@@ -100,7 +112,10 @@ public static class NativeByteString
     /// <param name="offset">Zero-based start offset in <paramref name="source"/>.</param>
     /// <param name="count">Maximum number of bytes to inspect.</param>
     /// <returns>The decoded ASCII string.</returns>
-    public static string ReadNullTerminatedAscii(byte[] source, int offset, int count)
+    public static string ReadNullTerminatedAscii(
+        byte[] source,
+        int offset,
+        int count)
     {
         ValidateBufferSlice(source, offset, count, nameof(source), nameof(count));
         var length = 0;
@@ -114,7 +129,8 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at buffer index {length.ToString(CultureInfo.InvariantCulture)}.");
+                throw new DecoderFallbackException(
+                    $"Non-ASCII byte 0x{b:X2} encountered at buffer index {length.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             length++;
@@ -142,7 +158,8 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at span index {length.ToString(CultureInfo.InvariantCulture)}.");
+                throw new DecoderFallbackException(
+                    $"Non-ASCII byte 0x{b:X2} encountered at span index {length.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             length++;
@@ -159,11 +176,15 @@ public static class NativeByteString
     /// <param name="offset">Zero-based start offset in <paramref name="source"/>.</param>
     /// <param name="count">Maximum number of bytes to inspect.</param>
     /// <returns>The decoded ISO-8859-1 string.</returns>
-    public static string ReadNullTerminatedLatin1(byte[] source, int offset, int count)
+    public static string ReadNullTerminatedLatin1(
+        byte[] source,
+        int offset,
+        int count)
     {
         ValidateBufferSlice(source, offset, count, nameof(source), nameof(count));
         var length = 0;
-        while (length < count && source[offset + length] != 0)
+        while (length < count
+               && source[offset + length] != 0)
         {
             length++;
         }
@@ -204,7 +225,11 @@ public static class NativeByteString
     /// <param name="destination">Destination byte array.</param>
     /// <param name="offset">Zero-based start offset in <paramref name="destination"/>.</param>
     /// <param name="count">Fixed character buffer width (<c>N</c>).</param>
-    public static void WriteSpacePaddedAscii(string value, byte[] destination, int offset, int count)
+    public static void WriteSpacePaddedAscii(
+        string value,
+        byte[] destination,
+        int offset,
+        int count)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(value);
@@ -244,7 +269,9 @@ public static class NativeByteString
     /// </summary>
     /// <param name="value">7-bit ASCII character span without embedded NUL characters.</param>
     /// <param name="destination">Fixed-width destination byte span.</param>
-    public static void WriteSpacePaddedAscii(ReadOnlySpan<char> value, Span<byte> destination)
+    public static void WriteSpacePaddedAscii(
+        ReadOnlySpan<char> value,
+        Span<byte> destination)
     {
         ValidateAsciiCharactersNoEmbeddedNull(value);
         if (value.Length > destination.Length)
@@ -272,7 +299,10 @@ public static class NativeByteString
     /// <param name="offset">Zero-based start offset in <paramref name="source"/>.</param>
     /// <param name="count">Fixed character buffer width (<c>N</c>).</param>
     /// <returns>The trimmed ASCII string.</returns>
-    public static string ReadSpacePaddedAscii(byte[] source, int offset, int count)
+    public static string ReadSpacePaddedAscii(
+        byte[] source,
+        int offset,
+        int count)
     {
         ValidateBufferSlice(source, offset, count, nameof(source), nameof(count));
         var effectiveEnd = 0;
@@ -286,13 +316,15 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at Fortran buffer index {effectiveEnd.ToString(CultureInfo.InvariantCulture)}.");
+                throw new DecoderFallbackException(
+                    $"Non-ASCII byte 0x{b:X2} encountered at Fortran buffer index {effectiveEnd.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             effectiveEnd++;
         }
 
-        while (effectiveEnd > 0 && source[offset + effectiveEnd - 1] == SpaceByte)
+        while (effectiveEnd > 0
+               && source[offset + effectiveEnd - 1] == SpaceByte)
         {
             effectiveEnd--;
         }
@@ -319,13 +351,15 @@ public static class NativeByteString
 
             if (b > 0x7F)
             {
-                throw new DecoderFallbackException($"Non-ASCII byte 0x{b:X2} encountered at Fortran span index {effectiveEnd.ToString(CultureInfo.InvariantCulture)}.");
+                throw new DecoderFallbackException(
+                    $"Non-ASCII byte 0x{b:X2} encountered at Fortran span index {effectiveEnd.ToString(CultureInfo.InvariantCulture)}.");
             }
 
             effectiveEnd++;
         }
 
-        while (effectiveEnd > 0 && source[effectiveEnd - 1] == SpaceByte)
+        while (effectiveEnd > 0
+               && source[effectiveEnd - 1] == SpaceByte)
         {
             effectiveEnd--;
         }
@@ -342,7 +376,11 @@ public static class NativeByteString
     /// <param name="destination">Destination byte array.</param>
     /// <param name="offset">Zero-based start offset in <paramref name="destination"/>.</param>
     /// <param name="capacity">Total <c>ShortString</c> slot byte length including the leading length byte (<c>1..256</c>).</param>
-    public static void WriteShortStringAscii(string value, byte[] destination, int offset, int capacity)
+    public static void WriteShortStringAscii(
+        string value,
+        byte[] destination,
+        int offset,
+        int capacity)
     {
 #if NET10_0_OR_GREATER
         ArgumentNullException.ThrowIfNull(value);
@@ -394,9 +432,12 @@ public static class NativeByteString
     /// </summary>
     /// <param name="value">7-bit ASCII character span without embedded NUL characters (<c>0..255</c> chars).</param>
     /// <param name="destination">Total <c>ShortString</c> slot byte span (<c>1..256</c> bytes including leading length byte).</param>
-    public static void WriteShortStringAscii(ReadOnlySpan<char> value, Span<byte> destination)
+    public static void WriteShortStringAscii(
+        ReadOnlySpan<char> value,
+        Span<byte> destination)
     {
-        if (destination.IsEmpty || destination.Length > MaxShortStringBufferBytes)
+        if (destination.IsEmpty
+            || destination.Length > MaxShortStringBufferBytes)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(destination),
@@ -431,12 +472,18 @@ public static class NativeByteString
     /// <param name="offset">Zero-based start offset of the leading length byte in <paramref name="source"/>.</param>
     /// <param name="maxLength">Available byte slice length starting at <paramref name="offset"/> (must be at least <c>1 + source[offset]</c>).</param>
     /// <returns>The decoded 7-bit ASCII string.</returns>
-    public static string ReadShortStringAscii(byte[] source, int offset, int maxLength)
+    public static string ReadShortStringAscii(
+        byte[] source,
+        int offset,
+        int maxLength)
     {
         ValidateBufferSlice(source, offset, maxLength, nameof(source), nameof(maxLength));
         if (maxLength < 1)
         {
-            throw new ArgumentOutOfRangeException(nameof(maxLength), maxLength, "ShortString slice length must be at least 1 byte.");
+            throw new ArgumentOutOfRangeException(
+                nameof(maxLength),
+                maxLength,
+                "ShortString slice length must be at least 1 byte.");
         }
 
         var payloadLength = source[offset];
@@ -452,7 +499,8 @@ public static class NativeByteString
             var b = source[offset + i];
             if (b is 0 or > 0x7F)
             {
-                throw new DecoderFallbackException($"Invalid ShortString ASCII byte 0x{b:X2} at payload index {(i - 1).ToString(CultureInfo.InvariantCulture)}.");
+                throw new DecoderFallbackException(
+                    $"Invalid ShortString ASCII byte 0x{b:X2} at payload index {(i - 1).ToString(CultureInfo.InvariantCulture)}.");
             }
         }
 
@@ -485,7 +533,8 @@ public static class NativeByteString
             var b = source[i];
             if (b is 0 or > 0x7F)
             {
-                throw new DecoderFallbackException($"Invalid ShortString ASCII byte 0x{b:X2} at payload index {(i - 1).ToString(CultureInfo.InvariantCulture)}.");
+                throw new DecoderFallbackException(
+                    $"Invalid ShortString ASCII byte 0x{b:X2} at payload index {(i - 1).ToString(CultureInfo.InvariantCulture)}.");
             }
         }
 
@@ -493,19 +542,26 @@ public static class NativeByteString
     }
 #endif
 
-    private static void ValidateBufferSlice(byte[] buffer, int offset, int length, string bufferParam, string lengthParam)
+    private static void ValidateBufferSlice(
+        byte[] buffer,
+        int offset,
+        int length,
+        string bufferParam,
+        string lengthParam)
     {
         if (buffer is null)
         {
             throw new ArgumentNullException(bufferParam);
         }
 
-        if (offset < 0 || offset > buffer.Length)
+        if (offset < 0
+            || offset > buffer.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(offset), offset, "Buffer offset is out of range.");
         }
 
-        if (length < 0 || offset > buffer.Length - length)
+        if (length < 0
+            || offset > buffer.Length - length)
         {
             throw new ArgumentOutOfRangeException(lengthParam, length, "Buffer slice length exceeds array bounds.");
         }

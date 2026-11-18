@@ -30,7 +30,15 @@ public class NativeByteStringTests
         buffer[10].Should().Be(0xFF);
         NativeByteString.ReadNullTerminatedAscii(buffer, offset: 2, count: 8).Should().Be("COIL01");
 
-        var latin1Bytes = new byte[] { (byte)'C', (byte)'a', (byte)'f', 0xE9, 0x00, 0x7F };
+        var latin1Bytes = new byte[]
+        {
+            (byte)'C',
+            (byte)'a',
+            (byte)'f',
+            0xE9,
+            0x00,
+            0x7F,
+        };
         NativeByteString.ReadNullTerminatedLatin1(latin1Bytes, 0, latin1Bytes.Length).Should().Be("Café");
         Action nonAscii = () => NativeByteString.ReadNullTerminatedAscii(latin1Bytes, 0, latin1Bytes.Length);
         nonAscii.Should().Throw<DecoderFallbackException>();
@@ -111,7 +119,8 @@ public class NativeByteStringTests
     [SuppressMessage("Security", "SEC0116", Justification = "Writes temporary test project files.")]
     public void BuildTransitiveTarget_SetsLargeAddressAwareOnWinX86AppHostOnlyWhenEnabled()
     {
-        if (TestHelpers.SkipIfNotWindows() || IntPtr.Size != 8)
+        if (TestHelpers.SkipIfNotWindows()
+            || IntPtr.Size != 8)
         {
             return;
         }
@@ -123,17 +132,25 @@ public class NativeByteStringTests
             var targetsPath = FindBuildTransitiveTargetsPath();
             WriteMinimalLaaProject(tempDir, targetsPath);
 
-            RunDotnet(tempDir, "build -c Release -r win-x86 --no-self-contained -p:EnableLargeAddressAwareAppHost=false -o out-disabled");
+            RunDotnet(
+                tempDir,
+                "build -c Release -r win-x86 --no-self-contained -p:EnableLargeAddressAwareAppHost=false -o out-disabled");
             var disabledExe = Path.Combine(tempDir, "out-disabled", "LaaProbe.exe");
-            var disabledEditor = PeImageEditor.FromFile(disabledExe, PeImageValidationOptions.ForExecutable(PeMachine.I386));
+            var disabledEditor = PeImageEditor.FromFile(
+                disabledExe,
+                PeImageValidationOptions.ForExecutable(PeMachine.I386));
             (disabledEditor.Characteristics & 0x0020).Should().Be(0);
 
-            RunDotnet(tempDir, "build -c Release -r win-x86 --no-self-contained -p:EnableLargeAddressAwareAppHost=true -o out-enabled");
+            RunDotnet(
+                tempDir,
+                "build -c Release -r win-x86 --no-self-contained -p:EnableLargeAddressAwareAppHost=true -o out-enabled");
             var builtExe = Path.Combine(tempDir, "out-enabled", "LaaProbe.exe");
             var builtEditor = PeImageEditor.FromFile(builtExe, PeImageValidationOptions.ForExecutable(PeMachine.I386));
             (builtEditor.Characteristics & 0x0020).Should().Be(0x0020);
 
-            RunDotnet(tempDir, "publish -c Release -r win-x86 --no-self-contained -p:EnableLargeAddressAwareAppHost=true -o pub-enabled");
+            RunDotnet(
+                tempDir,
+                "publish -c Release -r win-x86 --no-self-contained -p:EnableLargeAddressAwareAppHost=true -o pub-enabled");
             var pubExe = Path.Combine(tempDir, "pub-enabled", "LaaProbe.exe");
             var pubEditor = PeImageEditor.FromFile(pubExe, PeImageValidationOptions.ForExecutable(PeMachine.I386));
             (pubEditor.Characteristics & 0x0020).Should().Be(0x0020);
@@ -147,13 +164,21 @@ public class NativeByteStringTests
         }
     }
 
-    [SuppressMessage("Security", "SCS0018", Justification = "Resolves repository buildTransitive targets file from BaseDirectory.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Resolves repository buildTransitive targets file from BaseDirectory.")]
     private static string FindBuildTransitiveTargetsPath()
     {
         var cursor = new DirectoryInfo(AppContext.BaseDirectory);
         while (cursor is not null)
         {
-            var candidate = Path.Combine(cursor.FullName, "src", "AdaskoTheBeAsT.Interop.Unmanaged", "buildTransitive", "AdaskoTheBeAsT.Interop.Unmanaged.targets");
+            var candidate = Path.Combine(
+                cursor.FullName,
+                "src",
+                "AdaskoTheBeAsT.Interop.Unmanaged",
+                "buildTransitive",
+                "AdaskoTheBeAsT.Interop.Unmanaged.targets");
             if (File.Exists(candidate))
             {
                 return candidate;
@@ -167,30 +192,42 @@ public class NativeByteStringTests
 
     [SuppressMessage("Security", "SCS0018", Justification = "Writes temporary test project files inside tempDir.")]
     [SuppressMessage("Security", "SEC0116", Justification = "Writes temporary test project files inside tempDir.")]
-    private static void WriteMinimalLaaProject(string tempDir, string targetsPath)
+    private static void WriteMinimalLaaProject(
+        string tempDir,
+        string targetsPath)
     {
         File.WriteAllText(Path.Combine(tempDir, "Directory.Build.props"), "<Project />");
         File.WriteAllText(Path.Combine(tempDir, "Directory.Build.targets"), "<Project />");
-        File.WriteAllText(Path.Combine(tempDir, "Program.cs"), "internal static class Program { private static int Main() => 0; }");
+        File.WriteAllText(
+            Path.Combine(tempDir, "Program.cs"),
+            "internal static class Program { private static int Main() => 0; }");
         var csproj = $"""
-            <Project Sdk="Microsoft.NET.Sdk">
-              <PropertyGroup>
-                <OutputType>Exe</OutputType>
-                <TargetFramework>net10.0</TargetFramework>
-                <AssemblyName>LaaProbe</AssemblyName>
-                <ImplicitUsings>disable</ImplicitUsings>
-                <Nullable>enable</Nullable>
-              </PropertyGroup>
-              <Import Project="{targetsPath}" />
-            </Project>
-            """;
+                      <Project Sdk="Microsoft.NET.Sdk">
+                        <PropertyGroup>
+                          <OutputType>Exe</OutputType>
+                          <TargetFramework>net10.0</TargetFramework>
+                          <AssemblyName>LaaProbe</AssemblyName>
+                          <ImplicitUsings>disable</ImplicitUsings>
+                          <Nullable>enable</Nullable>
+                        </PropertyGroup>
+                        <Import Project="{targetsPath}" />
+                      </Project>
+                      """;
         File.WriteAllText(Path.Combine(tempDir, "LaaProbe.csproj"), csproj);
     }
 
     [SuppressMessage("Security", "SCS0001", Justification = "Executes dotnet build/publish on test-generated project.")]
-    [SuppressMessage("Security", "SEC0031", Justification = "Executes trusted dotnet CLI with constant test arguments.")]
-    [SuppressMessage("Security", "SEC0032", Justification = "Constructs ProcessStartInfo for trusted dotnet CLI test invocation.")]
-    private static void RunDotnet(string workingDirectory, string arguments)
+    [SuppressMessage(
+        "Security",
+        "SEC0031",
+        Justification = "Executes trusted dotnet CLI with constant test arguments.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0032",
+        Justification = "Constructs ProcessStartInfo for trusted dotnet CLI test invocation.")]
+    private static void RunDotnet(
+        string workingDirectory,
+        string arguments)
     {
         var psi = new ProcessStartInfo("dotnet", arguments)
         {

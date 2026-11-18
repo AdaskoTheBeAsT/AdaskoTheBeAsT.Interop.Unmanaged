@@ -1253,7 +1253,9 @@ public sealed class PeImageEditor
         return found.Value;
     }
 
+#pragma warning disable S3776
     private List<NamedImportThunk> CollectModuleNamedThunks(ImportModuleEntry module)
+#pragma warning restore S3776
     {
         if (module.OriginalFirstThunk == 0 && module.TimeDateStamp != 0)
         {
@@ -1320,7 +1322,9 @@ public sealed class PeImageEditor
         }
     }
 
+#pragma warning disable S3776
     private uint[] ParseThunkNameRvas(uint thunkTableRva)
+#pragma warning restore S3776
     {
         var entrySize = _headers.IsPe32Plus ? 8 : 4;
         var cursorRva = thunkTableRva;
@@ -1333,7 +1337,9 @@ public sealed class PeImageEditor
                 var value64 = PeHeaderParser.ReadUInt64(_buffer, offset);
                 if (value64 == 0)
                 {
+#pragma warning disable IDE0305 // Simplify collection initialization
                     return rvas.ToArray();
+#pragma warning restore IDE0305 // Simplify collection initialization
                 }
 
                 if ((value64 & 0x8000000000000000UL) != 0)
@@ -1355,7 +1361,9 @@ public sealed class PeImageEditor
                 var value32 = PeHeaderParser.ReadUInt32(_buffer, offset);
                 if (value32 == 0)
                 {
+#pragma warning disable IDE0305 // Simplify collection initialization
                     return rvas.ToArray();
+#pragma warning restore IDE0305 // Simplify collection initialization
                 }
 
                 rvas.Add((value32 & 0x80000000u) != 0 ? 0u : value32);
@@ -1684,66 +1692,46 @@ public sealed class PeImageEditor
     }
 
     [StructLayout(LayoutKind.Auto)]
-    private readonly struct ImportModuleEntry
+    private readonly struct ImportModuleEntry(
+        int descriptorFileOffset,
+        uint nameRva,
+        int nameFileOffset,
+        string moduleName,
+        uint originalFirstThunk,
+        uint firstThunk,
+        uint timeDateStamp)
     {
-        public ImportModuleEntry(
-            int descriptorFileOffset,
-            uint nameRva,
-            int nameFileOffset,
-            string moduleName,
-            uint originalFirstThunk,
-            uint firstThunk,
-            uint timeDateStamp)
-        {
-            DescriptorFileOffset = descriptorFileOffset;
-            NameRva = nameRva;
-            NameFileOffset = nameFileOffset;
-            ModuleName = moduleName;
-            OriginalFirstThunk = originalFirstThunk;
-            FirstThunk = firstThunk;
-            TimeDateStamp = timeDateStamp;
-        }
+        public int DescriptorFileOffset { get; } = descriptorFileOffset;
 
-        public int DescriptorFileOffset { get; }
+        public uint NameRva { get; } = nameRva;
 
-        public uint NameRva { get; }
+        public int NameFileOffset { get; } = nameFileOffset;
 
-        public int NameFileOffset { get; }
+        public string ModuleName { get; } = moduleName;
 
-        public string ModuleName { get; }
+        public uint OriginalFirstThunk { get; } = originalFirstThunk;
 
-        public uint OriginalFirstThunk { get; }
+        public uint FirstThunk { get; } = firstThunk;
 
-        public uint FirstThunk { get; }
-
-        public uint TimeDateStamp { get; }
+        public uint TimeDateStamp { get; } = timeDateStamp;
     }
 
     [StructLayout(LayoutKind.Auto)]
-    private readonly struct NamedImportThunk
+    private readonly struct NamedImportThunk(
+        int descriptorFileOffset,
+        uint primaryByNameRva,
+        uint secondaryByNameRva,
+        ushort hint,
+        string symbolName)
     {
-        public NamedImportThunk(
-            int descriptorFileOffset,
-            uint primaryByNameRva,
-            uint secondaryByNameRva,
-            ushort hint,
-            string symbolName)
-        {
-            DescriptorFileOffset = descriptorFileOffset;
-            PrimaryByNameRva = primaryByNameRva;
-            SecondaryByNameRva = secondaryByNameRva;
-            Hint = hint;
-            SymbolName = symbolName;
-        }
+        public int DescriptorFileOffset { get; } = descriptorFileOffset;
 
-        public int DescriptorFileOffset { get; }
+        public uint PrimaryByNameRva { get; } = primaryByNameRva;
 
-        public uint PrimaryByNameRva { get; }
+        public uint SecondaryByNameRva { get; } = secondaryByNameRva;
 
-        public uint SecondaryByNameRva { get; }
+        public ushort Hint { get; } = hint;
 
-        public ushort Hint { get; }
-
-        public string SymbolName { get; }
+        public string SymbolName { get; } = symbolName;
     }
 }

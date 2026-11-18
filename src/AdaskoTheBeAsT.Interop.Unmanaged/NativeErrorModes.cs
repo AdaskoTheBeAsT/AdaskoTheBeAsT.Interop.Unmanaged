@@ -7,7 +7,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// and process-wide (<c>SetErrorMode</c>) error handling.
 /// </summary>
 [Flags]
-public enum NativeErrorMode : uint
+public enum NativeErrorModes : uint
 {
     /// <summary>
     /// No additional error-mode flags.

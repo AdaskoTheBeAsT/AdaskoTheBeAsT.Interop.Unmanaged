@@ -46,7 +46,7 @@ public class NativeExecutionGuardTests
             uint activeThreadMode;
             uint processDuringScope;
 
-            using (var scope = NativeExecutionGuard.EnterScope(NativeErrorMode.FailCriticalErrors | NativeErrorMode.NoOpenFileErrorBox))
+            using (var scope = NativeExecutionGuard.EnterScope(NativeErrorModes.FailCriticalErrors | NativeErrorModes.NoOpenFileErrorBox))
             {
                 ownerThreadId = (uint)scope.OwnerThreadId;
                 activeThreadMode = WindowsExecutionNativeMethods.GetThreadErrorMode();
@@ -55,8 +55,8 @@ public class NativeExecutionGuardTests
 
             var threadAfter = WindowsExecutionNativeMethods.GetThreadErrorMode();
             ownerThreadId.Should().Be((uint)Environment.CurrentManagedThreadId);
-            (activeThreadMode & (uint)NativeErrorMode.FailCriticalErrors).Should().NotBe(0u);
-            (activeThreadMode & (uint)NativeErrorMode.NoOpenFileErrorBox).Should().NotBe(0u);
+            (activeThreadMode & (uint)NativeErrorModes.FailCriticalErrors).Should().NotBe(0u);
+            (activeThreadMode & (uint)NativeErrorModes.NoOpenFileErrorBox).Should().NotBe(0u);
             processDuringScope.Should().Be(0u);
             threadAfter.Should().Be(threadBefore);
         }
@@ -69,7 +69,7 @@ public class NativeExecutionGuardTests
     [Fact]
     public void EnterScope_RejectsUnsupportedNativeErrorModeFlags()
     {
-        Action act = () => NativeExecutionGuard.EnterScope((NativeErrorMode)0x01000000u);
+        Action act = () => NativeExecutionGuard.EnterScope((NativeErrorModes)0x01000000u);
         act.Should().Throw<ArgumentOutOfRangeException>().WithParameterName("threadErrorMode");
     }
 
@@ -206,7 +206,7 @@ public class NativeExecutionGuardTests
         {
             _ = NativeExecutionGuard.SuppressProcessErrorDialogs();
             var updated = WindowsExecutionNativeMethods.GetErrorMode();
-            (updated & (uint)NativeErrorMode.SuppressErrorDialogs).Should().Be((uint)NativeErrorMode.SuppressErrorDialogs);
+            (updated & (uint)NativeErrorModes.SuppressErrorDialogs).Should().Be((uint)NativeErrorModes.SuppressErrorDialogs);
         }
         finally
         {

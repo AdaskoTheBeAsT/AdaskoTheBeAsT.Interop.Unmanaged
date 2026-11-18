@@ -746,6 +746,7 @@ public static class LoadedModuleMemory
         }
     }
 
+#pragma warning disable S107
     private static void CollectDescriptorMatches(
         IntPtr baseAddress,
         MappedPeInfo pe,
@@ -756,6 +757,7 @@ public static class LoadedModuleMemory
         bool matchByOrdinal,
         string label,
         List<IntPtr> matches)
+#pragma warning restore S107
     {
         var pointerSize = (uint)IntPtr.Size;
         var slotIndex = 0u;
@@ -1056,6 +1058,7 @@ public static class LoadedModuleMemory
             sections);
     }
 
+#pragma warning disable S107
     private static void ReadAndValidateMappedCoffHeader(
         IntPtr baseAddress,
         ulong committedHeaderBytes,
@@ -1065,6 +1068,7 @@ public static class LoadedModuleMemory
         out ushort sectionCount,
         out uint timeDateStamp,
         out ushort optionalHeaderSize)
+#pragma warning restore S107
     {
         if (committedHeaderBytes < DosHeaderSize || ReadUInt16(baseAddress, 0) != DosSignature)
         {
@@ -1300,50 +1304,36 @@ public static class LoadedModuleMemory
     }
 
     [StructLayout(LayoutKind.Auto)]
-    private readonly struct MappedSection
+    private readonly struct MappedSection(
+        uint virtualAddress,
+        uint mappedLength,
+        uint characteristics)
     {
-        public MappedSection(uint virtualAddress, uint mappedLength, uint characteristics)
-        {
-            VirtualAddress = virtualAddress;
-            MappedLength = mappedLength;
-            Characteristics = characteristics;
-        }
+        public uint VirtualAddress { get; } = virtualAddress;
 
-        public uint VirtualAddress { get; }
+        public uint MappedLength { get; } = mappedLength;
 
-        public uint MappedLength { get; }
-
-        public uint Characteristics { get; }
+        public uint Characteristics { get; } = characteristics;
     }
 
-    private sealed class MappedPeInfo
+    private sealed class MappedPeInfo(
+        LoadedModuleIdentity identity,
+        uint sizeOfHeaders,
+        uint sizeOfImage,
+        uint importTableRva,
+        uint importTableSize,
+        MappedSection[] sections)
     {
-        public MappedPeInfo(
-            LoadedModuleIdentity identity,
-            uint sizeOfHeaders,
-            uint sizeOfImage,
-            uint importTableRva,
-            uint importTableSize,
-            MappedSection[] sections)
-        {
-            Identity = identity;
-            SizeOfHeaders = sizeOfHeaders;
-            SizeOfImage = sizeOfImage;
-            ImportTableRva = importTableRva;
-            ImportTableSize = importTableSize;
-            Sections = sections;
-        }
+        public LoadedModuleIdentity Identity { get; } = identity;
 
-        public LoadedModuleIdentity Identity { get; }
+        public uint SizeOfHeaders { get; } = sizeOfHeaders;
 
-        public uint SizeOfHeaders { get; }
+        public uint SizeOfImage { get; } = sizeOfImage;
 
-        public uint SizeOfImage { get; }
+        public uint ImportTableRva { get; } = importTableRva;
 
-        public uint ImportTableRva { get; }
+        public uint ImportTableSize { get; } = importTableSize;
 
-        public uint ImportTableSize { get; }
-
-        public MappedSection[] Sections { get; }
+        public MappedSection[] Sections { get; } = sections;
     }
 }

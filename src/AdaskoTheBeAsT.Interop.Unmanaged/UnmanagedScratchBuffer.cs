@@ -160,12 +160,12 @@ public sealed class UnmanagedScratchBuffer : SafeBuffer
             ByteLength = byteLength;
         }
 
-#pragma warning disable MA0102
+#pragma warning disable IDE0251,MA0102
         /// <summary>
         /// Gets the native pointer to the start of the scratch buffer, or <see cref="IntPtr.Zero"/> once disposed.
         /// </summary>
         public IntPtr Pointer => _pointer;
-#pragma warning restore MA0102
+#pragma warning restore IDE0251,MA0102
 
         /// <summary>
         /// Gets the total byte length of the leased scratch buffer.

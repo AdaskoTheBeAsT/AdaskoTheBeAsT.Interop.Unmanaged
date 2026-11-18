@@ -34,13 +34,13 @@ public sealed class IsolatedLibrarySet : IDisposable
     internal const string LeaseFileName = ".unmanaged-isolation.lease";
     internal const string OwnershipMarkerHeader = "AdaskoTheBeAsT.Interop.Unmanaged.IsolatedLibrarySet.v1";
 
-    private static readonly ConcurrentDictionary<string, string> ActiveCompanionModules =
+    private static readonly ConcurrentDictionary<string, string> _activeCompanionModules =
         new(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly ConcurrentDictionary<string, byte> ActiveWorkerDirectories =
+    private static readonly ConcurrentDictionary<string, byte> _activeWorkerDirectories =
         new(StringComparer.OrdinalIgnoreCase);
 
-    private static readonly ConcurrentBag<PinnedSetRetention> PinnedProcessSets = [];
+    private static readonly ConcurrentBag<PinnedSetRetention> _pinnedProcessSets = [];
 
     private readonly string _workerDirectory;
     private readonly int _owningThreadId;
@@ -56,6 +56,7 @@ public sealed class IsolatedLibrarySet : IDisposable
     private FileStream? _leaseStream;
     private int _disposed;
 
+#pragma warning disable S107
     private IsolatedLibrarySet(
         string workerDirectory,
         int owningThreadId,
@@ -69,6 +70,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         IReadOnlyDictionary<string, string> stagedPathsByLogicalName,
         FileStream leaseStream,
         Action<string>? onModuleUnloaded)
+#pragma warning restore S107
     {
         _workerDirectory = workerDirectory;
         _owningThreadId = owningThreadId;
@@ -270,7 +272,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         if (_pinModulesForProcessLifetime)
         {
             var pinnedLease = Interlocked.Exchange(ref _leaseStream, value: null);
-            PinnedProcessSets.Add(new PinnedSetRetention(_orderedLibraries, pinnedLease));
+            _pinnedProcessSets.Add(new PinnedSetRetention(_orderedLibraries, pinnedLease));
             return;
         }
 
@@ -321,6 +323,7 @@ public sealed class IsolatedLibrarySet : IDisposable
             onModuleUnloaded);
     }
 
+#pragma warning disable S107
     private static IsolatedLibrarySet StageAndLoadReservedSet(
         IsolatedLibrarySetOptions options,
         string fullIsolationRoot,
@@ -330,6 +333,7 @@ public sealed class IsolatedLibrarySet : IDisposable
         string[] reservedCompanionNames,
         Action<int, string>? stagingFaultHook,
         Action<string>? onModuleUnloaded)
+#pragma warning restore S107
     {
         FileStream? leaseStream = null;
         var loadedLibraries = new List<UnmanagedLibrary>(preparedModules.Length);
@@ -339,6 +343,7 @@ public sealed class IsolatedLibrarySet : IDisposable
             StagePreparedCompanions(preparedCompanions, workerDirectory);
             var stagedPaths = StagePreparedModules(preparedModules, workerDirectory, stagingFaultHook);
             var librariesByName = LoadStagedModules(preparedModules, stagedPaths, options.LoadFlags, loadedLibraries, out var loadOrder);
+#pragma warning disable IDE0305 // Simplify collection initialization
             return new IsolatedLibrarySet(
                 workerDirectory,
                 Environment.CurrentManagedThreadId,
@@ -352,6 +357,7 @@ public sealed class IsolatedLibrarySet : IDisposable
                 new ReadOnlyDictionary<string, string>(stagedPaths),
                 leaseStream,
                 onModuleUnloaded);
+#pragma warning restore IDE0305 // Simplify collection initialization
         }
         catch
         {
@@ -641,9 +647,11 @@ public sealed class IsolatedLibrarySet : IDisposable
         return prepared;
     }
 
+#pragma warning disable S3776
     private static void BuildIntraSetEdges(
         ModuleNode[] nodes,
         Dictionary<string, int> bySourceFile)
+#pragma warning restore S3776
     {
         for (var i = 0; i < nodes.Length; i++)
         {
@@ -715,7 +723,9 @@ public sealed class IsolatedLibrarySet : IDisposable
             }
         }
 
+#pragma warning disable IDE0305 // Simplify collection initialization
         reservedCompanionNames = companions.ToArray();
+#pragma warning restore IDE0305 // Simplify collection initialization
     }
 
     private static string ResolveSingleTargetFileName(ModuleNode node, IsolatedLibrarySetOptions options)
@@ -887,7 +897,9 @@ public sealed class IsolatedLibrarySet : IDisposable
             AddCompanionFileSpec(fileSpec, fullSourceDir, workerDirectory, reservedTargetPaths, list);
         }
 
+#pragma warning disable IDE0305 // Simplify collection initialization
         return list.ToArray();
+#pragma warning restore IDE0305 // Simplify collection initialization
     }
 
     [SuppressMessage("Security", "SCS0018", Justification = "Enumerates validated source companion subdirectory while rejecting traversal and reparse points.")]
@@ -1214,7 +1226,7 @@ public sealed class IsolatedLibrarySet : IDisposable
 
     private static void ReserveProcessIdentities(string[] companionNames, string workerDirectory)
     {
-        if (!ActiveWorkerDirectories.TryAdd(workerDirectory, 0))
+        if (!_activeWorkerDirectories.TryAdd(workerDirectory, 0))
         {
             throw new InvalidOperationException(
                 $"Worker directory '{workerDirectory}' is already leased by an active IsolatedLibrarySet in this process. Specify a distinct NamespaceId, WorkerIndex, or Generation.");
@@ -1225,9 +1237,9 @@ public sealed class IsolatedLibrarySet : IDisposable
         {
             foreach (var name in companionNames)
             {
-                if (!ActiveCompanionModules.TryAdd(name, workerDirectory))
+                if (!_activeCompanionModules.TryAdd(name, workerDirectory))
                 {
-                    ActiveCompanionModules.TryGetValue(name, out var ownerDir);
+                    _activeCompanionModules.TryGetValue(name, out var ownerDir);
                     throw new InvalidOperationException(
                         $"Isolated companion module name '{name}' is already active in '{ownerDir}'. "
                         + "Separate pools and overlapping worker generations require distinct NamespaceId, Generation, or ExplicitTargetFileName values.");
@@ -1240,10 +1252,10 @@ public sealed class IsolatedLibrarySet : IDisposable
         {
             for (var i = 0; i < reservedCount; i++)
             {
-                ActiveCompanionModules.TryRemove(companionNames[i], out _);
+                _activeCompanionModules.TryRemove(companionNames[i], out _);
             }
 
-            ActiveWorkerDirectories.TryRemove(workerDirectory, out _);
+            _activeWorkerDirectories.TryRemove(workerDirectory, out _);
             throw;
         }
     }
@@ -1252,10 +1264,10 @@ public sealed class IsolatedLibrarySet : IDisposable
     {
         foreach (var name in companionNames)
         {
-            ActiveCompanionModules.TryRemove(name, out _);
+            _activeCompanionModules.TryRemove(name, out _);
         }
 
-        ActiveWorkerDirectories.TryRemove(workerDirectory, out _);
+        _activeWorkerDirectories.TryRemove(workerDirectory, out _);
     }
 
     [SuppressMessage("Security", "SCS0018", Justification = "Creates validated child worker directory with ownership marker and exclusive lease.")]
@@ -1401,7 +1413,7 @@ public sealed class IsolatedLibrarySet : IDisposable
             return;
         }
 
-        if (ActiveWorkerDirectories.ContainsKey(fullCandidate))
+        if (_activeWorkerDirectories.ContainsKey(fullCandidate))
         {
             skippedActive.Add(fullCandidate);
             return;
@@ -1579,35 +1591,25 @@ public sealed class IsolatedLibrarySet : IDisposable
 #endif
     }
 
-    private sealed class ModuleNode
+    private sealed class ModuleNode(
+        int index,
+        IsolatedModuleSpecification spec,
+        PeImageEditor editor,
+        IReadOnlyList<string> ordinaryImports,
+        IReadOnlyList<string> delayImports,
+        bool hasInitialModification)
     {
-        public ModuleNode(
-            int index,
-            IsolatedModuleSpecification spec,
-            PeImageEditor editor,
-            IReadOnlyList<string> ordinaryImports,
-            IReadOnlyList<string> delayImports,
-            bool hasInitialModification)
-        {
-            Index = index;
-            Spec = spec;
-            Editor = editor;
-            OrdinaryImports = ordinaryImports;
-            DelayImports = delayImports;
-            HasInitialModification = hasInitialModification;
-        }
+        public int Index { get; } = index;
 
-        public int Index { get; }
+        public IsolatedModuleSpecification Spec { get; } = spec;
 
-        public IsolatedModuleSpecification Spec { get; }
+        public PeImageEditor Editor { get; } = editor;
 
-        public PeImageEditor Editor { get; }
+        public IReadOnlyList<string> OrdinaryImports { get; } = ordinaryImports;
 
-        public IReadOnlyList<string> OrdinaryImports { get; }
+        public IReadOnlyList<string> DelayImports { get; } = delayImports;
 
-        public IReadOnlyList<string> DelayImports { get; }
-
-        public bool HasInitialModification { get; }
+        public bool HasInitialModification { get; } = hasInitialModification;
 
         public bool IsImportedByPeer { get; set; }
 
@@ -1627,60 +1629,41 @@ public sealed class IsolatedLibrarySet : IDisposable
         }
     }
 
-    private sealed class PreparedModule
+    private sealed class PreparedModule(
+        IsolatedModuleSpecification spec,
+        string targetFileName,
+        PeImageEditor editor)
     {
-        public PreparedModule(
-            IsolatedModuleSpecification spec,
-            string targetFileName,
-            PeImageEditor editor)
-        {
-            Spec = spec;
-            TargetFileName = targetFileName;
-            Editor = editor;
-        }
+        public IsolatedModuleSpecification Spec { get; } = spec;
 
-        public IsolatedModuleSpecification Spec { get; }
+        public string TargetFileName { get; } = targetFileName;
 
-        public string TargetFileName { get; }
-
-        public PeImageEditor Editor { get; }
+        public PeImageEditor Editor { get; } = editor;
     }
 
-    private sealed class PreparedCompanionFile
+    private sealed class PreparedCompanionFile(
+        string sourceFilePath,
+        string targetFilePath,
+        CompanionCopyMode copyMode,
+        Func<byte[], string, byte[]>? transformBytes)
     {
-        public PreparedCompanionFile(
-            string sourceFilePath,
-            string targetFilePath,
-            CompanionCopyMode copyMode,
-            Func<byte[], string, byte[]>? transformBytes)
-        {
-            SourceFilePath = sourceFilePath;
-            TargetFilePath = targetFilePath;
-            CopyMode = copyMode;
-            TransformBytes = transformBytes;
-        }
+        public string SourceFilePath { get; } = sourceFilePath;
 
-        public string SourceFilePath { get; }
+        public string TargetFilePath { get; } = targetFilePath;
 
-        public string TargetFilePath { get; }
+        public CompanionCopyMode CopyMode { get; } = copyMode;
 
-        public CompanionCopyMode CopyMode { get; }
-
-        public Func<byte[], string, byte[]>? TransformBytes { get; }
+        public Func<byte[], string, byte[]>? TransformBytes { get; } = transformBytes;
     }
 
     [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP006", Justification = "Intentionally roots process-pinned module handles and lease stream for process lifetime without disposing.")]
     [SuppressMessage("Design", "CA1001", Justification = "Intentionally roots process-pinned module handles and lease stream for process lifetime without disposing.")]
-    private sealed class PinnedSetRetention
+    private sealed class PinnedSetRetention(
+        UnmanagedLibrary[] libraries,
+        FileStream? leaseStream)
     {
-        public PinnedSetRetention(UnmanagedLibrary[] libraries, FileStream? leaseStream)
-        {
-            Libraries = libraries;
-            LeaseStream = leaseStream;
-        }
+        public UnmanagedLibrary[] Libraries { get; } = libraries;
 
-        public UnmanagedLibrary[] Libraries { get; }
-
-        public FileStream? LeaseStream { get; }
+        public FileStream? LeaseStream { get; } = leaseStream;
     }
 }

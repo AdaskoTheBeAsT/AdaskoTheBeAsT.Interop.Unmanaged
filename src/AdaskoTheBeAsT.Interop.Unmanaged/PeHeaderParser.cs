@@ -131,6 +131,7 @@ internal static class PeHeaderParser
             validation);
     }
 
+#pragma warning disable S107
     private static PeHeaderInfo BuildHeaderInfo(
         byte[] buffer,
         int coffOffset,
@@ -144,6 +145,7 @@ internal static class PeHeaderParser
         PeSectionSlice[] sections,
         string imageLabel,
         PeImageValidationOptions validation)
+#pragma warning restore S107
     {
         ReadDataDirectory(buffer, dataDirOffset, numDataDirs, index: 0, out var exportRva, out var exportSize);
         ReadDataDirectory(buffer, dataDirOffset, numDataDirs, index: 1, out var importRva, out var importSize);

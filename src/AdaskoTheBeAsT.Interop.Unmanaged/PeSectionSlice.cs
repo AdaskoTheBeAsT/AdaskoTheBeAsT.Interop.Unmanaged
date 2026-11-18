@@ -4,27 +4,19 @@ using System.Runtime.InteropServices;
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
 [StructLayout(LayoutKind.Auto)]
-internal readonly struct PeSectionSlice
+internal readonly struct PeSectionSlice(
+    uint virtualAddress,
+    uint virtualSize,
+    uint pointerToRawData,
+    uint sizeOfRawData)
 {
-    public PeSectionSlice(
-        uint virtualAddress,
-        uint virtualSize,
-        uint pointerToRawData,
-        uint sizeOfRawData)
-    {
-        VirtualAddress = virtualAddress;
-        VirtualSize = virtualSize;
-        PointerToRawData = pointerToRawData;
-        SizeOfRawData = sizeOfRawData;
-    }
+    public uint VirtualAddress { get; } = virtualAddress;
 
-    public uint VirtualAddress { get; }
+    public uint VirtualSize { get; } = virtualSize;
 
-    public uint VirtualSize { get; }
+    public uint PointerToRawData { get; } = pointerToRawData;
 
-    public uint PointerToRawData { get; }
-
-    public uint SizeOfRawData { get; }
+    public uint SizeOfRawData { get; } = sizeOfRawData;
 
     public ulong FileBackedSpanLength
     {

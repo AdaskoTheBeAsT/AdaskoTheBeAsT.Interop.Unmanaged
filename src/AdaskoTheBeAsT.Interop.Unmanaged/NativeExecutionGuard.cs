@@ -39,7 +39,7 @@ public static class NativeExecutionGuard
             return 0;
         }
 
-        const uint suppressFlags = (uint)NativeErrorMode.SuppressErrorDialogs;
+        const uint suppressFlags = (uint)NativeErrorModes.SuppressErrorDialogs;
         var existingProcessMode = WindowsExecutionNativeMethods.GetErrorMode();
         var previousProcessMode = WindowsExecutionNativeMethods.SetErrorMode(existingProcessMode | suppressFlags);
 
@@ -85,12 +85,12 @@ public static class NativeExecutionGuard
     /// </param>
     /// <returns>A disposable <see cref="NativeExecutionScope"/> bound to the calling thread.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="threadErrorMode"/> contains unsupported flag bits outside <see cref="NativeErrorMode.SuppressErrorDialogs"/>.
+    /// Thrown when <paramref name="threadErrorMode"/> contains unsupported flag bits outside <see cref="NativeErrorModes.SuppressErrorDialogs"/>.
     /// </exception>
     public static NativeExecutionScope EnterScope(
-        NativeErrorMode threadErrorMode = NativeErrorMode.SuppressErrorDialogs)
+        NativeErrorModes threadErrorMode = NativeErrorModes.SuppressErrorDialogs)
     {
-        if ((threadErrorMode & ~NativeErrorMode.SuppressErrorDialogs) != NativeErrorMode.None)
+        if ((threadErrorMode & ~NativeErrorModes.SuppressErrorDialogs) != NativeErrorModes.None)
         {
             throw new ArgumentOutOfRangeException(
                 nameof(threadErrorMode),

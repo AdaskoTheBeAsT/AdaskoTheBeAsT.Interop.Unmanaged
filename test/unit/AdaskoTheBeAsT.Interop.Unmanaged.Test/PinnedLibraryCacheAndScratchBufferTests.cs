@@ -157,13 +157,8 @@ public class PinnedLibraryCacheAndScratchBufferTests
         leaseAfterDispose.Should().Throw<ObjectDisposedException>();
     }
 
-    private sealed class DummyHandles
+    private sealed class DummyHandles(string tag)
     {
-        public DummyHandles(string tag)
-        {
-            Tag = tag;
-        }
-
-        public string Tag { get; }
+        public string Tag { get; } = tag;
     }
 }

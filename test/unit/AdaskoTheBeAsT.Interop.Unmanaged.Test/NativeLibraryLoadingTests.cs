@@ -35,7 +35,9 @@ public class NativeLibraryLoadingTests
         AssertExportCanBeLoaded(Path.Combine(Environment.SystemDirectory, "xinput9_1_0.dll"), useInstance);
     }
 
-    private static void AssertExportCanBeLoaded(string fileName, bool useInstance)
+    private static void AssertExportCanBeLoaded(
+        string fileName,
+        bool useInstance)
     {
         bool found;
         IntPtr address;

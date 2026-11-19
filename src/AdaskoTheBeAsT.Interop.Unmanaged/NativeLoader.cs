@@ -20,7 +20,9 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// </remarks>
 internal static class NativeLoader
 {
-    public static IntPtr Load(string fileName, LoadLibraryFlags flags)
+    public static IntPtr Load(
+        string fileName,
+        LoadLibraryFlags flags)
     {
         if (IsWindows())
         {
@@ -113,7 +115,9 @@ internal static class NativeLoader
 #endif
     }
 
-    public static IntPtr GetExport(IntPtr handle, string name)
+    public static IntPtr GetExport(
+        IntPtr handle,
+        string name)
     {
         if (IsWindows())
         {
@@ -137,7 +141,18 @@ internal static class NativeLoader
 #endif
     }
 
-    private static IntPtr LoadWindowsLibrary(string fileName, LoadLibraryFlags flags)
+    internal static bool IsWindows()
+    {
+#if NET10_0_OR_GREATER
+        return OperatingSystem.IsWindows();
+#else
+        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+#endif
+    }
+
+    private static IntPtr LoadWindowsLibrary(
+        string fileName,
+        LoadLibraryFlags flags)
     {
         // DLL_LOAD_DIR requires a full path. For a bare name, keep the default
         // search restricted to System32 rather than falling back to legacy search.
@@ -159,19 +174,10 @@ internal static class NativeLoader
         return handle;
     }
 
-    private static bool IsWindows()
-    {
-#if NET5_0_OR_GREATER
-        return OperatingSystem.IsWindows();
-#else
-        return RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#endif
-    }
-
 #if !NET8_0_OR_GREATER
     private static bool IsLinux()
     {
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         return OperatingSystem.IsLinux();
 #else
         return RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
@@ -180,7 +186,7 @@ internal static class NativeLoader
 
     private static bool IsOsx()
     {
-#if NET5_0_OR_GREATER
+#if NET10_0_OR_GREATER
         return OperatingSystem.IsMacOS();
 #else
         return RuntimeInformation.IsOSPlatform(OSPlatform.OSX);

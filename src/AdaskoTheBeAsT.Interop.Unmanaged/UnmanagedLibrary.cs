@@ -1,7 +1,12 @@
 using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.InteropServices;
+#if NET10_0_OR_GREATER
+using System.Runtime.Versioning;
+#endif
 
 namespace AdaskoTheBeAsT.Interop.Unmanaged;
 
@@ -18,35 +23,50 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 /// This type owns the loaded module handle and frees it when disposed. Any function pointer or
 /// object obtained from the library becomes unsafe to use after the module is unloaded.
 /// </remarks>
-public sealed partial class UnmanagedLibrary : IDisposable
+/// <remarks>
+/// Loads a native dynamic library and transfers ownership of the resulting module handle to this instance.
+/// </remarks>
+/// <param name="fileName">
+/// Module name or fully qualified path of the library to load. With the default flags on
+/// Windows, the system searches <c>System32</c> for bare module names and uses the DLL
+/// directory for dependency resolution when a fully qualified path is provided. On Linux and
+/// macOS, the platform runtime controls name resolution. Relative paths with directory
+/// components are not automatically converted to absolute paths.
+/// </param>
+/// <param name="flags">Flags passed to <c>LoadLibraryEx</c> on Windows. Ignored on Linux and macOS.</param>
+/// <exception cref="ArgumentException">
+/// Thrown when <paramref name="fileName"/> is null, empty, whitespace-only, or contains NUL.
+/// </exception>
+/// <exception cref="Win32Exception">Thrown when the library cannot be loaded.</exception>
+public sealed partial class UnmanagedLibrary(
+    string fileName,
+    LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
+                             | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32) : IDisposable
 {
+    private static readonly ConcurrentDictionary<string, IntPtr> _pinnedSystemModules =
+        new(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>
     /// Unmanaged resource. CLR will ensure SafeHandles get freed, without requiring a finalizer on this class.
     /// </summary>
-    private readonly SafeLibraryHandle _safeLibraryHandle;
+    private readonly SafeLibraryHandle _safeLibraryHandle = LoadLibraryCore(fileName, flags);
 
     /// <summary>
-    /// Loads a native dynamic library and transfers ownership of the resulting module handle to this instance.
+    /// Gets the mapped module base address on Windows.
     /// </summary>
-    /// <param name="fileName">
-    /// Module name or fully qualified path of the library to load. With the default flags on
-    /// Windows, the system searches <c>System32</c> for bare module names and uses the DLL
-    /// directory for dependency resolution when a fully qualified path is provided. On Linux and
-    /// macOS, the platform runtime controls name resolution. Relative paths with directory
-    /// components are not automatically converted to absolute paths.
-    /// </param>
-    /// <param name="flags">Flags passed to <c>LoadLibraryEx</c> on Windows. Ignored on Linux and macOS.</param>
-    /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="fileName"/> is null, empty, whitespace-only, or contains NUL.
+    /// <exception cref="ObjectDisposedException">Thrown when this instance has been disposed.</exception>
+    /// <exception cref="PlatformNotSupportedException">
+    /// Thrown on non-Windows platforms where loader handles are opaque cookies rather than mapped PE image bases.
     /// </exception>
-    /// <exception cref="Win32Exception">Thrown when the library cannot be loaded.</exception>
-    public UnmanagedLibrary(
-        string fileName,
-        LoadLibraryFlags flags = LoadLibraryFlags.LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR
-                                 | LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32)
-    {
-        _safeLibraryHandle = LoadLibraryCore(fileName, flags);
-    }
+    /// <remarks>
+    /// The returned address remains valid only while this <see cref="UnmanagedLibrary"/> instance remains alive
+    /// and undisposed. Handle reference counting guards only the address query itself and does not grant a
+    /// permanent pointer lease across subsequent memory accesses; callers must prevent concurrent disposal while
+    /// dereferencing module memory.
+    /// </remarks>
+    public IntPtr BaseAddress => GetBaseAddress(_safeLibraryHandle);
+
+    internal SafeLibraryHandle SafeHandle => _safeLibraryHandle;
 
     /// <summary>
     /// Loads a native dynamic library and returns a safe handle that owns the module.
@@ -91,6 +111,56 @@ public sealed partial class UnmanagedLibrary : IDisposable
     }
 
     /// <summary>
+    /// Gets the mapped module base address for a loaded Windows module handle.
+    /// </summary>
+    /// <param name="safeLibraryHandle">Handle for the loaded module.</param>
+    /// <returns>The mapped module base address with any low-bit data-file or image-resource loader tags cleared.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="safeLibraryHandle"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ObjectDisposedException">
+    /// Thrown when <paramref name="safeLibraryHandle"/> has been closed or disposed.
+    /// </exception>
+    /// <exception cref="PlatformNotSupportedException">
+    /// Thrown on non-Windows platforms where loader handles are opaque cookies rather than mapped PE image bases.
+    /// </exception>
+    /// <remarks>
+    /// The returned address remains valid only while <paramref name="safeLibraryHandle"/> remains undisposed.
+    /// Handle reference counting protects only the lookup itself and does not establish a pointer lease across
+    /// subsequent memory reads or writes; callers must coordinate module lifetime against concurrent disposal.
+    /// </remarks>
+    public static IntPtr GetBaseAddress(SafeLibraryHandle safeLibraryHandle)
+    {
+        ThrowIfNull(safeLibraryHandle, nameof(safeLibraryHandle));
+
+        var addedRef = false;
+        try
+        {
+            safeLibraryHandle.DangerousAddRef(ref addedRef);
+            if (!NativeLoader.IsWindows())
+            {
+                throw new PlatformNotSupportedException(
+                    "Module base address introspection is supported only on Windows where module handles map to the PE image base.");
+            }
+
+#pragma warning disable S3869
+            var rawHandle = safeLibraryHandle.DangerousGetHandle();
+#pragma warning restore S3869
+            const long loaderTagMask = ~3L;
+            return IntPtr.Size == 8
+                ? new IntPtr(rawHandle.ToInt64() & loaderTagMask)
+                : new IntPtr(rawHandle.ToInt32() & ~3);
+        }
+        finally
+        {
+            if (addedRef)
+            {
+                safeLibraryHandle.DangerousRelease();
+            }
+        }
+    }
+
+    /// <summary>
     /// Looks up an exported function on a loaded module handle and marshals it as a managed delegate.
     /// </summary>
     /// <typeparam name="TDelegate">Delegate type that matches the unmanaged signature.</typeparam>
@@ -107,7 +177,9 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// Keep <paramref name="safeLibraryHandle"/> alive for at least as long as the returned
     /// delegate or any objects created by the delegate may be used.
     /// </remarks>
-    public static TDelegate? GetUnmanagedFunction<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName)
+    public static TDelegate? GetUnmanagedFunction<TDelegate>(
+        SafeLibraryHandle safeLibraryHandle,
+        string functionName)
         where TDelegate : Delegate
     {
         ThrowIfNull(safeLibraryHandle, nameof(safeLibraryHandle));
@@ -139,7 +211,10 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// (for example <c>delegate* unmanaged[Stdcall]&lt;uint&gt;</c>) on <c>net5.0</c> or newer.
     /// Keep <paramref name="safeLibraryHandle"/> alive for as long as the returned address is used.
     /// </remarks>
-    public static bool TryGetExport(SafeLibraryHandle safeLibraryHandle, string functionName, out IntPtr address)
+    public static bool TryGetExport(
+        SafeLibraryHandle safeLibraryHandle,
+        string functionName,
+        out IntPtr address)
     {
         ThrowIfNull(safeLibraryHandle, nameof(safeLibraryHandle));
         ValidateTextArgument(functionName, nameof(functionName));
@@ -160,6 +235,170 @@ public sealed partial class UnmanagedLibrary : IDisposable
                 safeLibraryHandle.DangerousRelease();
             }
         }
+    }
+
+    /// <summary>
+    /// Looks up a required exported symbol on a loaded module handle and returns its raw address.
+    /// </summary>
+    /// <param name="safeLibraryHandle">Handle for the loaded module that owns the export.</param>
+    /// <param name="functionName">Case-sensitive export name to look up.</param>
+    /// <returns>The native address of the requested export.</returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown when <paramref name="safeLibraryHandle"/> is <see langword="null"/>.
+    /// </exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="functionName"/> is null, empty, whitespace-only, or contains NUL.
+    /// </exception>
+    /// <exception cref="ObjectDisposedException">
+    /// Thrown when <paramref name="safeLibraryHandle"/> has been closed or disposed.
+    /// </exception>
+    /// <exception cref="EntryPointNotFoundException">
+    /// Thrown when <paramref name="functionName"/> is not exported by the loaded module.
+    /// </exception>
+    /// <remarks>
+    /// The returned address remains valid only while <paramref name="safeLibraryHandle"/> remains alive and
+    /// undisposed. Handle reference counting guards only the lookup itself and does not establish a permanent
+    /// pointer lease across subsequent invocations; callers must prevent concurrent disposal while calling the export.
+    /// </remarks>
+    public static IntPtr GetRequiredExport(
+        SafeLibraryHandle safeLibraryHandle,
+        string functionName)
+    {
+        if (TryGetExport(safeLibraryHandle, functionName, out var address))
+        {
+            return address;
+        }
+
+        var moduleIdentifier = !string.IsNullOrWhiteSpace(safeLibraryHandle.ModuleName)
+            ? safeLibraryHandle.ModuleName
+            : "loaded module";
+        throw new EntryPointNotFoundException(
+            $"Unable to find an entry point named '{functionName}' in native module '{moduleIdentifier}'.");
+    }
+
+    /// <summary>
+    /// Gets the full filesystem path reported by the Windows loader for <paramref name="safeLibraryHandle"/>.
+    /// </summary>
+    /// <param name="safeLibraryHandle">Handle for the loaded Windows module.</param>
+    /// <returns>The full path returned by <c>GetModuleFileNameW</c>, expanding dynamically beyond <c>MAX_PATH</c> when necessary.</returns>
+#if NET10_0_OR_GREATER
+    [SupportedOSPlatform("windows")]
+#endif
+    public static string GetLoadedFilePath(SafeLibraryHandle safeLibraryHandle)
+    {
+        ThrowIfNull(safeLibraryHandle, nameof(safeLibraryHandle));
+
+        var addedRef = false;
+        try
+        {
+            safeLibraryHandle.DangerousAddRef(ref addedRef);
+            if (!NativeLoader.IsWindows())
+            {
+                throw new PlatformNotSupportedException(
+                    "Loaded module path introspection via GetModuleFileNameW is supported only on Windows.");
+            }
+
+#pragma warning disable S3869
+            var rawHandle = safeLibraryHandle.DangerousGetHandle();
+#pragma warning restore S3869
+            if (rawHandle == IntPtr.Zero
+                || (rawHandle.ToInt64() & 3L) != 0L)
+            {
+                throw new InvalidOperationException(
+                    "GetLoadedFilePath requires a standard mapped Windows module handle and rejects data-file or image-resource mappings.");
+            }
+
+            return QueryModuleFileName(rawHandle);
+        }
+        finally
+        {
+            if (addedRef)
+            {
+                safeLibraryHandle.DangerousRelease();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Resolves which loaded Windows module backs a native code or data <paramref name="address"/>, safely incrementing
+    /// the target module's reference count while reading its path.
+    /// </summary>
+    /// <param name="address">Native code, export, callback, or vtable address to inspect.</param>
+    /// <param name="moduleBaseAddress">Receives the owning module's base address when found; otherwise <see cref="IntPtr.Zero"/>.</param>
+    /// <param name="moduleFilePath">Receives the owning module's loaded filesystem path when found; otherwise <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if <paramref name="address"/> belongs to a loaded Windows module; otherwise <see langword="false"/>.</returns>
+#if NET10_0_OR_GREATER
+    [SupportedOSPlatform("windows")]
+#endif
+    public static bool TryGetLoadedModuleFromAddress(
+        IntPtr address,
+        out IntPtr moduleBaseAddress,
+        out string? moduleFilePath)
+    {
+        if (!NativeLoader.IsWindows())
+        {
+            throw new PlatformNotSupportedException(
+                "Address-to-module provenance introspection is supported only on Windows.");
+        }
+
+        if (address == IntPtr.Zero
+            || !WindowsNativeMethods.GetModuleHandleExW(
+                WindowsNativeMethods.GetModuleHandleExFlagFromAddress,
+                address,
+                out var moduleHandle)
+            || moduleHandle == IntPtr.Zero)
+        {
+            moduleBaseAddress = IntPtr.Zero;
+            moduleFilePath = null;
+            return false;
+        }
+
+        try
+        {
+            moduleBaseAddress = moduleHandle;
+            moduleFilePath = QueryModuleFileName(moduleHandle);
+            return true;
+        }
+        finally
+        {
+            _ = WindowsNativeMethods.FreeLibrary(moduleHandle);
+        }
+    }
+
+    /// <summary>
+    /// Resolves a required exported symbol from a bare Windows <c>System32</c> DLL using <c>LOAD_LIBRARY_SEARCH_SYSTEM32</c>,
+    /// preventing working-directory DLL planting and keeping the system module pinned for process lifetime.
+    /// </summary>
+    /// <param name="systemModuleName">Bare Windows system DLL filename (for example <c>"kernel32.dll"</c> or <c>"ole32.dll"</c>) without path separators.</param>
+    /// <param name="exportName">Case-sensitive ASCII export name.</param>
+    /// <returns>The non-zero native address of the requested export.</returns>
+#if NET10_0_OR_GREATER
+    [SupportedOSPlatform("windows")]
+#endif
+    public static IntPtr GetRequiredSystemExport(
+        string systemModuleName,
+        string exportName)
+    {
+        ValidateBareSystemModuleName(systemModuleName, nameof(systemModuleName));
+        ValidateTextArgument(exportName, nameof(exportName));
+
+        if (!NativeLoader.IsWindows())
+        {
+            throw new PlatformNotSupportedException(
+                "System32 export resolution via LOAD_LIBRARY_SEARCH_SYSTEM32 is supported only on Windows.");
+        }
+
+        var moduleHandle = _pinnedSystemModules.GetOrAdd(
+            systemModuleName,
+            static name => NativeLoader.Load(name, LoadLibraryFlags.LOAD_LIBRARY_SEARCH_SYSTEM32));
+        var exportAddress = NativeLoader.GetExport(moduleHandle, exportName);
+        if (exportAddress == IntPtr.Zero)
+        {
+            throw new EntryPointNotFoundException(
+                $"Unable to find an entry point named '{exportName}' in Windows system module '{systemModuleName}'.");
+        }
+
+        return exportAddress;
     }
 
     /// <summary>
@@ -219,10 +458,14 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// </para>
     /// </remarks>
 #if NET8_0_OR_GREATER
-    [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk. Use TryGetExport and an unmanaged function pointer instead.")]
-    [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields. Preserve all signature metadata.")]
+    [RequiresDynamicCode(
+        "Creates an IL-emitted unmanaged call thunk. Use TryGetExport and an unmanaged function pointer instead.")]
+    [RequiresUnreferencedCode(
+        "Inspects delegate signatures and nested struct fields. Preserve all signature metadata.")]
 #endif
-    public static T? GetDelegateForFunctionPointer<T>(IntPtr ptr, CallingConvention conv)
+    public static T? GetDelegateForFunctionPointer<T>(
+        IntPtr ptr,
+        CallingConvention conv)
         where T : class
     {
         if (ptr == IntPtr.Zero)
@@ -280,10 +523,14 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// </para>
     /// </remarks>
 #if NET8_0_OR_GREATER
-    [RequiresDynamicCode("Constructed generic callbacks require a runtime proxy. Use PinConcreteDelegate or UnmanagedCallersOnly instead.")]
-    [RequiresUnreferencedCode("Generic callback proxies inspect the runtime delegate type and its marshaling metadata.")]
+    [RequiresDynamicCode(
+        "Constructed generic callbacks require a runtime proxy. Use PinConcreteDelegate or UnmanagedCallersOnly instead.")]
+    [RequiresUnreferencedCode(
+        "Generic callback proxies inspect the runtime delegate type and its marshaling metadata.")]
 #endif
-    public static IntPtr GetFunctionPointerForDelegate<T>(T delegateCallback, out object binder)
+    public static IntPtr GetFunctionPointerForDelegate<T>(
+        T delegateCallback,
+        out object binder)
         where T : class, Delegate
     {
         ThrowIfNull(delegateCallback, nameof(delegateCallback));
@@ -312,8 +559,10 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// The native module owner must separately remain undisposed while its code may execute.
     /// </remarks>
 #if NET8_0_OR_GREATER
-    [RequiresDynamicCode("Constructed generic callbacks require a runtime proxy. Use PinConcreteDelegate or UnmanagedCallersOnly instead.")]
-    [RequiresUnreferencedCode("Generic callback proxies inspect the runtime delegate type and its marshaling metadata.")]
+    [RequiresDynamicCode(
+        "Constructed generic callbacks require a runtime proxy. Use PinConcreteDelegate or UnmanagedCallersOnly instead.")]
+    [RequiresUnreferencedCode(
+        "Generic callback proxies inspect the runtime delegate type and its marshaling metadata.")]
 #endif
     public static DelegatePin PinDelegate<TDelegate>(TDelegate callback)
         where TDelegate : class, Delegate
@@ -388,9 +637,104 @@ public sealed partial class UnmanagedLibrary : IDisposable
     /// (for example <c>delegate* unmanaged[Stdcall]&lt;uint&gt;</c>) on <c>net5.0</c> or newer.
     /// Keep this <see cref="UnmanagedLibrary"/> instance alive for as long as the returned address is used.
     /// </remarks>
-    public bool TryGetExport(string functionName, out IntPtr address)
+    public bool TryGetExport(
+        string functionName,
+        out IntPtr address)
     {
         return TryGetExport(_safeLibraryHandle, functionName, out address);
+    }
+
+    /// <summary>
+    /// Looks up a required exported symbol in the loaded module and returns its raw address.
+    /// </summary>
+    /// <param name="functionName">Case-sensitive export name to look up.</param>
+    /// <returns>The native address of the requested export.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="functionName"/> is null, empty, whitespace-only, or contains NUL.
+    /// </exception>
+    /// <exception cref="ObjectDisposedException">
+    /// Thrown when this <see cref="UnmanagedLibrary"/> instance has been disposed.
+    /// </exception>
+    /// <exception cref="EntryPointNotFoundException">
+    /// Thrown when <paramref name="functionName"/> is not exported by the loaded module.
+    /// </exception>
+    /// <remarks>
+    /// The returned address remains valid only while this <see cref="UnmanagedLibrary"/> instance remains alive
+    /// and undisposed. Handle reference counting guards only the lookup itself and does not grant a permanent
+    /// pointer lease across subsequent invocations; callers must coordinate module lifetime against concurrent disposal.
+    /// </remarks>
+    public IntPtr GetRequiredExport(string functionName)
+    {
+        return GetRequiredExport(_safeLibraryHandle, functionName);
+    }
+
+    /// <summary>
+    /// Gets the full filesystem path reported by the Windows loader for this loaded library.
+    /// </summary>
+    /// <returns>The full path returned by <c>GetModuleFileNameW</c>.</returns>
+#if NET10_0_OR_GREATER
+    [SupportedOSPlatform("windows")]
+#endif
+    public string GetLoadedFilePath()
+    {
+        return GetLoadedFilePath(_safeLibraryHandle);
+    }
+
+    /// <summary>
+    /// Determines whether <paramref name="address"/> resides within the mapped Windows module owned by this <see cref="UnmanagedLibrary"/>.
+    /// </summary>
+    /// <param name="address">Native code or data address to test.</param>
+    /// <returns><see langword="true"/> if <paramref name="address"/> maps to this loaded module; otherwise <see langword="false"/>.</returns>
+#if NET10_0_OR_GREATER
+    [SupportedOSPlatform("windows")]
+#endif
+    public bool ContainsAddress(IntPtr address)
+    {
+        var addedRef = false;
+        try
+        {
+            _safeLibraryHandle.DangerousAddRef(ref addedRef);
+            if (!NativeLoader.IsWindows())
+            {
+                throw new PlatformNotSupportedException(
+                    "Address-to-module provenance introspection is supported only on Windows.");
+            }
+
+#pragma warning disable S3869
+            var rawHandle = _safeLibraryHandle.DangerousGetHandle();
+#pragma warning restore S3869
+            if (address == IntPtr.Zero
+                || rawHandle == IntPtr.Zero
+                || (rawHandle.ToInt64() & 3L) != 0L)
+            {
+                return false;
+            }
+
+            if (!WindowsNativeMethods.GetModuleHandleExW(
+                    WindowsNativeMethods.GetModuleHandleExFlagFromAddress,
+                    address,
+                    out var ownerModule)
+                || ownerModule == IntPtr.Zero)
+            {
+                return false;
+            }
+
+            try
+            {
+                return ownerModule == rawHandle;
+            }
+            finally
+            {
+                _ = WindowsNativeMethods.FreeLibrary(ownerModule);
+            }
+        }
+        finally
+        {
+            if (addedRef)
+            {
+                _safeLibraryHandle.DangerousRelease();
+            }
+        }
     }
 
     /// <summary>
@@ -408,15 +752,73 @@ public sealed partial class UnmanagedLibrary : IDisposable
         }
     }
 
-    private static SafeLibraryHandle LoadLibraryCore(string fileName, LoadLibraryFlags flags)
+    private static SafeLibraryHandle LoadLibraryCore(
+        string fileName,
+        LoadLibraryFlags flags)
     {
         ValidateTextArgument(fileName, nameof(fileName));
 
         var handle = NativeLoader.Load(fileName, flags);
-        return new SafeLibraryHandle(handle, ownsHandle: true);
+        return new SafeLibraryHandle(handle, ownsHandle: true, fileName);
     }
 
-    private static TDelegate? GetUnmanagedFunctionCore<TDelegate>(SafeLibraryHandle safeLibraryHandle, string functionName)
+    private static string QueryModuleFileName(IntPtr moduleHandle)
+    {
+        const int maxCapacity = 32768;
+        var capacity = 260;
+        while (true)
+        {
+            var buffer = Marshal.AllocHGlobal(capacity * sizeof(char));
+            try
+            {
+                var copied = WindowsNativeMethods.GetModuleFileNameW(moduleHandle, buffer, (uint)capacity);
+                if (copied == 0)
+                {
+                    throw new Win32Exception(Marshal.GetLastWin32Error());
+                }
+
+                if (copied < (uint)capacity)
+                {
+                    return Marshal.PtrToStringUni(buffer, (int)copied) ?? string.Empty;
+                }
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+
+            if (capacity >= maxCapacity)
+            {
+                throw new PathTooLongException(
+                    $"Loaded module path exceeded the maximum supported Windows path buffer ({maxCapacity} characters).");
+            }
+
+            capacity = Math.Min(maxCapacity, capacity * 2);
+        }
+    }
+
+    private static void ValidateBareSystemModuleName(
+        string? value,
+        string paramName)
+    {
+        ValidateTextArgument(value, paramName);
+#pragma warning disable CA2249,MA0001
+        if (value!.IndexOf('/') >= 0
+            || value.IndexOf('\\') >= 0
+            || value.IndexOf(':') >= 0
+            || string.Equals(value, ".", StringComparison.Ordinal)
+            || string.Equals(value, "..", StringComparison.Ordinal))
+        {
+            throw new ArgumentException(
+                "System module name must be a bare file name without directory or drive separators.",
+                paramName);
+        }
+#pragma warning restore CA2249,MA0001
+    }
+
+    private static TDelegate? GetUnmanagedFunctionCore<TDelegate>(
+        SafeLibraryHandle safeLibraryHandle,
+        string functionName)
         where TDelegate : Delegate
     {
         var addedRef = false;
@@ -444,9 +846,12 @@ public sealed partial class UnmanagedLibrary : IDisposable
         }
     }
 
-    private static void ValidateTextArgument(string? value, string paramName)
+    private static void ValidateTextArgument(
+        string? value,
+        string paramName)
     {
-        if (value == null || string.IsNullOrWhiteSpace(value))
+        if (value == null
+            || string.IsNullOrWhiteSpace(value))
         {
             throw new ArgumentException("Value cannot be null or whitespace.", paramName);
         }
@@ -461,8 +866,13 @@ public sealed partial class UnmanagedLibrary : IDisposable
         }
     }
 
-    [SuppressMessage("Roslynator", "RCS1256:Invalid argument null check", Justification = "paramName is the caller's public-API parameter, not this helper's")]
-    private static void ThrowIfNull<T>(T? value, string paramName)
+    [SuppressMessage(
+        "Roslynator",
+        "RCS1256:Invalid argument null check",
+        Justification = "paramName is the caller's public-API parameter, not this helper's")]
+    private static void ThrowIfNull<T>(
+        T? value,
+        string paramName)
         where T : class
     {
 #if NET8_0_OR_GREATER

@@ -1,0 +1,4 @@
+LIBRARY isohookdep
+EXPORTS
+iso_hook_dep_calc
+iso_hook_dep_ord @7 NONAME

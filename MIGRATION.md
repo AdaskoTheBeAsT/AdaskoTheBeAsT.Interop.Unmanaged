@@ -8,9 +8,66 @@ for complete examples.
 
 ## From 4.0.x to 5.0.0
 
-5.0.0 adds a dedicated `net11.0` package asset while retaining all six `4.0.x`
-targets (`net10.0`, `net9.0`, `net8.0`, `net481`, `net48`, and `net472`). There
-are no public API removals or runtime behavior changes relative to 4.0.1.
+### Target frameworks
+
+5.0.0 adds a dedicated `net11.0` package asset and removes the out-of-support
+`net8.0` and `net9.0` targets. Supported package targets in 5.0.0 are `net11.0`,
+`net10.0`, `net481`, `net48`, and `net472`.
+
+| Consumer target | 5.0.0 action |
+| --- | --- |
+| `net11.0`, `net10.0` | Package assets are available; no code changes required. |
+| `net472`, `net48`, `net481` | Package assets remain available; no code changes required. |
+| `net8.0`, `net9.0` | Retarget to `net10.0` or `net11.0`, or stay on `4.0.1` until ready. |
+
+All public `4.0.x` APIs and runtime behaviors remain compatible on the five
+supported target frameworks.
+
+### New 5.0.0 capabilities
+
+- **`GetRequiredExport`, Windows `BaseAddress`, module provenance, and `System32` lookup:**
+  `library.GetRequiredExport(name)` and `UnmanagedLibrary.GetRequiredExport(handle, name)`
+  return a non-zero export address or throw `EntryPointNotFoundException` naming
+  both the symbol and module. On Windows, `library.BaseAddress` /
+  `UnmanagedLibrary.GetBaseAddress(handle)` return the mapped image base address
+  with low loader tag bits masked off; `GetLoadedFilePath`, `ContainsAddress`,
+  `TryGetLoadedModuleFromAddress`, and `GetRequiredSystemExport` inspect mapped
+  module paths/ranges and resolve `System32` exports safely.
+- **Windows per-worker native DLL and companion-file isolation (`IsolatedLibrarySet`, `WorkerModuleNaming`, `WorkerSlotAllocator`):**
+  Stages and loads independent copies of non-thread-safe native DLL graphs and
+  pre-`DllMain` companion files/directories (`CompanionFiles` with `TransformBytes`,
+  `CompanionDirectories`), enforces `MaxWorkerFilePathLength` and
+  `RequireAsciiWorkerPaths` preflight guards, supports `PinModulesForProcessLifetime`
+  for unload-unsafe runtimes, provides bounded `00..99` `WorkerSlotAllocator`
+  leasing with optional thread-sticky slot reuse, and cleans crash-leftover
+  worker directories via `IsolatedLibrarySet.SweepStaleWorkerDirectories`.
+- **Windows PE32 / PE32+ binary editor (`PeImageEditor`) and `LargeAddressAware` MSBuild target:**
+  Validates unmanaged PE32/PE32+ DLL and executable (`PeImageValidationOptions.ForExecutable`)
+  headers and section bounds before rewriting export module names, removing whole
+  import descriptors (`PeImportModuleRemoval`), rewriting ordinary and delay-load
+  imports, rewriting import-by-name symbols, applying verified byte and
+  ASCII/UTF-16/Pascal `ShortString` RVA patches, toggling `SetLargeAddressAware`,
+  translating `FileOffsetToRva`, clearing invalidated Authenticode signatures with
+  checksum recalculation, and saving atomically via `SaveIfChanged`. Consuming
+  `win-x86` executable projects can also set
+  `<EnableLargeAddressAwareAppHost>true</EnableLargeAddressAwareAppHost>` via the
+  packaged `buildTransitive` target.
+- **Windows runtime IAT redirection and verified module memory (`LoadedModuleMemory` & `LoadedModuleIdentity`):**
+  Inspects and verifies live mapped PE headers (`Machine`, `TimeDateStamp`,
+  `SizeOfImage`), redirects named or ordinal IAT slots at runtime with scoped
+  `VirtualProtect`, writes verified RVA patches (flushing the instruction cache
+  on executable pages), and clears writable `.data`/`.bss` scratch ranges.
+- **Fixed-buffer byte strings, process-pinned caches, and scratch memory (`NativeByteString`, `PinnedLibraryCache`, `UnmanagedScratchBuffer`):**
+  Provides zero-dependency NUL-terminated ASCII/Latin-1, Fortran space-padded
+  ASCII, and Delphi/Pascal `ShortString` fixed-buffer marshaling, single-flight
+  fault-evicting `PinnedLibraryCache<TKey, THandles>`, and `SafeBuffer`-backed
+  `UnmanagedScratchBuffer` with ref-counted `PointerLease` scopes.
+- **Thread-affine execution guard (`NativeExecutionGuard` & `NativeExecutionScope`):**
+  Masks x87/SSE floating-point exceptions and clears sticky status flags across
+  native calls while preserving caller rounding and x86 precision modes, and
+  applies per-thread `SetThreadErrorMode` without mutating process-wide error
+  mode (use `NativeExecutionGuard.SuppressProcessErrorDialogs()` explicitly when
+  process-wide dialog suppression is wanted).
 
 ## Upgrade checklist
 

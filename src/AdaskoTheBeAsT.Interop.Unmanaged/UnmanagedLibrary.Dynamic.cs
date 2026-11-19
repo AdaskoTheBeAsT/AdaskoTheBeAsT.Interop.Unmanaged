@@ -15,32 +15,34 @@ public sealed partial class UnmanagedLibrary
 {
     private const string Invoke = "Invoke";
 
-    private static readonly MethodInfo RawCallTargetAddressGetter =
+    private static readonly MethodInfo _rawCallTargetAddressGetter =
         typeof(RawCallTarget).GetProperty(
             nameof(RawCallTarget.Address),
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)!.GetMethod!;
 
 #if NET8_0_OR_GREATER
-    private static readonly ConditionalWeakTable<Type, Lazy<DynamicMethod>[]> RawCallThunks = [];
+    private static readonly ConditionalWeakTable<Type, Lazy<DynamicMethod>[]> _rawCallThunks = [];
 
-    private static readonly ConditionalWeakTable<Type, Lazy<Type>> ProxyDelegateTypes = [];
+    private static readonly ConditionalWeakTable<Type, Lazy<Type>> _proxyDelegateTypes = [];
 #else
-    private static readonly ConditionalWeakTable<Type, Lazy<DynamicMethod>[]> RawCallThunks = new();
+    private static readonly ConditionalWeakTable<Type, Lazy<DynamicMethod>[]> _rawCallThunks = new();
 
-    private static readonly ConditionalWeakTable<Type, Lazy<Type>> ProxyDelegateTypes = new();
+    private static readonly ConditionalWeakTable<Type, Lazy<Type>> _proxyDelegateTypes = new();
 #endif
 
 #if NET8_0_OR_GREATER
     [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk.")]
     [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields.")]
 #endif
-    private static T? CreateRawDelegate<T>(IntPtr ptr, CallingConvention conv)
+    private static T? CreateRawDelegate<T>(
+        IntPtr ptr,
+        CallingConvention conv)
         where T : class
     {
         EnsureDynamicCode();
         var delegateType = typeof(T);
         _ = RawCallSignature.Validate(delegateType, conv);
-        var thunks = RawCallThunks.GetValue(delegateType, CreateRawCallThunks);
+        var thunks = _rawCallThunks.GetValue(delegateType, CreateRawCallThunks);
         var invoke = thunks[(int)conv - 1].Value;
         return invoke.CreateDelegate(delegateType, new RawCallTarget(ptr)) as T;
     }
@@ -63,7 +65,9 @@ public sealed partial class UnmanagedLibrary
     [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk.")]
     [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields.")]
 #endif
-    private static Lazy<DynamicMethod> CreateLazyRawCallThunk(Type delegateType, CallingConvention conv)
+    private static Lazy<DynamicMethod> CreateLazyRawCallThunk(
+        Type delegateType,
+        CallingConvention conv)
     {
         return new Lazy<DynamicMethod>(
             () => CreateRawCallThunk(delegateType, conv),
@@ -74,7 +78,9 @@ public sealed partial class UnmanagedLibrary
     [RequiresDynamicCode("Creates an IL-emitted unmanaged call thunk.")]
     [RequiresUnreferencedCode("Inspects delegate signatures and nested struct fields.")]
 #endif
-    private static DynamicMethod CreateRawCallThunk(Type delegateType, CallingConvention conv)
+    private static DynamicMethod CreateRawCallThunk(
+        Type delegateType,
+        CallingConvention conv)
     {
         var method = delegateType.GetMethod(Invoke)!;
         var returnType = method.ReturnType;
@@ -102,7 +108,7 @@ public sealed partial class UnmanagedLibrary
         }
 
         il.Emit(OpCodes.Ldarg_0);
-        il.Emit(OpCodes.Call, RawCallTargetAddressGetter);
+        il.Emit(OpCodes.Call, _rawCallTargetAddressGetter);
         il.EmitCalli(OpCodes.Calli, conv, returnType, paramTypes);
         il.Emit(OpCodes.Ret);
         return invoke;
@@ -124,16 +130,19 @@ public sealed partial class UnmanagedLibrary
     [RequiresDynamicCode("Creates a callback proxy delegate type.")]
     [RequiresUnreferencedCode("Inspects the runtime delegate's Invoke signature.")]
 #endif
-    private static IntPtr GetFunctionPointerForGenericDelegate(Delegate del, out object binder)
+    private static IntPtr GetFunctionPointerForGenericDelegate(
+        Delegate del,
+        out object binder)
     {
         EnsureDynamicCode();
         var delegateType = del.GetType();
         var method = delegateType.GetMethod(Invoke)!;
-        var proxyType = ProxyDelegateTypes.GetValue(
-            delegateType,
-            static type => new Lazy<Type>(
-                () => CreateProxyDelegateType(type),
-                LazyThreadSafetyMode.ExecutionAndPublication)).Value;
+        var proxyType = _proxyDelegateTypes.GetValue(
+                delegateType,
+                static type => new Lazy<Type>(
+                    () => CreateProxyDelegateType(type),
+                    LazyThreadSafetyMode.ExecutionAndPublication))
+            .Value;
 
         // Invoke the original delegate to preserve multicast and open/closed bindings.
         var repProxy = Delegate.CreateDelegate(proxyType, del, method);
@@ -167,7 +176,9 @@ public sealed partial class UnmanagedLibrary
         return proxyTypeBuilder.CreateTypeInfo();
     }
 
-    private static void ApplyUnmanagedFunctionPointerAttribute(Type delegateType, TypeBuilder proxyTypeBuilder)
+    private static void ApplyUnmanagedFunctionPointerAttribute(
+        Type delegateType,
+        TypeBuilder proxyTypeBuilder)
     {
         // Preserve the calling convention and all fields affecting native callback marshaling.
         var ufp = delegateType.GetCustomAttribute<UnmanagedFunctionPointerAttribute>();
@@ -180,10 +191,18 @@ public sealed partial class UnmanagedLibrary
         const BindingFlags ufpFieldBindingFlags =
             BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly;
         var ufpCtor = ufpAttributeType.GetConstructor([typeof(CallingConvention)]);
-        var charSetField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.CharSet), ufpFieldBindingFlags);
-        var bestFitMappingField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.BestFitMapping), ufpFieldBindingFlags);
-        var throwOnUnmappableCharField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.ThrowOnUnmappableChar), ufpFieldBindingFlags);
-        var setLastErrorField = ufpAttributeType.GetField(nameof(UnmanagedFunctionPointerAttribute.SetLastError), ufpFieldBindingFlags);
+        var charSetField = ufpAttributeType.GetField(
+            nameof(UnmanagedFunctionPointerAttribute.CharSet),
+            ufpFieldBindingFlags);
+        var bestFitMappingField = ufpAttributeType.GetField(
+            nameof(UnmanagedFunctionPointerAttribute.BestFitMapping),
+            ufpFieldBindingFlags);
+        var throwOnUnmappableCharField = ufpAttributeType.GetField(
+            nameof(UnmanagedFunctionPointerAttribute.ThrowOnUnmappableChar),
+            ufpFieldBindingFlags);
+        var setLastErrorField = ufpAttributeType.GetField(
+            nameof(UnmanagedFunctionPointerAttribute.SetLastError),
+            ufpFieldBindingFlags);
         if (ufpCtor == null
             || charSetField == null
             || bestFitMappingField == null
@@ -213,7 +232,9 @@ public sealed partial class UnmanagedLibrary
                 ]));
     }
 
-    private static void DefineDelegateMembers(TypeBuilder proxyTypeBuilder, MethodInfo method)
+    private static void DefineDelegateMembers(
+        TypeBuilder proxyTypeBuilder,
+        MethodInfo method)
     {
         const MethodAttributes methodAttributes =
             MethodAttributes.Public
@@ -231,11 +252,13 @@ public sealed partial class UnmanagedLibrary
             .SetImplementationFlags(MethodImplAttributes.Runtime);
 
         var parameters = method.GetParameters();
+#pragma warning disable IDE0305 // Simplify collection initialization
         var invoke = proxyTypeBuilder.DefineMethod(
             Invoke,
             methodAttributes,
             method.ReturnType,
             parameters.Select(parameter => parameter.ParameterType).ToArray());
+#pragma warning restore IDE0305 // Simplify collection initialization
         invoke.SetImplementationFlags(MethodImplAttributes.Runtime);
         CopyParameterMetadata(invoke, method.ReturnParameter, 0);
         for (var index = 0; index < parameters.Length; index++)
@@ -244,7 +267,10 @@ public sealed partial class UnmanagedLibrary
         }
     }
 
-    private static void CopyParameterMetadata(MethodBuilder method, ParameterInfo parameter, int position)
+    private static void CopyParameterMetadata(
+        MethodBuilder method,
+        ParameterInfo parameter,
+        int position)
     {
         var builder = method.DefineParameter(position, parameter.Attributes, parameter.Name);
         var marshalAs = parameter.GetCustomAttributesData()
@@ -254,15 +280,18 @@ public sealed partial class UnmanagedLibrary
             return;
         }
 
+#pragma warning disable IDE0305 // Simplify collection initialization
         builder.SetCustomAttribute(
             new CustomAttributeBuilder(
                 marshalAs.Constructor,
                 marshalAs.ConstructorArguments.Select(argument => argument.Value!).ToArray(),
                 marshalAs.NamedArguments.Select(argument => (FieldInfo)argument.MemberInfo).ToArray(),
                 marshalAs.NamedArguments.Select(argument => argument.TypedValue.Value!).ToArray()));
+#pragma warning restore IDE0305 // Simplify collection initialization
     }
 
-    private sealed class RawCallTarget(IntPtr address)
+    private sealed class RawCallTarget(
+        IntPtr address)
     {
         public IntPtr Address { get; } = address;
     }

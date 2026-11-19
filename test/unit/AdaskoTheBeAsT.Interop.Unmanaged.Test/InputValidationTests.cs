@@ -52,12 +52,13 @@ public class InputValidationTests
     public void RawCall_RejectsNonConcreteDelegates(Type type)
     {
         var method = typeof(UnmanagedLibrary).GetMethod(
-            nameof(UnmanagedLibrary.GetDelegateForFunctionPointer),
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!
+                nameof(UnmanagedLibrary.GetDelegateForFunctionPointer),
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!
             .MakeGenericMethod(type);
         Action create = () => method.Invoke(null, [new IntPtr(1), CallingConvention.Cdecl]);
 
-        create.Should().Throw<System.Reflection.TargetInvocationException>()
+        create.Should()
+            .Throw<System.Reflection.TargetInvocationException>()
             .WithInnerException<InvalidOperationException>();
     }
 

@@ -28,12 +28,26 @@ internal static class LinuxNativeMethods
     private const string LibDl = "libdl.so.2";
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(LibDl, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, EntryPoint = nameof(dlopen))]
-    internal static extern IntPtr dlopen(string fileName, int flags);
+    [DllImport(
+        LibDl,
+        CharSet = CharSet.Ansi,
+        BestFitMapping = false,
+        ThrowOnUnmappableChar = true,
+        EntryPoint = nameof(dlopen))]
+    internal static extern IntPtr dlopen(
+        string fileName,
+        int flags);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(LibDl, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, EntryPoint = nameof(dlsym))]
-    internal static extern IntPtr dlsym(IntPtr handle, string symbol);
+    [DllImport(
+        LibDl,
+        CharSet = CharSet.Ansi,
+        BestFitMapping = false,
+        ThrowOnUnmappableChar = true,
+        EntryPoint = nameof(dlsym))]
+    internal static extern IntPtr dlsym(
+        IntPtr handle,
+        string symbol);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport(LibDl, EntryPoint = nameof(dlclose))]

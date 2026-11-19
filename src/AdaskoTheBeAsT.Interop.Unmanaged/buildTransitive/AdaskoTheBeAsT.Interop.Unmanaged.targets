@@ -1,0 +1,169 @@
+<Project>
+
+  <PropertyGroup>
+    <EnableLargeAddressAwareAppHost Condition="'$(EnableLargeAddressAwareAppHost)' == ''">false</EnableLargeAddressAwareAppHost>
+  </PropertyGroup>
+
+  <UsingTask TaskName="AdaskoSetLargeAddressAwarePe32"
+             TaskFactory="RoslynCodeTaskFactory"
+             AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <FilePath ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        if (string.IsNullOrWhiteSpace(FilePath) || !File.Exists(FilePath))
+        {
+            return true;
+        }
+
+        byte[] buffer = File.ReadAllBytes(FilePath);
+        if (buffer.Length < 64 || buffer[0] != 0x4D || buffer[1] != 0x5A)
+        {
+            Log.LogError("AdaskoSetLargeAddressAwarePe32: '{0}' is missing DOS 'MZ' header.", FilePath);
+            return false;
+        }
+
+        int peOffset = BitConverter.ToInt32(buffer, 0x3C);
+        if (peOffset < 64 || (long)peOffset + 24L + 96L > buffer.Length || BitConverter.ToUInt32(buffer, peOffset) != 0x00004550u)
+        {
+            Log.LogError("AdaskoSetLargeAddressAwarePe32: '{0}' is missing a valid PE header.", FilePath);
+            return false;
+        }
+
+        int coffOffset = peOffset + 4;
+        ushort machine = BitConverter.ToUInt16(buffer, coffOffset);
+        ushort optSize = BitConverter.ToUInt16(buffer, coffOffset + 16);
+        ushort characteristics = BitConverter.ToUInt16(buffer, coffOffset + 18);
+        int optOffset = coffOffset + 20;
+        if ((long)optOffset + optSize > buffer.Length || optSize < 96)
+        {
+            Log.LogError("AdaskoSetLargeAddressAwarePe32: '{0}' has a truncated optional header.", FilePath);
+            return false;
+        }
+
+        ushort magic = BitConverter.ToUInt16(buffer, optOffset);
+        const ushort ImageFileMachineI386 = 0x014C;
+        const ushort ImageFileExecutableImage = 0x0002;
+        const ushort ImageFileLargeAddressAware = 0x0020;
+        const ushort ImageFileDll = 0x2000;
+        const ushort Pe32Magic = 0x010B;
+
+        if (machine != ImageFileMachineI386
+            || (characteristics & ImageFileExecutableImage) == 0
+            || (characteristics & ImageFileDll) != 0
+            || magic != Pe32Magic)
+        {
+            Log.LogError(
+                "AdaskoSetLargeAddressAwarePe32: '{0}' is not a 32-bit I386 PE32 executable (Machine=0x{1:X4}, Characteristics=0x{2:X4}, Magic=0x{3:X4}).",
+                FilePath,
+                machine,
+                characteristics,
+                magic);
+            return false;
+        }
+
+        if ((characteristics & ImageFileLargeAddressAware) != 0)
+        {
+            return true;
+        }
+
+        ushort updated = (ushort)(characteristics | ImageFileLargeAddressAware);
+        buffer[coffOffset + 18] = (byte)(updated & 0xFF);
+        buffer[coffOffset + 19] = (byte)((updated >> 8) & 0xFF);
+
+        int checkSumOffset = optOffset + 64;
+        if (BitConverter.ToUInt32(buffer, checkSumOffset) != 0u)
+        {
+            ulong sum = 0;
+            int evenLength = buffer.Length & ~1;
+            for (int i = 0; i < evenLength; i += 2)
+            {
+                if (i == checkSumOffset || i == checkSumOffset + 2)
+                {
+                    continue;
+                }
+
+                ushort word = (ushort)(buffer[i] | (buffer[i + 1] << 8));
+                sum += word;
+                sum = (sum & 0xFFFFUL) + (sum >> 16);
+            }
+
+            if ((buffer.Length & 1) != 0)
+            {
+                sum += buffer[buffer.Length - 1];
+                sum = (sum & 0xFFFFUL) + (sum >> 16);
+            }
+
+            sum = (sum & 0xFFFFUL) + (sum >> 16);
+            uint checkSum = (uint)(sum + (ulong)buffer.Length);
+            buffer[checkSumOffset] = (byte)(checkSum & 0xFF);
+            buffer[checkSumOffset + 1] = (byte)((checkSum >> 8) & 0xFF);
+            buffer[checkSumOffset + 2] = (byte)((checkSum >> 16) & 0xFF);
+            buffer[checkSumOffset + 3] = (byte)((checkSum >> 24) & 0xFF);
+        }
+
+        string fullTarget = Path.GetFullPath(FilePath);
+        string dir = Path.GetDirectoryName(fullTarget) ?? ".";
+        string tempPath = Path.Combine(dir, Path.GetFileName(fullTarget) + "." + Guid.NewGuid().ToString("N") + ".tmp");
+        try
+        {
+            File.WriteAllBytes(tempPath, buffer);
+            if (File.Exists(fullTarget))
+            {
+                File.Replace(tempPath, fullTarget, null, true);
+            }
+            else
+            {
+                File.Move(tempPath, fullTarget);
+            }
+        }
+        catch
+        {
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+
+            throw;
+        }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="_AdaskoPatchAppHostLargeAddressAware"
+          AfterTargets="_CreateAppHost"
+          Condition="'$(EnableLargeAddressAwareAppHost)' == 'true'
+                     and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe')
+                     and ('$(PlatformTarget)' == 'x86' or '$(RuntimeIdentifier)' == 'win-x86' or '$(AppHostRuntimeIdentifier)' == 'win-x86')
+                     and '$(AppHostIntermediatePath)' != ''
+                     and Exists('$(AppHostIntermediatePath)')">
+    <AdaskoSetLargeAddressAwarePe32 FilePath="$(AppHostIntermediatePath)" />
+  </Target>
+
+  <Target Name="_AdaskoPatchNetFrameworkExeLargeAddressAware"
+          AfterTargets="CopyFilesToOutputDirectory"
+          Condition="'$(EnableLargeAddressAwareAppHost)' == 'true'
+                     and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe')
+                     and '$(PlatformTarget)' == 'x86'
+                     and '$(AppHostIntermediatePath)' == ''
+                     and '$(TargetExt)' == '.exe'
+                     and Exists('$(TargetPath)')">
+    <AdaskoSetLargeAddressAwarePe32 FilePath="$(TargetPath)" />
+  </Target>
+
+  <Target Name="_AdaskoPatchPublishedExeLargeAddressAware"
+          AfterTargets="Publish"
+          Condition="'$(EnableLargeAddressAwareAppHost)' == 'true'
+                     and ('$(OutputType)' == 'Exe' or '$(OutputType)' == 'WinExe')
+                     and ('$(PlatformTarget)' == 'x86' or '$(RuntimeIdentifier)' == 'win-x86' or '$(AppHostRuntimeIdentifier)' == 'win-x86')
+                     and '$(PublishDir)' != ''
+                     and Exists('$(PublishDir)$(AssemblyName).exe')">
+    <AdaskoSetLargeAddressAwarePe32 FilePath="$(PublishDir)$(AssemblyName).exe" />
+  </Target>
+
+</Project>

@@ -51,7 +51,8 @@ public class UnmanagedLibraryInstanceMethodsTests
         Action act = () => library.GetUnmanagedFunction<GetCurrentProcessIdDelegate>("   ");
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("functionName");
     }

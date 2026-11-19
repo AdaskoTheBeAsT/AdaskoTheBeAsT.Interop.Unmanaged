@@ -16,10 +16,14 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 public class NativeFixtureTests
 {
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int Binary(int first, int second);
+    private delegate int Binary(
+        int first,
+        int second);
 
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
-    private delegate int StdCallBinary(int first, int second);
+    private delegate int StdCallBinary(
+        int first,
+        int second);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate int Unary(int value);
@@ -31,20 +35,27 @@ public class NativeFixtureTests
     private delegate int StdCallUnary<T>(T value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int RefCallback<T>(ref T value, out int copy);
+    private delegate int RefCallback<T>(
+        ref T value,
+        out int copy);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     [return: MarshalAs(UnmanagedType.I1)]
     private delegate bool TextCallback<T>([MarshalAs(UnmanagedType.LPWStr)] T value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int InvokeRef(IntPtr callback, int value, out int copy);
+    private delegate int InvokeRef(
+        IntPtr callback,
+        int value,
+        out int copy);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate byte InvokeText(IntPtr callback);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int InvokeCallback(IntPtr callback, int value);
+    private delegate int InvokeCallback(
+        IntPtr callback,
+        int value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void RegisterCallback(IntPtr callback);
@@ -73,19 +84,26 @@ public class NativeFixtureTests
 
         library.TryGetExport("fixture_add", out var pointer).Should().BeTrue();
         UnmanagedLibrary.GetDelegateForFunctionPointer<Func<int, int, int>>(pointer, CallingConvention.Cdecl)!(20, 22)
-            .Should().Be(42);
+            .Should()
+            .Be(42);
         library.TryGetExport("fixture_increment", out pointer).Should().BeTrue();
         var value = 41;
         library.GetUnmanagedFunction<Increment>("fixture_increment")!(ref value);
         value.Should().Be(42);
         library.TryGetExport("fixture_pair", out pointer).Should().BeTrue();
         var pair = UnmanagedLibrary.GetDelegateForFunctionPointer<TransformPair>(pointer, CallingConvention.Cdecl)!(
-            new Pair { First = 20, Second = 21 });
+            new Pair
+            {
+                First = 20,
+                Second = 21,
+            });
         pair.First.Should().Be(21);
         pair.Second.Should().Be(22);
         library.TryGetExport("fixture_echo", out pointer).Should().BeTrue();
-        UnmanagedLibrary.GetDelegateForFunctionPointer<Func<IntPtr, IntPtr>>(pointer, CallingConvention.Cdecl)!(new IntPtr(42))
-            .Should().Be(new IntPtr(42));
+        UnmanagedLibrary.GetDelegateForFunctionPointer<Func<IntPtr, IntPtr>>(pointer, CallingConvention.Cdecl)!(
+                new IntPtr(42))
+            .Should()
+            .Be(new IntPtr(42));
     }
 
     [Theory]
@@ -113,8 +131,14 @@ public class NativeFixtureTests
     }
 
     [Fact]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Verifies the public disposed-owner error contract.")]
-    [SuppressMessage("IDisposableAnalyzers", "IDISP017", Justification = "Explicit early disposal is the behavior under test.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP016",
+        Justification = "Verifies the public disposed-owner error contract.")]
+    [SuppressMessage(
+        "IDisposableAnalyzers",
+        "IDISP017",
+        Justification = "Explicit early disposal is the behavior under test.")]
     public void DisposedOwners_RejectAllLookupOverloads()
     {
         using var fixture = new NativeFixture();
@@ -218,9 +242,15 @@ public class NativeFixtureTests
     {
         using var fixture = new NativeFixture();
         using var library = new UnmanagedLibrary(fixture.LibraryPath);
-        using var text = UnmanagedLibrary.PinDelegate<TextCallback<string>>(value => string.Equals(value, "AB", StringComparison.Ordinal));
+        using var text =
+            UnmanagedLibrary.PinDelegate<TextCallback<string>>(value => string.Equals(
+                value,
+                "AB",
+                StringComparison.Ordinal));
         library.GetUnmanagedFunction<InvokeText>("fixture_invoke_text")!(text.Ptr).Should().Be(1);
-        using var byRef = UnmanagedLibrary.PinDelegate<RefCallback<int>>((ref int value, out int copy) =>
+        using var byRef = UnmanagedLibrary.PinDelegate<RefCallback<int>>((
+            ref value,
+            out copy) =>
         {
             copy = ++value;
             return value;
@@ -250,8 +280,14 @@ public class NativeFixtureTests
     [InlineData("missing")]
     [InlineData("invalid")]
     [InlineData("dependency")]
-    [SuppressMessage("Security", "SCS0018", Justification = "Changes only files copied into the test-owned random fixture directory.")]
-    [SuppressMessage("Security", "SEC0116", Justification = "Paths belong to this test's temporary fixture, not user input.")]
+    [SuppressMessage(
+        "Security",
+        "SCS0018",
+        Justification = "Changes only files copied into the test-owned random fixture directory.")]
+    [SuppressMessage(
+        "Security",
+        "SEC0116",
+        Justification = "Paths belong to this test's temporary fixture, not user input.")]
     public void LoadFailures_PreserveUsefulDiagnostics(string failure)
     {
         using var fixture = new NativeFixture();

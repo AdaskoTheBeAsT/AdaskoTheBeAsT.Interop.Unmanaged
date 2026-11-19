@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net11.0;net10.0;net9.0;net8.0;net481;net48;net472</TargetFrameworks>
+    <TargetFrameworks>net11.0;net10.0;net481;net48;net472</TargetFrameworks>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EmitCompilerGeneratedFiles>false</EmitCompilerGeneratedFiles>
@@ -9,7 +9,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryType>github</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <Description>Native library loading, export lookup, SafeHandle ownership, and managed callback lifetime scopes for Windows, Linux, and macOS.</Description>
+    <Description>Native library loading, export lookup, SafeHandle ownership, managed callback lifetime scopes, verified PE32/PE32+ binary patching, loaded-module IAT/memory primitives, per-worker native module isolation, fixed-buffer byte-string marshaling, and floating-point/error-mode execution guards.</Description>
     <Authors>Adam "AdaskoTheBeAsT" Pluciński</Authors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <IncludeSymbols>true</IncludeSymbols>
@@ -19,8 +19,8 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageProjectUrl>https://github.com/AdaskoTheBeAsT/AdaskoTheBeAsT.Interop.Unmanaged</PackageProjectUrl>
     <Copyright>Adam "AdaskoTheBeAsT" Pluciński</Copyright>
-    <PackageTags>Interop;Unmanaged</PackageTags>
-    <PackageReleaseNotes>5.0.0: Add net11.0 target framework support, update repository toolchain to .NET SDK 11.0.100, and upgrade build analyzers and test packages.</PackageReleaseNotes>
+    <PackageTags>Interop;Unmanaged;PE;Isolation;Native</PackageTags>
+    <PackageReleaseNotes>5.0.0: Add net11.0 support, remove out-of-support net8.0 and net9.0 targets, and add PeImageEditor, LoadedModuleMemory, IsolatedLibrarySet, WorkerModuleNaming, WorkerSlotAllocator, NativeByteString, PinnedLibraryCache, UnmanagedScratchBuffer, NativeExecutionGuard, module provenance helpers, and opt-in win-x86 LargeAddressAware build targets.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
@@ -48,6 +48,7 @@
   <ItemGroup>
     <None Include="..\..\LICENSE" Pack="true" PackagePath="" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="buildTransitive\AdaskoTheBeAsT.Interop.Unmanaged.targets" Pack="true" PackagePath="buildTransitive\" />
   </ItemGroup>
 
 </Project>

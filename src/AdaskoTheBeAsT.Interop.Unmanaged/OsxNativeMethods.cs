@@ -27,12 +27,26 @@ internal static class OsxNativeMethods
     private const string LibSystem = "libSystem.dylib";
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(LibSystem, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, EntryPoint = nameof(dlopen))]
-    internal static extern IntPtr dlopen(string fileName, int flags);
+    [DllImport(
+        LibSystem,
+        CharSet = CharSet.Ansi,
+        BestFitMapping = false,
+        ThrowOnUnmappableChar = true,
+        EntryPoint = nameof(dlopen))]
+    internal static extern IntPtr dlopen(
+        string fileName,
+        int flags);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(LibSystem, CharSet = CharSet.Ansi, BestFitMapping = false, ThrowOnUnmappableChar = true, EntryPoint = nameof(dlsym))]
-    internal static extern IntPtr dlsym(IntPtr handle, string symbol);
+    [DllImport(
+        LibSystem,
+        CharSet = CharSet.Ansi,
+        BestFitMapping = false,
+        ThrowOnUnmappableChar = true,
+        EntryPoint = nameof(dlsym))]
+    internal static extern IntPtr dlsym(
+        IntPtr handle,
+        string symbol);
 
     [SuppressUnmanagedCodeSecurity]
     [DllImport(LibSystem, EntryPoint = nameof(dlclose))]

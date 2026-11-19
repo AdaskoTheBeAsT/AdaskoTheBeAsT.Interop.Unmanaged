@@ -4,13 +4,31 @@
     <NativeBuildDirectory>$(MSBuildProjectDirectory)/obj/native/$(TargetFramework)/$(PlatformTarget)</NativeBuildDirectory>
     <NativeGeneratorArgs Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' == 'x86'">-A Win32</NativeGeneratorArgs>
     <NativeGeneratorArgs Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' != 'x86'">-A x64</NativeGeneratorArgs>
+    <NativeCompanionArch Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' == 'x86'">x64</NativeCompanionArch>
+    <NativeCompanionArch Condition="$([MSBuild]::IsOSPlatform('Windows')) and '$(PlatformTarget)' != 'x86'">x86</NativeCompanionArch>
+    <NativeCompanionGeneratorArgs Condition="'$(NativeCompanionArch)' == 'x86'">-A Win32</NativeCompanionGeneratorArgs>
+    <NativeCompanionGeneratorArgs Condition="'$(NativeCompanionArch)' == 'x64'">-A x64</NativeCompanionGeneratorArgs>
+    <NativeCompanionBuildDirectory>$(MSBuildProjectDirectory)/obj/native-companion/$(TargetFramework)/$(NativeCompanionArch)</NativeCompanionBuildDirectory>
     <NativeBuildTypeArg Condition="!$([MSBuild]::IsOSPlatform('Windows'))">-DCMAKE_BUILD_TYPE=$(Configuration)</NativeBuildTypeArg>
   </PropertyGroup>
   <Target Name="BuildNativeFixture" BeforeTargets="Build" Condition="'$(TargetFramework)' != '' and '$(DesignTimeBuild)' != 'true'">
     <PropertyGroup>
+      <NativeStageDirectory>$(NativeBuildDirectory)/out</NativeStageDirectory>
+      <NativeCompanionStageDirectory>$(NativeCompanionBuildDirectory)/out</NativeCompanionStageDirectory>
       <NativeOutputDirectory>$(TargetDir)native</NativeOutputDirectory>
+      <NativeCompanionOutputDirectory>$(TargetDir)native-$(NativeCompanionArch)</NativeCompanionOutputDirectory>
     </PropertyGroup>
-    <Exec Command="&quot;$(CMakeCommand)&quot; -S &quot;$(MSBuildThisFileDirectory).&quot; -B &quot;$(NativeBuildDirectory)&quot; $(NativeGeneratorArgs) $(NativeBuildTypeArg) -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=&quot;$(NativeOutputDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=&quot;$(NativeOutputDirectory)&quot; -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeOutputDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeOutputDirectory)&quot;" />
+    <Exec Command="&quot;$(CMakeCommand)&quot; -S &quot;$(MSBuildThisFileDirectory).&quot; -B &quot;$(NativeBuildDirectory)&quot; $(NativeGeneratorArgs) $(NativeBuildTypeArg) -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=&quot;$(NativeStageDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=&quot;$(NativeStageDirectory)&quot; -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeStageDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeStageDirectory)&quot;" />
     <Exec Command="&quot;$(CMakeCommand)&quot; --build &quot;$(NativeBuildDirectory)&quot; --config $(Configuration)" />
+    <ItemGroup>
+      <_NativeBuiltFiles Include="$(NativeStageDirectory)/*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(_NativeBuiltFiles)" DestinationFolder="$(NativeOutputDirectory)" SkipUnchangedFiles="false" />
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Windows'))" IgnoreExitCode="true" Command="&quot;$(CMakeCommand)&quot; -S &quot;$(MSBuildThisFileDirectory).&quot; -B &quot;$(NativeCompanionBuildDirectory)&quot; $(NativeCompanionGeneratorArgs) -DCMAKE_RUNTIME_OUTPUT_DIRECTORY=&quot;$(NativeCompanionStageDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY=&quot;$(NativeCompanionStageDirectory)&quot; -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeCompanionStageDirectory)&quot; -DCMAKE_LIBRARY_OUTPUT_DIRECTORY_$(Configuration.ToUpperInvariant())=&quot;$(NativeCompanionStageDirectory)&quot;" />
+    <Exec Condition="$([MSBuild]::IsOSPlatform('Windows')) and Exists('$(NativeCompanionBuildDirectory)/CMakeCache.txt')" IgnoreExitCode="true" Command="&quot;$(CMakeCommand)&quot; --build &quot;$(NativeCompanionBuildDirectory)&quot; --config $(Configuration)" />
+    <ItemGroup Condition="$([MSBuild]::IsOSPlatform('Windows')) and Exists('$(NativeCompanionStageDirectory)')">
+      <_NativeCompanionBuiltFiles Include="$(NativeCompanionStageDirectory)/*" />
+    </ItemGroup>
+    <Copy Condition="'@(_NativeCompanionBuiltFiles)' != ''" SourceFiles="@(_NativeCompanionBuiltFiles)" DestinationFolder="$(NativeCompanionOutputDirectory)" SkipUnchangedFiles="false" />
   </Target>
 </Project>

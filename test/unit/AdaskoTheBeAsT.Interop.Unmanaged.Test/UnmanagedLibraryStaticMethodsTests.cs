@@ -23,7 +23,8 @@ public class UnmanagedLibraryStaticMethodsTests
         Action act = () => UnmanagedLibrary.LoadLibrary(null!);
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("fileName");
     }
@@ -35,7 +36,8 @@ public class UnmanagedLibraryStaticMethodsTests
         Action act = () => UnmanagedLibrary.LoadLibrary(string.Empty);
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("fileName");
     }
@@ -47,7 +49,8 @@ public class UnmanagedLibraryStaticMethodsTests
         Action act = () => UnmanagedLibrary.LoadLibrary("   ");
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("fileName");
     }
@@ -62,7 +65,8 @@ public class UnmanagedLibraryStaticMethodsTests
         Action act = () => UnmanagedLibrary.LoadLibrary(nonExistentDll);
 
         // Assert
-        act.Should().Throw<Win32Exception>()
+        act.Should()
+            .Throw<Win32Exception>()
             .WithMessage($"*Failed to load library*{nonExistentDll}*");
     }
 
@@ -219,7 +223,8 @@ public class UnmanagedLibraryStaticMethodsTests
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
-        var function = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var function =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
 
         // Assert
         function.Should().NotBeNull();
@@ -229,10 +234,12 @@ public class UnmanagedLibraryStaticMethodsTests
     public void GetUnmanagedFunction_WithNullHandle_ThrowsArgumentNullException()
     {
         // Act
-        Action act = () => UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(null!, "GetCurrentProcessId");
+        Action act = () =>
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(null!, "GetCurrentProcessId");
 
         // Assert
-        act.Should().Throw<ArgumentNullException>()
+        act.Should()
+            .Throw<ArgumentNullException>()
             .WithParameterName("safeLibraryHandle");
     }
 
@@ -251,7 +258,8 @@ public class UnmanagedLibraryStaticMethodsTests
         Action act = () => UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "   ");
 
         // Assert
-        act.Should().Throw<ArgumentException>()
+        act.Should()
+            .Throw<ArgumentException>()
             .WithMessage("*cannot be null or whitespace*")
             .WithParameterName("functionName");
     }
@@ -268,7 +276,8 @@ public class UnmanagedLibraryStaticMethodsTests
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
-        var function = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "NonExistentFunction");
+        var function =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "NonExistentFunction");
 
         // Assert
         function.Should().BeNull();
@@ -286,8 +295,10 @@ public class UnmanagedLibraryStaticMethodsTests
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
-        var function1 = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
-        var function2 = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var function1 =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var function2 =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
 
         // Assert
         function1.Should().NotBeNull();
@@ -306,7 +317,8 @@ public class UnmanagedLibraryStaticMethodsTests
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
 
         // Act
-        var function1 = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var function1 =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
         var function2 = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessDelegate>(handle, "GetCurrentProcess");
 
         // Assert
@@ -324,7 +336,8 @@ public class UnmanagedLibraryStaticMethodsTests
 
         // Arrange
         using var handle = UnmanagedLibrary.LoadLibrary("kernel32.dll");
-        var function = UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
+        var function =
+            UnmanagedLibrary.GetUnmanagedFunction<GetCurrentProcessIdDelegate>(handle, "GetCurrentProcessId");
 
         // Act
         var processId = function!();

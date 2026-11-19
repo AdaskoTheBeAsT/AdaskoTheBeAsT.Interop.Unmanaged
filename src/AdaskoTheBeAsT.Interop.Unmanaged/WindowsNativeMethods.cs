@@ -13,10 +13,17 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged;
 [ExcludeFromCodeCoverage]
 internal static class WindowsNativeMethods
 {
+    internal const uint GetModuleHandleExFlagFromAddress = 0x00000004;
+
     private const string KernelLib = "kernel32";
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(KernelLib, CharSet = CharSet.Unicode, BestFitMapping = false, SetLastError = true, EntryPoint = nameof(LoadLibraryEx))]
+    [DllImport(
+        KernelLib,
+        CharSet = CharSet.Unicode,
+        BestFitMapping = false,
+        SetLastError = true,
+        EntryPoint = nameof(LoadLibraryEx))]
     internal static extern IntPtr LoadLibraryEx(
         string fileName,
         IntPtr hFile,
@@ -31,8 +38,31 @@ internal static class WindowsNativeMethods
     internal static extern bool FreeLibrary(IntPtr hModule);
 
     [SuppressUnmanagedCodeSecurity]
-    [DllImport(KernelLib, CharSet = CharSet.Ansi, EntryPoint = nameof(GetProcAddress), ExactSpelling = true, BestFitMapping = false, ThrowOnUnmappableChar = true)]
-    internal static extern IntPtr GetProcAddress(IntPtr hModule, string procname);
+    [DllImport(
+        KernelLib,
+        CharSet = CharSet.Ansi,
+        EntryPoint = nameof(GetProcAddress),
+        ExactSpelling = true,
+        BestFitMapping = false,
+        ThrowOnUnmappableChar = true)]
+    internal static extern IntPtr GetProcAddress(
+        IntPtr hModule,
+        string procname);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport(KernelLib, ExactSpelling = true, SetLastError = true, EntryPoint = nameof(GetModuleFileNameW))]
+    internal static extern uint GetModuleFileNameW(
+        IntPtr hModule,
+        IntPtr lpFilename,
+        uint nSize);
+
+    [SuppressUnmanagedCodeSecurity]
+    [DllImport(KernelLib, ExactSpelling = true, SetLastError = true, EntryPoint = nameof(GetModuleHandleExW))]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetModuleHandleExW(
+        uint dwFlags,
+        IntPtr lpModuleAddress,
+        out IntPtr phModule);
 }
 #pragma warning restore SYSLIB1054
 #pragma warning restore CA1060

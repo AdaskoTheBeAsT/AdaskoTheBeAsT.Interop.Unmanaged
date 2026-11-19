@@ -10,7 +10,9 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
 public class DelegatePinTests
 {
-    private delegate int SimpleDelegate(int x, int y);
+    private delegate int SimpleDelegate(
+        int x,
+        int y);
 
     [Fact]
     public void UsingScope_KeepsObjectAliveUntilDispose()
@@ -146,17 +148,17 @@ public class DelegatePinTests
         var ptr = new IntPtr(12345);
 
         // Act & Assert - no exception
-        using (var delegatePin = new DelegatePin(ptr, new object()))
-        {
-            delegatePin.Ptr.Should().Be(ptr);
-        }
+        using var delegatePin = new DelegatePin(ptr, new object());
+        delegatePin.Ptr.Should().Be(ptr);
     }
 
     [Fact]
     public void Constructor_WithDelegateAsKeepAlive_PreservesDelegate()
     {
         // Arrange
-        SimpleDelegate callback = (x, y) => x + y;
+        SimpleDelegate callback = (
+            x,
+            y) => x + y;
         var ptr = Marshal.GetFunctionPointerForDelegate(callback);
 
         // Act
@@ -191,8 +193,11 @@ public class DelegatePinTests
     public void Constructor_WithFunctionPointer_WorksCorrectly()
     {
         // Arrange
-        SimpleDelegate callback = (x, y) => x + y;
-        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate(callback, out var binder);
+        static int Callback(
+            int x,
+            int y) =>
+            x + y;
+        var ptr = UnmanagedLibrary.GetFunctionPointerForDelegate((SimpleDelegate)Callback, out var binder);
 
         // Act
         using var delegatePin = new DelegatePin(ptr, binder);

@@ -2,6 +2,7 @@
 #include <stddef.h>
 
 #ifdef _WIN32
+#include <float.h>
 #include <windows.h>
 static SRWLOCK mutex = SRWLOCK_INIT;
 static CONDITION_VARIABLE changed = CONDITION_VARIABLE_INIT;
@@ -105,3 +106,51 @@ API void CDECL fixture_release(void)
     WAKE();
     UNLOCK();
 }
+
+#if defined(_WIN32) && defined(_MSC_VER)
+API uint32_t CDECL fixture_get_fp_control_word(void)
+{
+    unsigned int cw = 0;
+    _controlfp_s(&cw, 0, 0);
+    return (uint32_t)cw;
+}
+
+API uint32_t CDECL fixture_get_fp_status_word(void)
+{
+    return (uint32_t)_statusfp();
+}
+
+API void CDECL fixture_set_fp_rounding_chop(void)
+{
+    unsigned int cw = 0;
+    _controlfp_s(&cw, _RC_CHOP, _MCW_RC);
+}
+
+API void CDECL fixture_set_fp_rounding_near(void)
+{
+    unsigned int cw = 0;
+    _controlfp_s(&cw, _RC_NEAR, _MCW_RC);
+}
+
+API double CDECL fixture_divide_doubles(double numerator, double denominator)
+{
+    return numerator / denominator;
+}
+
+API void CDECL fixture_corrupt_fpu_state(void)
+{
+    unsigned int cw = 0;
+    _clearfp();
+    _controlfp_s(&cw, _RC_UP, _MCW_RC);
+#if defined(_M_IX86)
+    {
+        unsigned int cw_x87 = 0;
+        unsigned int cw_sse2 = 0;
+        __control87_2(0, _EM_ZERODIVIDE | _EM_INVALID, &cw_x87, &cw_sse2);
+    }
+#else
+    _controlfp_s(&cw, 0, _EM_ZERODIVIDE | _EM_INVALID);
+#endif
+}
+#endif
+

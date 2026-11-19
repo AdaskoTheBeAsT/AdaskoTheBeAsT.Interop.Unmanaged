@@ -12,6 +12,7 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 
 #pragma warning disable SA1121
 
+[Collection(ProcessErrorModeTestCollection.Name)]
 [Trait("Category", "Native")]
 public class CollectibleCallbackTests
 {
@@ -19,7 +20,9 @@ public class CollectibleCallbackTests
     public delegate int PluginCallback<T>(T value);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int NativeInvoke(IntPtr pointer, int value);
+    private delegate int NativeInvoke(
+        IntPtr pointer,
+        int value);
 
     public static Delegate CreateCallback()
     {
@@ -34,7 +37,10 @@ public class CollectibleCallbackTests
     }
 
     [Fact]
-    [SuppressMessage("Sonar", "S1215", Justification = "Repeated GC verifies collectible context and emitted type reachability.")]
+    [SuppressMessage(
+        "Sonar",
+        "S1215",
+        Justification = "Repeated GC verifies collectible context and emitted type reachability.")]
     public void ReleasedCallback_DoesNotRootCollectibleContext()
     {
         using var fixture = new NativeFixture();
@@ -51,7 +57,10 @@ public class CollectibleCallbackTests
     }
 
     [Fact]
-    [SuppressMessage("Sonar", "S1215", Justification = "Repeated GC verifies collectible context and emitted type reachability.")]
+    [SuppressMessage(
+        "Sonar",
+        "S1215",
+        Justification = "Repeated GC verifies collectible context and emitted type reachability.")]
     public void ReleasedStructCallback_DoesNotRootCollectibleContext()
     {
         using var fixture = new NativeFixture();
@@ -74,8 +83,9 @@ public class CollectibleCallbackTests
         var assembly = context.LoadFromAssemblyPath(typeof(CollectibleCallbackTests).Assembly.Location);
         var type = assembly.GetType(typeof(CollectibleCallbackTests).FullName!)!;
         var callback = (Delegate)type.GetMethod(
-            nameof(CreateCallback),
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(obj: null, parameters: null)!;
+                nameof(CreateCallback),
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!
+            .Invoke(obj: null, parameters: null)!;
         using (var scope = UnmanagedLibrary.PinDelegate(callback))
         {
             library.GetUnmanagedFunction<NativeInvoke>("fixture_invoke")!(scope.Ptr, 41).Should().Be(42);
@@ -93,8 +103,9 @@ public class CollectibleCallbackTests
         var assembly = context.LoadFromAssemblyPath(typeof(CollectibleCallbackTests).Assembly.Location);
         var type = assembly.GetType(typeof(CollectibleCallbackTests).FullName!)!;
         var callback = (Delegate)type.GetMethod(
-            nameof(CreateStructCallback),
-            BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!.Invoke(obj: null, parameters: null)!;
+                nameof(CreateStructCallback),
+                BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)!
+            .Invoke(obj: null, parameters: null)!;
         using (var scope = UnmanagedLibrary.PinDelegate(callback))
         {
             library.GetUnmanagedFunction<NativeInvoke>("fixture_invoke")!(scope.Ptr, 41).Should().Be(42);

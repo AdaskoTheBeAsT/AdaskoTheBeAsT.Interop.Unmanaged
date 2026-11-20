@@ -485,6 +485,7 @@ dotnet_diagnostic.S3776.severity = warning
 # StyleCop.Analyzers
 dotnet_diagnostic.SA1101.severity = none
 dotnet_diagnostic.SA1126.severity = none
+dotnet_diagnostic.SA1128.severity = warning
 dotnet_diagnostic.SA1200.severity = none
 dotnet_diagnostic.SA1303.severity = none
 dotnet_diagnostic.SA1309.severity = none

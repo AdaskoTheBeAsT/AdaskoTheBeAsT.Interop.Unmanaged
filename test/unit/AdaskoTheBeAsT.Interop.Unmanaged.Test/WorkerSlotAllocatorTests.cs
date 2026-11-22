@@ -13,6 +13,28 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 public class WorkerSlotAllocatorTests
 {
     [Fact]
+    public void GenerationsAdvancePerSlotAndWrapAfter1296Leases()
+    {
+        var allocator = new WorkerSlotAllocator(maxExclusive: 2);
+        for (var generation = 0; generation < 1297; generation++)
+        {
+            using var lease = allocator.Acquire(preferredSlot: 1);
+            lease.SlotIndex.Should().Be(1);
+            lease.Generation.Should().Be(generation % 1296);
+        }
+
+        allocator.TryAcquire(out var first).Should().BeTrue();
+        using (first)
+        {
+            first!.SlotIndex.Should().Be(0);
+            first.Generation.Should().Be(0);
+        }
+
+        using var independent = new WorkerSlotAllocator(maxExclusive: 2).Acquire(preferredSlot: 1);
+        independent.Generation.Should().Be(0);
+    }
+
+    [Fact]
     [SuppressMessage("IDisposableAnalyzers", "IDISP016", Justification = "Verifies idempotent double-Dispose.")]
     [SuppressMessage(
         "IDisposableAnalyzers",
@@ -51,6 +73,7 @@ public class WorkerSlotAllocatorTests
         allocator.AvailableCount.Should().Be(1);
         using var reacquired = allocator.Acquire();
         reacquired.SlotIndex.Should().Be(4);
+        reacquired.Generation.Should().Be(1);
 
         preferredHit.Dispose();
         allocator.AvailableCount.Should().Be(0);

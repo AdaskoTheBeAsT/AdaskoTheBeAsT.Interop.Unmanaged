@@ -6,6 +6,10 @@ NuGet publication dates.
 
 See the [migration guide](MIGRATION.md) for upgrade steps.
 
+## [5.1.0]
+
+Adds per-slot generations to worker leases and required typed native export lookup.
+
 ## [5.0.0] - 2026-11-15
 
 ### Breaking changes

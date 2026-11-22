@@ -13,16 +13,24 @@ public sealed class WorkerSlotLease : IDisposable
 
     internal WorkerSlotLease(
         WorkerSlotAllocator owner,
-        int slotIndex)
+        int slotIndex,
+        int generation)
     {
         _owner = owner;
         SlotIndex = slotIndex;
+        Generation = generation;
     }
 
     /// <summary>
     /// Gets the leased zero-based worker slot index.
     /// </summary>
     public int SlotIndex { get; }
+
+    /// <summary>
+    /// Gets the zero-based acquisition generation for this slot within its allocator.
+    /// Wraps after 1296 acquisitions; use one allocator per isolation namespace.
+    /// </summary>
+    public int Generation { get; }
 
     /// <summary>
     /// Releases the leased worker slot back to its <see cref="WorkerSlotAllocator"/>. Idempotent on repeated calls.

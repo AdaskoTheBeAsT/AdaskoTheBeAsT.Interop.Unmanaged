@@ -25,6 +25,7 @@ public sealed class WorkerSlotAllocator
     private readonly bool _preferThreadStickySlot;
     private readonly bool[] _excluded;
     private readonly bool[] _occupied;
+    private readonly int[] _nextGenerations;
     private readonly int _capacity;
     private int _availableCount;
 
@@ -54,6 +55,7 @@ public sealed class WorkerSlotAllocator
         _preferThreadStickySlot = preferThreadStickySlot;
         _excluded = new bool[maxExclusive];
         _occupied = new bool[maxExclusive];
+        _nextGenerations = new int[maxExclusive];
 
         var excludedCount = 0;
         if (excludedSlots is not null)
@@ -111,7 +113,7 @@ public sealed class WorkerSlotAllocator
     {
         if (TryClaimSlotIndex(preferredSlot, out var slotIndex))
         {
-            return new WorkerSlotLease(this, slotIndex);
+            return CreateLease(slotIndex);
         }
 
         throw new InvalidOperationException(
@@ -130,7 +132,7 @@ public sealed class WorkerSlotAllocator
     {
         if (TryClaimSlotIndex(preferredSlot, out var slotIndex))
         {
-            lease = new WorkerSlotLease(this, slotIndex);
+            lease = CreateLease(slotIndex);
             return true;
         }
 
@@ -196,6 +198,14 @@ public sealed class WorkerSlotAllocator
         {
             table.Add(allocator, new StrongBox<int>(slotIndex));
         }
+    }
+
+    private WorkerSlotLease CreateLease(int slotIndex)
+    {
+        // Only the holder of the claimed slot can access its generation until it releases the lease.
+        var generation = _nextGenerations[slotIndex];
+        _nextGenerations[slotIndex] = (generation + 1) % 1296;
+        return new WorkerSlotLease(this, slotIndex, generation);
     }
 
     private bool TryClaimSlotIndex(

@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <ErrorLog>$(MSBuildThisFileDirectory).sarif\$(MSBuildProjectName).json</ErrorLog>
-    <Version>5.0.0</Version>
+    <Version>5.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>

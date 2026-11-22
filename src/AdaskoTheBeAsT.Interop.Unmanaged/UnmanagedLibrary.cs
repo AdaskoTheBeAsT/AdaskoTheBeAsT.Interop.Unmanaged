@@ -617,6 +617,17 @@ public sealed partial class UnmanagedLibrary(
         return GetUnmanagedFunctionCore<TDelegate>(_safeLibraryHandle, functionName);
     }
 
+    /// <summary>Gets an exported function as a delegate, or throws if it is missing.</summary>
+    /// <typeparam name="TDelegate">Delegate type matching the native signature.</typeparam>
+    /// <param name="functionName">Case-sensitive export name to look up.</param>
+    /// <returns>The requested delegate. Keep the library open while using it.</returns>
+    /// <exception cref="ArgumentException">The export name is invalid.</exception>
+    /// <exception cref="ObjectDisposedException">The library has been disposed.</exception>
+    /// <exception cref="EntryPointNotFoundException">The loaded library does not export the name.</exception>
+    public TDelegate GetRequiredUnmanagedFunction<TDelegate>(string functionName)
+        where TDelegate : Delegate =>
+        Marshal.GetDelegateForFunctionPointer<TDelegate>(GetRequiredExport(functionName));
+
     /// <summary>
     /// Tries to look up an exported symbol in the loaded module and returns its raw address.
     /// </summary>

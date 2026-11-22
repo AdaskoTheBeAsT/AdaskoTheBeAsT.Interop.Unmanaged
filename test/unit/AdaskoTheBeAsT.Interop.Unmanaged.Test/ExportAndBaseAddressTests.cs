@@ -15,6 +15,22 @@ namespace AdaskoTheBeAsT.Interop.Unmanaged.Test;
 [Trait("Category", "Native")]
 public class ExportAndBaseAddressTests
 {
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int Add(int left, int right);
+
+    [Fact]
+    public void RequiredTypedExport_IsCallableAndReportsMissingExport()
+    {
+        using var fixture = new NativeFixture();
+        using var library = new UnmanagedLibrary(fixture.LibraryPath);
+        var add = library.GetRequiredUnmanagedFunction<Add>("fixture_add");
+        add(19, 23).Should().Be(42);
+
+        Action missing = () => library.GetRequiredUnmanagedFunction<Add>("fixture_missing");
+        var error = missing.Should().Throw<EntryPointNotFoundException>().Which;
+        error.Message.Should().Contain("fixture_missing").And.Contain(fixture.LibraryPath);
+    }
+
     [Fact]
     public void GetRequiredExport_ReturnsCallableExportAddress_ForInstanceAndStaticOverloads()
     {

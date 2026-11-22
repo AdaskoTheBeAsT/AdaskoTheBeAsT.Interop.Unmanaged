@@ -6,6 +6,12 @@ Load the right native library at runtime, call its exports, and keep callbacks
 alive without scattering loader plumbing throughout your .NET application.
 Windows, Linux, and macOS, with the platform details spelled out below.
 
+**New in 5.1:** Pass `WorkerSlotLease.Generation` to `IsolatedLibrarySetOptions`
+to distinguish successive uses of a slot. Use one allocator per isolation namespace.
+For required native functions, use `library.GetRequiredUnmanagedFunction<TDelegate>(name)`
+and keep the library open for the lifetime of the delegate.
+See [ADR 0010](docs/adr/0010-worker-generations-and-required-delegates.md).
+
 [![NuGet](https://img.shields.io/nuget/v/AdaskoTheBeAsT.Interop.Unmanaged.svg)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/AdaskoTheBeAsT.Interop.Unmanaged.svg)](https://www.nuget.org/packages/AdaskoTheBeAsT.Interop.Unmanaged/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
